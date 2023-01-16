@@ -14,9 +14,9 @@ const LEFT = 4;
 const DOWN = 5;
 
 const colors = ['white', 'green', 'red', 'blue', 'orange', 'yellow'];
-const gap = 0.1;
-const offset = 1 + gap;
-const SIZE = 8;
+
+// Space between cubies (of unit dimension)
+const OFFSET = 1.1;
 
 const faceNormals = [
     [0, 1, 0],
@@ -28,7 +28,8 @@ const faceNormals = [
 ];
 
 function init() {
-    console.log("starting app");
+    const SIZE = 3;
+
     scene = new THREE.Scene();
     renderer = new THREE.WebGLRenderer();
     camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
@@ -38,9 +39,6 @@ function init() {
     camera.position.y = 0;
     camera.position.z = SIZE * 2;
     camera.lookAt(0, 0, 0);
-
-    console.log("added canvas");
-
     renderer.setSize(400, 400);
 
     const light = new THREE.HemisphereLight(0xffffff, 0xe0e0e0, 1);
@@ -49,11 +47,7 @@ function init() {
     group = new THREE.Group();
     scene.add(group);
 
-    console.log("added light");
-
     buildCube(SIZE, group);
-
-    console.log("added elements");
 
     render();
 }
@@ -64,6 +58,61 @@ function render() {
     group.rotateX(0.005);
     // group.rotateZ(0.01);
     renderer.render(scene, camera);
+}
+
+function buildCube(size, group) {
+    for (let depth = 0; depth < size; depth++) {
+        for (let row = 0; row < size; row++) {
+            for (let col = 0; col < size; col++) {
+                const cubie = makeCubie(row, col, depth, size);
+                group.add(cubie);
+            }
+        }
+    }
+}
+
+function makeCubie(row, column, depth, size) {
+    const g = new THREE.PlaneGeometry(1, 1);
+    const cubie = new THREE.Group();
+    console.log(`${row}, ${column}, ${depth}`);
+    for (let face of facesOf(row, column, depth, size)) {
+        addFace(face, cubie);
+    }
+    cubie.position.x = (column - (size - 1)/2) * OFFSET;
+    cubie.position.y = (row - (size - 1)/2) * OFFSET;
+    cubie.position.z = (depth - (size - 1)/2) * OFFSET;
+    return cubie;
+}
+
+function addFace(face, cubie) {
+    if (face === undefined) {
+        return;
+    }
+
+    const g = new THREE.PlaneGeometry(1, 1);
+    const color = colors[face];
+    const normal = faceNormals[face];
+
+    console.log(`Adding ${face} at ${normal}`);
+
+    const m = new THREE.MeshStandardMaterial({ color });
+    const sticker = new THREE.Mesh(g, m);
+
+    if (normal[0] !== 0) {
+        sticker.rotateY(Math.PI / 2 * normal[0]);
+    }
+    if (normal[1] !== 0) {
+        sticker.rotateX(-Math.PI / 2 * normal[1]);
+    }
+    if (normal[2] === -1) {
+        sticker.rotateX(Math.PI);
+    }
+
+    sticker.position.x = normal[0] / 2;
+    sticker.position.y = normal[1] / 2;
+    sticker.position.z = normal[2] / 2;
+
+    cubie.add(sticker);
 }
 
 function facesOf(row, column, depth, size) {
@@ -87,58 +136,6 @@ function facesOf(row, column, depth, size) {
         faces.push(BACK);
     }
     return faces;
-}
-
-function buildCube(size, group) {
-    for (let depth = 0; depth < size; depth++) {
-        for (let row = 0; row < size; row++) {
-            for (let col = 0; col < size; col++) {
-                const cubie = makeCubie(row, col, depth, size);
-                group.add(cubie);
-            }
-        }
-    }
-}
-
-function makeCubie(row, column, depth, size) {
-    const g = new THREE.PlaneGeometry(1, 1);
-    const cubie = new THREE.Group();
-    console.log(`${row}, ${column}, ${depth}`);
-    for (let face of facesOf(row, column, depth, size)) {
-        addFace(face, cubie);
-    }
-    cubie.position.x = (column - (size - 1)/2) * offset;
-    cubie.position.y = (row - (size - 1)/2) * offset;
-    cubie.position.z = (depth - (size - 1)/2) * offset;
-    return cubie;
-}
-
-function addFace(face, cubie) {
-    if (face === undefined) {
-        return;
-    }
-
-    const g = new THREE.PlaneGeometry(1, 1);
-    const color = colors[face];
-    const normal = faceNormals[face];
-
-    console.log(`Adding ${face} at ${normal}`);
-
-    const m = new THREE.MeshStandardMaterial({ color });
-    const sticker = new THREE.Mesh(g, m);
-    if (normal[0] !== 0) {
-        sticker.rotateY(Math.PI / 2 * normal[0]);
-    }
-    if (normal[1] !== 0) {
-        sticker.rotateX(-Math.PI / 2 * normal[1]);
-    }
-    if (normal[2] === -1) {
-        sticker.rotateX(Math.PI);
-    }
-    sticker.position.x = normal[0] / 2;
-    sticker.position.y = normal[1] / 2;
-    sticker.position.z = normal[2] / 2;
-    cubie.add(sticker);
 }
 
 init();
