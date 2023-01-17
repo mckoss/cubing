@@ -32,6 +32,10 @@ const faceNormals = [
     [0, -1, 0]
 ];
 
+const X_AXIS = new THREE.Vector3(1, 0, 0);
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+const Z_AXIS = new THREE.Vector3(0, 0, 1);
+
 // Initialize THREE.js scene and build a Cubing Cube.
 function init() {
     const SIZE = 3;
@@ -42,7 +46,8 @@ function init() {
     document.body.appendChild(renderer.domElement);
     scene.background = new THREE.Color('black');
 
-    camera.position.y = 0;
+    camera.position.x = SIZE * 1.25;
+    camera.position.y = SIZE * 1.25;
     camera.position.z = SIZE * 2;
     camera.lookAt(0, 0, 0);
     renderer.setSize(400, 400);
@@ -136,16 +141,18 @@ function render(cube, millis) {
     }
     lastTime = millis;
     const fraction = elapsed / currentAction.millis;
+    const amount = fraction * currentAction.limit;
 
     switch (currentAction.action) {
     case 'RX':
-        cube.rotateX(fraction * currentAction.limit);
+        // cube.rotateX(fraction * currentAction.limit);
+        cube.rotateOnWorldAxis(X_AXIS, amount);
         break;
     case 'RY':
-        cube.rotateY(fraction * currentAction.limit);
+        cube.rotateOnWorldAxis(Y_AXIS, amount);
         break;
     case 'RZ':
-        cube.rotateZ(fraction * currentAction.limit);
+        cube.rotateOnWorldAxis(Z_AXIS, amount);
         break;
     }
 
