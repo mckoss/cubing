@@ -36,6 +36,9 @@ const X_AXIS = new THREE.Vector3(1, 0, 0);
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
+let cube;
+const cubies = [];
+
 // Initialize THREE.js scene and build a Cubing Cube.
 function init() {
     const SIZE = 3;
@@ -55,21 +58,18 @@ function init() {
     const light = new THREE.HemisphereLight(0xffffff, 0xe0e0e0, 1);
     scene.add(light);
 
-    const cube = buildCube(SIZE);
+    cube = buildCube(SIZE);
     scene.add(cube);
 
     window.addEventListener("keydown", handleKey);
 
     renderer.render(scene, camera);
 
-    requestAnimationFrame((millis) => {
-        render(cube, millis);
-    });
+    requestAnimationFrame(render);
 }
 
 function handleKey(ev) {
     const key = ev.key;
-    console.log(`${key} pressed`);
 
     switch (key) {
     case 'x':
@@ -113,28 +113,45 @@ function handleKey(ev) {
             limit: -Math.PI / 2,
             millis: 500
         });
+    case 'r':
+        actions.push({
+            action: 'R',
+            limit: Math.PI / 2,
+            millis: 500
+        });
+        break;
+    default:
+        console.log(`Unknown key: ${key}`);
         break;
     }
 }
 
 // This is the animation loop.  We update the cube's orientation
 // to make it look like it is spinning.
-function render(cube, millis) {
-    requestAnimationFrame((millis) => {
-        render(cube, millis);
-    });
+function render(millis) {
+    requestAnimationFrame(render);
 
     if (currentAction === undefined) {
-        if (actions.length === 0) {
-            return;
-        }
-        currentAction = actions.shift();
-        startTime = millis;
-        endTime = startTime + currentAction.millis;
-        lastTime = millis;
+        initAction(millis);
         return;
     }
 
+    doAction(millis);
+
+    renderer.render(scene, camera);
+}
+
+function initAction(millis) {
+    if (actions.length === 0) {
+        return;
+    }
+    currentAction = actions.shift();
+    startTime = millis;
+    endTime = startTime + currentAction.millis;
+    lastTime = millis;
+}
+
+function doAction(millis) {
     let elapsed = millis - lastTime;
     if (millis > endTime) {
         elapsed = endTime - lastTime;
@@ -159,8 +176,6 @@ function render(cube, millis) {
     if (millis > endTime) {
         currentAction = undefined;
     }
-
-    renderer.render(scene, camera);
 }
 
 // Make a whole cube by enumerating all the cubies
@@ -172,6 +187,9 @@ function buildCube(size, group) {
             for (let col = 0; col < size; col++) {
                 const cubie = makeCubie(row, col, depth, size);
                 if (cubie !== null) {
+                    cubies.push({
+                        row, col, depth, cubie
+                    })
                     cube.add(cubie);
                 }
             }
@@ -256,6 +274,23 @@ function facesOf(row, column, depth, size) {
         faces.push(BACK);
     }
     return faces;
+}
+
+function selectCubies(row, col, depth) {
+    const selected = [];
+    for (let cubie of cubies) {
+        if (match(row, cubie.row) &&
+            match(col, cubie.col) &&
+            match(depth, cubie.depth)) {
+                selected.push(cubie);
+            }
+    }
+
+    return selected;
+
+    function match(sel, value) {
+        return (sel === undefined || sel === value);
+    }
 }
 
 init();
