@@ -141,6 +141,48 @@ function handleKey(ev) {
             turns: -1,
         });
         break;
+    case 'f':
+        actions.push({
+            action: 'F',
+            limit: -Math.PI / 2,
+            turns: 1,
+        });
+        break;
+    case 'F':
+        actions.push({
+            action: 'F',
+            limit: Math.PI / 2,
+            turns: -1,
+        });
+        break;
+    case 'u':
+        actions.push({
+            action: 'U',
+            limit: -Math.PI / 2,
+            turns: 1,
+        });
+        break;
+    case 'U':
+        actions.push({
+            action: 'U',
+            limit: Math.PI / 2,
+            turns: -1,
+        });
+        break;
+    case 'l':
+        actions.push({
+            action: 'L',
+            limit: -Math.PI / 2,
+            turns: 1,
+        });
+        break;
+    case 'L':
+        actions.push({
+            action: 'L',
+            limit: Math.PI / 2,
+            turns: -1,
+        });
+        break;
     default:
         console.log(`Unknown key: ${key}`);
         break;
@@ -175,11 +217,23 @@ function initAction(millis) {
 
     switch (currentAction.action) {
     case 'R':
-        sliceCubies = selectCubies(undefined, SIZE-1, undefined);
+        sliceCubies = selectCubies(undefined, SIZE - 1, undefined);
+        attachSlice();
+        break;
+    case 'F':
+        sliceCubies = selectCubies(undefined, undefined, 0);
+        attachSlice();
+        break;
+    case 'U':
+        sliceCubies = selectCubies(SIZE - 1, undefined, undefined);
+        attachSlice();
+        break;
+    }
+
+    function attachSlice() {
         for (let cubie of sliceCubies) {
             slice.attach(cubie.cubie);
         }
-        break;
     }
 }
 
@@ -206,6 +260,12 @@ function doAction(millis) {
     case 'R':
         slice.rotateOnWorldAxis(X_AXIS, angle);
         break;
+    case 'F':
+        slice.rotateOnWorldAxis(Z_AXIS, angle);
+        break;
+    case 'U':
+        slice.rotateOnWorldAxis(Y_AXIS, angle);
+        break;
     default:
         console.log(`Unknown action ${currentAction.action}`);
         break;
@@ -229,6 +289,14 @@ function finalizeAction() {
         break;
     case 'R':
         rotateCubies(sliceCubies, 'x', currentAction.turns);
+        clearSlice();
+        break;
+    case 'F':
+        rotateCubies(sliceCubies, 'z', currentAction.turns);
+        clearSlice();
+        break;
+    case 'U':
+        rotateCubies(sliceCubies, 'y', currentAction.turns);
         clearSlice();
         break;
     }
