@@ -172,15 +172,43 @@ function handleKey(ev) {
     case 'l':
         actions.push({
             action: 'L',
-            limit: -Math.PI / 2,
-            turns: 1,
+            limit: Math.PI / 2,
+            turns: -1,
         });
         break;
     case 'L':
         actions.push({
             action: 'L',
+            limit: -Math.PI / 2,
+            turns: 1,
+        });
+        break;
+    case 'b':
+        actions.push({
+            action: 'B',
             limit: Math.PI / 2,
             turns: -1,
+        });
+        break;
+    case 'B':
+        actions.push({
+            action: 'B',
+            limit: -Math.PI / 2,
+            turns: 1,
+        });
+        break;
+    case 'd':
+        actions.push({
+            action: 'D',
+            limit: Math.PI / 2,
+            turns: -1,
+        });
+        break;
+    case 'D':
+        actions.push({
+            action: 'D',
+            limit: -Math.PI / 2,
+            turns: 1,
         });
         break;
     default:
@@ -228,6 +256,18 @@ function initAction(millis) {
         sliceCubies = selectCubies(SIZE - 1, undefined, undefined);
         attachSlice();
         break;
+    case 'L':
+        sliceCubies = selectCubies(undefined, 0, undefined);
+        attachSlice();
+        break;
+    case 'B':
+        sliceCubies = selectCubies(undefined, undefined, SIZE - 1);
+        attachSlice();
+        break;
+    case 'D':
+        sliceCubies = selectCubies(0, undefined, undefined);
+        attachSlice();
+        break;
     }
 
     function attachSlice() {
@@ -258,12 +298,15 @@ function doAction(millis) {
         cube.rotateOnWorldAxis(Z_AXIS, angle);
         break;
     case 'R':
+    case 'L':
         slice.rotateOnWorldAxis(X_AXIS, angle);
         break;
     case 'F':
+    case 'B':
         slice.rotateOnWorldAxis(Z_AXIS, angle);
         break;
     case 'U':
+    case 'D':
         slice.rotateOnWorldAxis(Y_AXIS, angle);
         break;
     default:
@@ -288,14 +331,17 @@ function finalizeAction() {
         rotateCubies(cubies, 'z', currentAction.turns);
         break;
     case 'R':
+    case 'L':
         rotateCubies(sliceCubies, 'x', currentAction.turns);
         clearSlice();
         break;
     case 'F':
+    case 'B':
         rotateCubies(sliceCubies, 'z', currentAction.turns);
         clearSlice();
         break;
     case 'U':
+    case 'D':
         rotateCubies(sliceCubies, 'y', currentAction.turns);
         clearSlice();
         break;
