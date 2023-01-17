@@ -17,6 +17,7 @@ const colors = ['white', 'green', 'red', 'blue', 'orange', 'yellow'];
 
 // Space between cubies (of unit dimension)
 const OFFSET = 1.1;
+const SIZE = 3;
 
 const actions = [];
 let currentAction;
@@ -36,22 +37,28 @@ const X_AXIS = new THREE.Vector3(1, 0, 0);
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
+// The cube group here
 let cube;
+
+// Array of all created cubies and their current
+// location in the cube.
 const cubies = [];
+
+// Currently rotating slice
+let slice;
+let sliceCubies;
 
 // Initialize THREE.js scene and build a Cubing Cube.
 function init() {
-    const SIZE = 3;
-
     scene = new THREE.Scene();
     renderer = new THREE.WebGLRenderer();
     camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
     document.body.appendChild(renderer.domElement);
     scene.background = new THREE.Color('black');
 
-    camera.position.x = SIZE * 1.25;
-    camera.position.y = SIZE * 1.25;
-    camera.position.z = SIZE * 2;
+    camera.position.x = SIZE;
+    camera.position.y = SIZE;
+    camera.position.z = SIZE * 1.8;
     camera.lookAt(0, 0, 0);
     renderer.setSize(400, 400);
 
@@ -60,6 +67,8 @@ function init() {
 
     cube = buildCube(SIZE);
     scene.add(cube);
+    slice = new THREE.Group();
+    scene.add(slice);
 
     window.addEventListener("keydown", handleKey);
 
@@ -116,6 +125,15 @@ function handleKey(ev) {
     case 'r':
         actions.push({
             action: 'R',
+            turns: 1,
+            limit: -Math.PI / 2,
+            millis: 500
+        });
+        break;
+    case 'R':
+        actions.push({
+            action: 'R',
+            turns: -1,
             limit: Math.PI / 2,
             millis: 500
         });
@@ -145,10 +163,20 @@ function initAction(millis) {
     if (actions.length === 0) {
         return;
     }
+
     currentAction = actions.shift();
     startTime = millis;
     endTime = startTime + currentAction.millis;
     lastTime = millis;
+
+    switch (currentAction.action) {
+    case 'R':
+        sliceCubies = selectCubies(undefined, SIZE-1, undefined);
+        for (let cubie of sliceCubies) {
+            slice.attach(cubie.cubie);
+        }
+        break;
+    }
 }
 
 function doAction(millis) {
@@ -157,6 +185,7 @@ function doAction(millis) {
         elapsed = endTime - lastTime;
     }
     lastTime = millis;
+
     const fraction = elapsed / currentAction.millis;
     const amount = fraction * currentAction.limit;
 
@@ -171,11 +200,30 @@ function doAction(millis) {
     case 'RZ':
         cube.rotateOnWorldAxis(Z_AXIS, amount);
         break;
+    case 'R':
+        slice.rotateOnWorldAxis(X_AXIS, amount);
+        break;
+    default:
+        console.log(`Unknown action ${currentAction.action}`);
+        break;
     }
 
     if (millis > endTime) {
-        currentAction = undefined;
+        finalizeAction();
     }
+}
+
+function finalizeAction() {
+    switch (currentAction.action) {
+    case 'R':
+        rotateCubies(sliceCubies, 'x', currentAction.turns);
+        for (let cubie of sliceCubies) {
+            cube.attach(cubie.cubie);
+        }
+        break;
+    }
+
+    currentAction = undefined;
 }
 
 // Make a whole cube by enumerating all the cubies
@@ -290,6 +338,35 @@ function selectCubies(row, col, depth) {
 
     function match(sel, value) {
         return (sel === undefined || sel === value);
+    }
+}
+
+// Transform x,y coordinates (0-based) based on
+// the number of 90 degree (clockwise) turns;
+function turn(x, y, turns) {
+    if (turns < 0) {
+        turns = - turns;
+    }
+    while (turns < 0) {
+        turns += 4;
+    }
+    while (turns > 0) {
+        [x, y] = [y, SIZE - x];
+        turns -= 1;
+    }
+    return [x, y];
+}
+
+// Update the meta-data in the cubes list to reflect a rotation.
+function rotateCubies(cubies, axis, turns) {
+    for (let cubie of cubies) {
+        if (axis === 'x') {
+            [cubie.depth, cubie.row] = turn(cubie.depth, cubie.row, turns);
+        } else if (axis === 'y') {
+            [cubie.col, cubie.depth] = turn(cubie.col, cubie.depth, turns);
+        } else if (axis === 'z') {
+            [cubie.col, cubie.row] = turn(cubie.col, cubie.row, turns);
+        }
     }
 }
 
