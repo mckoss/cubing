@@ -27,6 +27,7 @@ const faceNormals = [
     [0, -1, 0]
 ];
 
+// Initialize THREE.js scene and build a Cubing Cube.
 function init() {
     const SIZE = 3;
 
@@ -44,38 +45,53 @@ function init() {
     const light = new THREE.HemisphereLight(0xffffff, 0xe0e0e0, 1);
     scene.add(light);
 
-    group = new THREE.Group();
-    scene.add(group);
+    const cube = buildCube(SIZE);
+    scene.add(cube);
 
-    buildCube(SIZE, group);
-
-    render();
+    render(cube);
 }
 
-function render() {
-    requestAnimationFrame(render);
-    group.rotateY(0.01);
-    group.rotateX(0.005);
-    // group.rotateZ(0.01);
+// This is the animation loop.  We update the cube's orientation
+// to make it look like it is spinning.
+function render(cube) {
+    requestAnimationFrame(() => {
+        render(cube);
+    });
+    cube.rotateY(0.01);
+    cube.rotateX(0.005);
+    // cube.rotateZ(0.01);
     renderer.render(scene, camera);
 }
 
+// Make a whole cube by enumerating all the cubies
+// and adding them to a group.
 function buildCube(size, group) {
+    const cube = new THREE.Group();
     for (let depth = 0; depth < size; depth++) {
         for (let row = 0; row < size; row++) {
             for (let col = 0; col < size; col++) {
                 const cubie = makeCubie(row, col, depth, size);
-                group.add(cubie);
+                if (cubie !== null) {
+                    cube.add(cubie);
+                }
             }
         }
     }
+    return cube;
 }
 
+// Build a cubie with all it's visible faces
+// added to one object.  If the cubie is completely hidden
+// we return null.
 function makeCubie(row, column, depth, size) {
     const g = new THREE.PlaneGeometry(1, 1);
     const cubie = new THREE.Group();
-    console.log(`${row}, ${column}, ${depth}`);
-    for (let face of facesOf(row, column, depth, size)) {
+    const faces = facesOf(row, column, depth, size);
+    if (faces.length === 0) {
+        return null;
+    }
+
+    for (let face of faces) {
         addFace(face, cubie);
     }
     cubie.position.x = (column - (size - 1)/2) * OFFSET;
@@ -84,16 +100,18 @@ function makeCubie(row, column, depth, size) {
     return cubie;
 }
 
+// Add a face to a cubie (at the origin).
+// It will be oriented so that the visible face is
+// facing outward.
 function addFace(face, cubie) {
     if (face === undefined) {
         return;
     }
 
+    // Default face is facing forward.
     const g = new THREE.PlaneGeometry(1, 1);
     const color = colors[face];
     const normal = faceNormals[face];
-
-    console.log(`Adding ${face} at ${normal}`);
 
     const m = new THREE.MeshStandardMaterial({ color });
     const sticker = new THREE.Mesh(g, m);
@@ -115,6 +133,8 @@ function addFace(face, cubie) {
     cubie.add(sticker);
 }
 
+// Return a list of the visible faces depending on the
+// coordinates of the cubie.
 function facesOf(row, column, depth, size) {
     const faces = [];
     if (row === 0) {
