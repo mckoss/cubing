@@ -18,6 +18,11 @@ const colors = ['white', 'green', 'red', 'blue', 'orange', 'yellow'];
 // Space between cubies (of unit dimension)
 const OFFSET = 1.1;
 
+const actions = [];
+let currentAction;
+let startTime;
+let lastTime;
+
 const faceNormals = [
     [0, 1, 0],
     [0, 0, -1],
@@ -48,18 +53,106 @@ function init() {
     const cube = buildCube(SIZE);
     scene.add(cube);
 
-    render(cube);
+    window.addEventListener("keydown", handleKey);
+
+    renderer.render(scene, camera);
+
+    requestAnimationFrame((millis) => {
+        render(cube, millis);
+    });
+}
+
+function handleKey(ev) {
+    const key = ev.key;
+    console.log(`${key} pressed`);
+
+    switch (key) {
+    case 'x':
+        actions.push({
+            action: "RX",
+            limit: Math.PI / 2,
+            millis: 500
+        });
+        break;
+    case 'X':
+        actions.push({
+            action: "RX",
+            limit: -Math.PI / 2,
+            millis: 500
+        });
+        break;
+    case 'y':
+        actions.push({
+            action: "RY",
+            limit: Math.PI / 2,
+            millis: 500
+        });
+        break;
+    case 'Y':
+        actions.push({
+            action: "RY",
+            limit: -Math.PI / 2,
+            millis: 500
+        });
+        break;
+    case 'z':
+        actions.push({
+            action: "RZ",
+            limit: Math.PI / 2,
+            millis: 500
+        });
+        break;
+    case 'Z':
+        actions.push({
+            action: "RZ",
+            limit: -Math.PI / 2,
+            millis: 500
+        });
+        break;
+    }
 }
 
 // This is the animation loop.  We update the cube's orientation
 // to make it look like it is spinning.
-function render(cube) {
-    requestAnimationFrame(() => {
-        render(cube);
+function render(cube, millis) {
+    requestAnimationFrame((millis) => {
+        render(cube, millis);
     });
-    cube.rotateY(0.01);
-    cube.rotateX(0.005);
-    // cube.rotateZ(0.01);
+
+    if (currentAction === undefined) {
+        if (actions.length === 0) {
+            return;
+        }
+        currentAction = actions.shift();
+        startTime = millis;
+        endTime = startTime + currentAction.millis;
+        lastTime = millis;
+        return;
+    }
+
+    let elapsed = millis - lastTime;
+    if (millis > endTime) {
+        elapsed = endTime - lastTime;
+    }
+    lastTime = millis;
+    const fraction = elapsed / currentAction.millis;
+
+    switch (currentAction.action) {
+    case 'RX':
+        cube.rotateX(fraction * currentAction.limit);
+        break;
+    case 'RY':
+        cube.rotateY(fraction * currentAction.limit);
+        break;
+    case 'RZ':
+        cube.rotateZ(fraction * currentAction.limit);
+        break;
+    }
+
+    if (millis > endTime) {
+        currentAction = undefined;
+    }
+
     renderer.render(scene, camera);
 }
 
