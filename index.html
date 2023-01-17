@@ -5,10 +5,22 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="./three.js"></script>
-    <title>Document</title>
+    <script defer src="./cubing.js"></script>
+    <title>Cubing Simulator</title>
+    <style>
+        body {
+            font-family:Verdana, Geneva, Tahoma, sans-serif;
+            font-size: 1.5rem;
+        }
+        canvas {
+            width: 500px;
+            height: 500px;
+        }
+    </style>
 </head>
 <body>
-    <script src="./cubing.js"></script>
+    <canvas id="render-canvas"></canvas>
+
     <p>Type: x, y, z, u, f, r, b, l, d</p>
     <p>Shift-letter to reverse direction</p>
 </body>
