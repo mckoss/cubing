@@ -20,7 +20,7 @@ const OFFSET = 1.1;
 const SIZE = 3;
 
 // Radians per millisecond
-const SPEED = 5 * Math.PI / 1000;
+const SPEED = 2 * Math.PI / 1000;
 
 const actions = [];
 let currentAction;
@@ -88,51 +88,57 @@ function handleKey(ev) {
     case 'x':
         actions.push({
             action: "RX",
-            limit: Math.PI / 2,
+            limit: -Math.PI / 2,
+            turns: 1,
         });
         break;
     case 'X':
         actions.push({
             action: "RX",
-            limit: -Math.PI / 2,
+            limit: Math.PI / 2,
+            turns: -1,
         });
         break;
     case 'y':
         actions.push({
             action: "RY",
-            limit: Math.PI / 2,
+            limit: -Math.PI / 2,
+            turns: 1,
         });
         break;
     case 'Y':
         actions.push({
             action: "RY",
-            limit: -Math.PI / 2,
+            limit: Math.PI / 2,
+            turns: -1,
         });
         break;
     case 'z':
         actions.push({
             action: "RZ",
-            limit: Math.PI / 2,
+            limit: -Math.PI / 2,
+            turns: 1,
         });
         break;
     case 'Z':
         actions.push({
             action: "RZ",
-            limit: -Math.PI / 2,
+            limit: Math.PI / 2,
+            turns: -1,
         });
         break;
     case 'r':
         actions.push({
             action: 'R',
-            turns: 1,
             limit: -Math.PI / 2,
+            turns: 1,
         });
         break;
     case 'R':
         actions.push({
             action: 'R',
-            turns: -1,
             limit: Math.PI / 2,
+            turns: -1,
         });
         break;
     default:
@@ -212,6 +218,15 @@ function doAction(millis) {
 
 function finalizeAction() {
     switch (currentAction.action) {
+    case 'RX':
+        rotateCubies(cubies, 'x', currentAction.turns);
+        break;
+    case 'RY':
+        rotateCubies(cubies, 'y', currentAction.turns);
+        break;
+    case 'RZ':
+        rotateCubies(cubies, 'z', currentAction.turns);
+        break;
     case 'R':
         rotateCubies(sliceCubies, 'x', currentAction.turns);
         clearSlice();
@@ -345,14 +360,11 @@ function selectCubies(row, col, depth) {
 // Transform x,y coordinates (0-based) based on
 // the number of 90 degree (clockwise) turns;
 function turn(x, y, turns) {
-    if (turns < 0) {
-        turns = - turns;
-    }
     while (turns < 0) {
         turns += 4;
     }
     while (turns > 0) {
-        [x, y] = [y, SIZE - x];
+        [x, y] = [y, SIZE - x - 1];
         turns -= 1;
     }
     return [x, y];
