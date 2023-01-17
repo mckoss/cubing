@@ -25,9 +25,9 @@ let lastTime;
 
 const faceNormals = [
     [0, 1, 0],
-    [0, 0, -1],
-    [1, 0, 0],
     [0, 0, 1],
+    [1, 0, 0],
+    [0, 0, -1],
     [-1, 0, 0],
     [0, -1, 0]
 ];
@@ -196,7 +196,7 @@ function makeCubie(row, column, depth, size) {
     }
     cubie.position.x = (column - (size - 1)/2) * OFFSET;
     cubie.position.y = (row - (size - 1)/2) * OFFSET;
-    cubie.position.z = (depth - (size - 1)/2) * OFFSET;
+    cubie.position.z = -(depth - (size - 1)/2) * OFFSET;
     return cubie;
 }
 
