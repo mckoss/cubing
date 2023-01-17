@@ -1,5 +1,6 @@
 // THREE is loaded in this script in the settings tab
 
+let canvas;
 let renderer;
 let scene;
 let camera;
@@ -22,7 +23,7 @@ const SIZE = 3;
 // Radians per millisecond
 const SPEED = 2 * Math.PI / 1000;
 
-const actions = [];
+const animationQueue = [];
 let currentAction;
 let startTime;
 let lastTime;
@@ -37,42 +38,91 @@ const faceNormals = [
     [0, -1, 0]
 ];
 
-const X_AXIS = new THREE.Vector3(1, 0, 0);
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
-const Z_AXIS = new THREE.Vector3(0, 0, 1);
+const AXES = {
+    x: new THREE.Vector3(1, 0, 0),
+    y: new THREE.Vector3(0, 1, 0),
+    z: new THREE.Vector3(0, 0, 1),
+};
 
-// The cube group here
-let cube;
+// Stationary cubies
+let staticGroup;
+// Currently rotating cubies
+let movingGroup;
 
 // Array of all created cubies and their current
 // location in the cube.
 const cubies = [];
+let movingCubies;
 
-// Currently rotating slice
-let slice;
-let sliceCubies;
+const ACTIONS = {
+    x: {
+        axis: 'x',
+        turns: 1,
+        selection: {},
+    },
+    y: {
+        axis: 'y',
+        turns: 1,
+        selection: {},
+    },
+    z: {
+        axis: 'z',
+        turns: 1,
+        selection: {},
+    },
+    r: {
+        axis: 'x',
+        turns: 1,
+        selection: {col: SIZE - 1},
+    },
+    f: {
+        axis: 'z',
+        turns: 1,
+        selection: {depth: 0},
+    },
+    u: {
+        axis: 'y',
+        turns: 1,
+        selection: {row: SIZE - 1},
+    },
+    l: {
+        axis: 'x',
+        turns: -1,
+        selection: {col: 0},
+    },
+    b: {
+        axis: 'z',
+        turns: -1,
+        selection: {depth: SIZE - 1},
+    },
+    d: {
+        axis: 'y',
+        turns: -1,
+        selection: {row: 0},
+    },
+};
 
 // Initialize THREE.js scene and build a Cubing Cube.
 function init() {
+    canvas = document.getElementById("render-canvas");
     scene = new THREE.Scene();
-    renderer = new THREE.WebGLRenderer();
-    camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-    document.body.appendChild(renderer.domElement);
-    scene.background = new THREE.Color('black');
+    renderer = new THREE.WebGLRenderer({canvas: canvas});
+    camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
+    scene.background = new THREE.Color(0x202020);
 
     camera.position.x = SIZE;
     camera.position.y = SIZE;
     camera.position.z = SIZE * 1.8;
     camera.lookAt(0, 0, 0);
-    renderer.setSize(400, 400);
+    renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
 
     const light = new THREE.HemisphereLight(0xffffff, 0xe0e0e0, 1);
     scene.add(light);
 
-    cube = buildCube(SIZE);
-    scene.add(cube);
-    slice = new THREE.Group();
-    scene.add(slice);
+    staticGroup = buildCube(SIZE);
+    scene.add(staticGroup);
+    movingGroup = new THREE.Group();
+    scene.add(movingGroup);
 
     window.addEventListener("keydown", handleKey);
 
@@ -82,139 +132,20 @@ function init() {
 }
 
 function handleKey(ev) {
-    const key = ev.key;
+    const key = ev.key.toLowerCase();
 
-    switch (key) {
-    case 'x':
-        actions.push({
-            action: "RX",
-            limit: -Math.PI / 2,
-            turns: 1,
-        });
-        break;
-    case 'X':
-        actions.push({
-            action: "RX",
-            limit: Math.PI / 2,
-            turns: -1,
-        });
-        break;
-    case 'y':
-        actions.push({
-            action: "RY",
-            limit: -Math.PI / 2,
-            turns: 1,
-        });
-        break;
-    case 'Y':
-        actions.push({
-            action: "RY",
-            limit: Math.PI / 2,
-            turns: -1,
-        });
-        break;
-    case 'z':
-        actions.push({
-            action: "RZ",
-            limit: -Math.PI / 2,
-            turns: 1,
-        });
-        break;
-    case 'Z':
-        actions.push({
-            action: "RZ",
-            limit: Math.PI / 2,
-            turns: -1,
-        });
-        break;
-    case 'r':
-        actions.push({
-            action: 'R',
-            limit: -Math.PI / 2,
-            turns: 1,
-        });
-        break;
-    case 'R':
-        actions.push({
-            action: 'R',
-            limit: Math.PI / 2,
-            turns: -1,
-        });
-        break;
-    case 'f':
-        actions.push({
-            action: 'F',
-            limit: -Math.PI / 2,
-            turns: 1,
-        });
-        break;
-    case 'F':
-        actions.push({
-            action: 'F',
-            limit: Math.PI / 2,
-            turns: -1,
-        });
-        break;
-    case 'u':
-        actions.push({
-            action: 'U',
-            limit: -Math.PI / 2,
-            turns: 1,
-        });
-        break;
-    case 'U':
-        actions.push({
-            action: 'U',
-            limit: Math.PI / 2,
-            turns: -1,
-        });
-        break;
-    case 'l':
-        actions.push({
-            action: 'L',
-            limit: Math.PI / 2,
-            turns: -1,
-        });
-        break;
-    case 'L':
-        actions.push({
-            action: 'L',
-            limit: -Math.PI / 2,
-            turns: 1,
-        });
-        break;
-    case 'b':
-        actions.push({
-            action: 'B',
-            limit: Math.PI / 2,
-            turns: -1,
-        });
-        break;
-    case 'B':
-        actions.push({
-            action: 'B',
-            limit: -Math.PI / 2,
-            turns: 1,
-        });
-        break;
-    case 'd':
-        actions.push({
-            action: 'D',
-            limit: Math.PI / 2,
-            turns: -1,
-        });
-        break;
-    case 'D':
-        actions.push({
-            action: 'D',
-            limit: -Math.PI / 2,
-            turns: 1,
-        });
-        break;
-    default:
-        console.log(`Unknown key: ${key}`);
-        break;
+    if (ACTIONS[key] === undefined) {
+        console.log("Unknown key: " + key);
+        return;
     }
+
+    const action = {...ACTIONS[key]};
+    // Reverse direction if shift key is pressed
+    if (ev.shiftKey) {
+        action.turns = -action.turns;
+    }
+
+    animationQueue.push(action);
 }
 
 // This is the animation loop.  We update the cube's orientation
@@ -223,61 +154,34 @@ function render(millis) {
     requestAnimationFrame(render);
 
     if (currentAction === undefined) {
-        initAction(millis);
+        initAnimation(millis);
         return;
     }
 
-    doAction(millis);
+    animate(millis);
 
     renderer.render(scene, camera);
 }
 
-function initAction(millis) {
-    if (actions.length === 0) {
+function initAnimation(millis) {
+    if (animationQueue.length === 0) {
         return;
     }
 
-    currentAction = actions.shift();
+    currentAction = animationQueue.shift();
     startTime = millis;
-    speed = (currentAction.limit >= 0 ? 1 : -1) * SPEED;
-    endTime = startTime + currentAction.limit / speed;
+    const angle = -currentAction.turns * Math.PI / 2;
+    speed = (angle >= 0 ? 1 : -1) * SPEED;
+    endTime = startTime + angle / speed;
     lastTime = millis;
 
-    switch (currentAction.action) {
-    case 'R':
-        sliceCubies = selectCubies(undefined, SIZE - 1, undefined);
-        attachSlice();
-        break;
-    case 'F':
-        sliceCubies = selectCubies(undefined, undefined, 0);
-        attachSlice();
-        break;
-    case 'U':
-        sliceCubies = selectCubies(SIZE - 1, undefined, undefined);
-        attachSlice();
-        break;
-    case 'L':
-        sliceCubies = selectCubies(undefined, 0, undefined);
-        attachSlice();
-        break;
-    case 'B':
-        sliceCubies = selectCubies(undefined, undefined, SIZE - 1);
-        attachSlice();
-        break;
-    case 'D':
-        sliceCubies = selectCubies(0, undefined, undefined);
-        attachSlice();
-        break;
-    }
-
-    function attachSlice() {
-        for (let cubie of sliceCubies) {
-            slice.attach(cubie.cubie);
-        }
+    movingCubies = selectCubies(currentAction.selection);
+    for (let cubie of movingCubies) {
+        movingGroup.attach(cubie.cubie);
     }
 }
 
-function doAction(millis) {
+function animate(millis) {
     let elapsed = millis - lastTime;
     if (millis > endTime) {
         elapsed = endTime - lastTime;
@@ -286,74 +190,20 @@ function doAction(millis) {
 
     const angle = elapsed * speed;
 
-    switch (currentAction.action) {
-    case 'RX':
-        // cube.rotateX(fraction * currentAction.limit);
-        cube.rotateOnWorldAxis(X_AXIS, angle);
-        break;
-    case 'RY':
-        cube.rotateOnWorldAxis(Y_AXIS, angle);
-        break;
-    case 'RZ':
-        cube.rotateOnWorldAxis(Z_AXIS, angle);
-        break;
-    case 'R':
-    case 'L':
-        slice.rotateOnWorldAxis(X_AXIS, angle);
-        break;
-    case 'F':
-    case 'B':
-        slice.rotateOnWorldAxis(Z_AXIS, angle);
-        break;
-    case 'U':
-    case 'D':
-        slice.rotateOnWorldAxis(Y_AXIS, angle);
-        break;
-    default:
-        console.log(`Unknown action ${currentAction.action}`);
-        break;
-    }
+    const axis = AXES[currentAction.axis];
+    movingGroup.rotateOnWorldAxis(axis, angle);
 
     if (millis > endTime) {
-        finalizeAction();
+        finishAnimation();
     }
 }
 
-function finalizeAction() {
-    switch (currentAction.action) {
-    case 'RX':
-        rotateCubies(cubies, 'x', currentAction.turns);
-        break;
-    case 'RY':
-        rotateCubies(cubies, 'y', currentAction.turns);
-        break;
-    case 'RZ':
-        rotateCubies(cubies, 'z', currentAction.turns);
-        break;
-    case 'R':
-    case 'L':
-        rotateCubies(sliceCubies, 'x', currentAction.turns);
-        clearSlice();
-        break;
-    case 'F':
-    case 'B':
-        rotateCubies(sliceCubies, 'z', currentAction.turns);
-        clearSlice();
-        break;
-    case 'U':
-    case 'D':
-        rotateCubies(sliceCubies, 'y', currentAction.turns);
-        clearSlice();
-        break;
+function finishAnimation() {
+    rotateCubies(movingCubies, currentAction.axis, currentAction.turns);
+    for (let cubie of movingCubies) {
+        staticGroup.attach(cubie.cubie);
     }
-
     currentAction = undefined;
-
-    function clearSlice() {
-        for (let cubie of sliceCubies) {
-            cube.attach(cubie.cubie);
-        }
-    }
 }
 
 // Make a whole cube by enumerating all the cubies
@@ -454,19 +304,24 @@ function facesOf(row, column, depth, size) {
     return faces;
 }
 
-function selectCubies(row, col, depth) {
+function selectCubies(attrs) {
     const selected = [];
+
     for (let cubie of cubies) {
-        if (match(row, cubie.row) &&
-            match(col, cubie.col) &&
-            match(depth, cubie.depth)) {
-                selected.push(cubie);
-            }
+        if (match(attrs, cubie)) {
+            selected.push(cubie);
+        }
     }
 
     return selected;
 
-    function match(sel, value) {
+    function match(attrs, cubie) {
+        for (let [attr, value] of Object.entries(attrs)) {
+            if (value !== cubie[attr]) {
+                return false;
+            }
+        }
+        return true;
         return (sel === undefined || sel === value);
     }
 }
