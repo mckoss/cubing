@@ -19,10 +19,14 @@ const colors = ['white', 'green', 'red', 'blue', 'orange', 'yellow'];
 const OFFSET = 1.1;
 const SIZE = 3;
 
+// Radians per millisecond
+const SPEED = 5 * Math.PI / 1000;
+
 const actions = [];
 let currentAction;
 let startTime;
 let lastTime;
+let speed;
 
 const faceNormals = [
     [0, 1, 0],
@@ -85,49 +89,43 @@ function handleKey(ev) {
         actions.push({
             action: "RX",
             limit: Math.PI / 2,
-            millis: 500
         });
         break;
     case 'X':
         actions.push({
             action: "RX",
             limit: -Math.PI / 2,
-            millis: 500
         });
         break;
     case 'y':
         actions.push({
             action: "RY",
             limit: Math.PI / 2,
-            millis: 500
         });
         break;
     case 'Y':
         actions.push({
             action: "RY",
             limit: -Math.PI / 2,
-            millis: 500
         });
         break;
     case 'z':
         actions.push({
             action: "RZ",
             limit: Math.PI / 2,
-            millis: 500
         });
         break;
     case 'Z':
         actions.push({
             action: "RZ",
             limit: -Math.PI / 2,
-            millis: 500
         });
+        break;
     case 'r':
         actions.push({
             action: 'R',
             turns: 1,
             limit: -Math.PI / 2,
-            millis: 500
         });
         break;
     case 'R':
@@ -135,7 +133,6 @@ function handleKey(ev) {
             action: 'R',
             turns: -1,
             limit: Math.PI / 2,
-            millis: 500
         });
         break;
     default:
@@ -166,7 +163,8 @@ function initAction(millis) {
 
     currentAction = actions.shift();
     startTime = millis;
-    endTime = startTime + currentAction.millis;
+    speed = (currentAction.limit >= 0 ? 1 : -1) * SPEED;
+    endTime = startTime + currentAction.limit / speed;
     lastTime = millis;
 
     switch (currentAction.action) {
@@ -186,22 +184,21 @@ function doAction(millis) {
     }
     lastTime = millis;
 
-    const fraction = elapsed / currentAction.millis;
-    const amount = fraction * currentAction.limit;
+    const angle = elapsed * speed;
 
     switch (currentAction.action) {
     case 'RX':
         // cube.rotateX(fraction * currentAction.limit);
-        cube.rotateOnWorldAxis(X_AXIS, amount);
+        cube.rotateOnWorldAxis(X_AXIS, angle);
         break;
     case 'RY':
-        cube.rotateOnWorldAxis(Y_AXIS, amount);
+        cube.rotateOnWorldAxis(Y_AXIS, angle);
         break;
     case 'RZ':
-        cube.rotateOnWorldAxis(Z_AXIS, amount);
+        cube.rotateOnWorldAxis(Z_AXIS, angle);
         break;
     case 'R':
-        slice.rotateOnWorldAxis(X_AXIS, amount);
+        slice.rotateOnWorldAxis(X_AXIS, angle);
         break;
     default:
         console.log(`Unknown action ${currentAction.action}`);
@@ -217,13 +214,17 @@ function finalizeAction() {
     switch (currentAction.action) {
     case 'R':
         rotateCubies(sliceCubies, 'x', currentAction.turns);
-        for (let cubie of sliceCubies) {
-            cube.attach(cubie.cubie);
-        }
+        clearSlice();
         break;
     }
 
     currentAction = undefined;
+
+    function clearSlice() {
+        for (let cubie of sliceCubies) {
+            cube.attach(cubie.cubie);
+        }
+    }
 }
 
 // Make a whole cube by enumerating all the cubies
