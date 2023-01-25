@@ -100,6 +100,21 @@ const ACTIONS = {
         turns: -1,
         selection: {row: 0},
     },
+    m: {
+        axis: 'x',
+        turns: -1,
+        selection: {col: 1},
+    },
+    e: {
+        axis: 'y',
+        turns: -1,
+        selection: {row: 1},
+    },
+    s: {
+        axis: 'z',
+        turns: 1,
+        selection: {depth: 1},
+    },
 };
 
 // Initialize THREE.js scene and build a Cubing Cube.
