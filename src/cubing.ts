@@ -1,4 +1,4 @@
-// THREE is loaded in this script in the settings tab
+import * as THREE from "three";
 
 let canvas;
 let renderer;
@@ -27,6 +27,7 @@ const animationQueue = [];
 let currentAction;
 let startTime;
 let lastTime;
+let endTime;
 let speed;
 
 const faceNormals = [

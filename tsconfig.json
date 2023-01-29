@@ -16,6 +16,7 @@
       "outDir": "scripts",
       "sourceMap": true,
       "inlineSources": true,
+      "noEmit": true,
     },
     "include": ["src/**/*"]
   }
