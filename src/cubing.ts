@@ -1,20 +1,14 @@
 import * as THREE from "three";
 
+import { Face, Axis, Cubie, Selection,
+    selectCubies, rotateCubies, buildCube } from "./cubies";
+
 let canvas: HTMLCanvasElement | undefined;
 let renderer: THREE.WebGLRenderer | undefined;
 let scene: THREE.Scene | undefined;
 let camera: THREE.PerspectiveCamera | undefined;
 
-// Face indexes
-const UP = 0;
-const FRONT = 1;
-const RIGHT = 2;
-const BACK = 3;
-const LEFT = 4;
-const DOWN = 5;
-
-const colors: ReadonlyArray<string> = ['white', 'green', 'red', 'blue', 'orange', 'yellow'];
-type Face = keyof typeof colors;
+const colors = ['white', 'green', 'red', 'blue', 'orange', 'yellow'] as const;
 
 // Space between cubies (of unit dimension)
 const OFFSET = 1.1;
@@ -22,21 +16,6 @@ const SIZE = 3;
 
 // Radians per millisecond
 const SPEED = 2 * Math.PI / 1000;
-
-interface Cubie<T> {
-    row: number;
-    col: number;
-    depth: number;
-    cubie: T;
-}
-
-interface Selection {
-    row?: number;
-    col?: number;
-    depth?: number;
-}
-
-type Axis = 'x' | 'y' | 'z';
 
 interface Action {
     axis: Axis;
@@ -66,16 +45,16 @@ const AXES: {[key in Axis]: THREE.Vector3} = {
     x: new THREE.Vector3(1, 0, 0),
     y: new THREE.Vector3(0, 1, 0),
     z: new THREE.Vector3(0, 0, 1),
-};
+} as const;
 
 // Stationary cubies
-let staticGroup: THREE.Group;
+let staticGroup: THREE.Group | undefined;
 // Currently rotating cubies
-let movingGroup: THREE.Group;
+let movingGroup: THREE.Group | undefined;
 
 // Array of all created cubies and their current
 // location in the cube.
-const cubies: Cubie<THREE.Group>[] = [];
+let cubies: Cubie<THREE.Group>[] = [];
 let movingCubies: Cubie<THREE.Group>[] = [];
 
 type ActionMap = {[key: string]: Action};
@@ -160,7 +139,11 @@ function init() {
     const light = new THREE.HemisphereLight(0xffffff, 0xe0e0e0, 1);
     scene.add(light);
 
-    staticGroup = buildCube(SIZE);
+    cubies = buildCube(SIZE, makeCubie);
+    staticGroup = new THREE.Group();
+    for (let cubie of cubies) {
+        staticGroup.add(cubie.cubie);
+    }
     scene.add(staticGroup);
     movingGroup = new THREE.Group();
     scene.add(movingGroup);
@@ -218,7 +201,7 @@ function initAnimation(millis: number) {
 
     movingCubies = selectCubies(cubies, currentAction.selection);
     for (let cubie of movingCubies) {
-        movingGroup.attach(cubie.cubie);
+        movingGroup!.attach(cubie.cubie);
     }
 }
 
@@ -232,7 +215,7 @@ function animate(millis: number) {
     const angle = elapsed * speed;
 
     const axis = AXES[currentAction!.axis];
-    movingGroup.rotateOnWorldAxis(axis, angle);
+    movingGroup!.rotateOnWorldAxis(axis, angle);
 
     if (millis > endTime) {
         finishAnimation();
@@ -240,47 +223,23 @@ function animate(millis: number) {
 }
 
 function finishAnimation() {
-    rotateCubies(movingCubies, currentAction!.axis, currentAction!.turns);
+    rotateCubies(movingCubies, currentAction!.axis, currentAction!.turns, SIZE);
     for (let cubie of movingCubies) {
-        staticGroup.attach(cubie.cubie);
+        staticGroup!.attach(cubie.cubie);
     }
     currentAction = undefined;
-}
-
-// Make a whole cube by enumerating all the cubies
-// and adding them to a group.
-function buildCube(size: number): THREE.Group {
-    const cube = new THREE.Group();
-    for (let depth = 0; depth < size; depth++) {
-        for (let row = 0; row < size; row++) {
-            for (let col = 0; col < size; col++) {
-                const cubie = makeCubie(row, col, depth, size);
-                if (cubie !== null) {
-                    cubies.push({
-                        row, col, depth, cubie
-                    })
-                    cube.add(cubie);
-                }
-            }
-        }
-    }
-    return cube;
 }
 
 // Build a cubie with all it's visible faces
 // added to one object.  If the cubie is completely hidden
 // we return null.
-function makeCubie(row: number, column: number, depth:number, size: number): THREE.Group | null {
+function makeCubie(row: number, col: number, depth:number, size: number, faces: Face[]): THREE.Group {
     const cubie = new THREE.Group();
-    const faces = facesOf(row, column, depth, size);
-    if (faces.length === 0) {
-        return null;
-    }
 
     for (let face of faces) {
         addFace(face, cubie);
     }
-    cubie.position.x = (column - (size - 1)/2) * OFFSET;
+    cubie.position.x = (col - (size - 1)/2) * OFFSET;
     cubie.position.y = (row - (size - 1)/2) * OFFSET;
     cubie.position.z = -(depth - (size - 1)/2) * OFFSET;
     return cubie;
@@ -315,78 +274,6 @@ function addFace(face: Face, cubie: THREE.Group) {
     sticker.position.z = normal[2] / 2;
 
     cubie.add(sticker);
-}
-
-// Return a list of the visible faces depending on the
-// coordinates of the cubie.
-function facesOf(row: number, column:number, depth: number, size: number) {
-    const faces = [];
-    if (row === 0) {
-        faces.push(DOWN)
-    }
-    if (row === size - 1) {
-        faces.push(UP);
-    }
-    if (column === 0) {
-        faces.push(LEFT);
-    }
-    if (column === size - 1) {
-        faces.push(RIGHT);
-    }
-    if (depth === 0) {
-        faces.push(FRONT);
-    }
-    if (depth === size - 1) {
-        faces.push(BACK);
-    }
-    return faces;
-}
-
-function selectCubies<T>(cubies: Cubie<T>[], attrs: Selection): Cubie<T>[] {
-    const selected: Cubie<T>[] = [];
-
-    for (let cubie of cubies) {
-        if (match(attrs, cubie)) {
-            selected.push(cubie);
-        }
-    }
-
-    return selected;
-
-    function match(attrs: Selection, cubie: Cubie<T>): boolean {
-        for (let [attr, value] of Object.entries(attrs) as [keyof Cubie<T>, number][]) {
-            if (value !== cubie[attr]) {
-                return false;
-            }
-        }
-        return true;
-    }
-}
-
-// Transform x,y coordinates (0-based) based on
-// the number of 90 degree (clockwise) turns;
-function turn(x: number, y: number, turns: number) {
-    while (turns < 0) {
-        turns += 4;
-    }
-    while (turns > 0) {
-        [x, y] = [y, SIZE - x - 1];
-        turns -= 1;
-    }
-    return [x, y];
-}
-
-// Update the meta-data in the cubes list to reflect a rotation.
-function rotateCubies<T>(cubies: Cubie<T>[], axis: Axis, turns: number) {
-    for (let cubie of cubies) {
-        if (axis === 'x') {
-            [cubie.depth, cubie.row] = turn(cubie.depth, cubie.row, turns);
-        } else if (axis === 'y') {
-            [cubie.col, cubie.depth] = turn(cubie.col, cubie.depth, turns);
-        } else if (axis === 'z') {
-            [cubie.col, cubie.row] = turn(cubie.col, cubie.row, turns);
-        }
-    }
 }
 
 init();
