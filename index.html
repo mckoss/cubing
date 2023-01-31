@@ -10,11 +10,18 @@
             font-family:Verdana, Geneva, Tahoma, sans-serif;
             font-size: 1.5rem;
         }
+
+        div.canvases {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+        }
+
         canvas {
-            width: 100%;
-            min-width: 400px;
-            min-height: 400px;
-            aspect-ratio: 1/1;
+            width: 300px;
+            height: 300px;
         }
 
         canvas:focus {
@@ -23,13 +30,19 @@
     </style>
 </head>
 <body>
-    <canvas tabindex="0" id="render-canvas"></canvas>
+    <div class="canvases">
+        <canvas tabindex="0" id="canvas-2"></canvas>
+        <canvas tabindex="0" id="canvas-3"></canvas>
+        <canvas tabindex="0" id="canvas-4"></canvas>
+    </div>
 
     <p>Type: x, y, z, u, f, r, b, l, d, m, e, s</p>
     <p>Shift-letter to reverse direction</p>
     <script type="module">
         import {Cubing} from './src/cubing.ts';
-        const cubing = new Cubing(document.getElementById('render-canvas'));
+        new Cubing(document.getElementById('canvas-2'), 2);
+        new Cubing(document.getElementById('canvas-3'), 3);
+        new Cubing(document.getElementById('canvas-4'), 4);
     </script>
 </body>
 </html>
