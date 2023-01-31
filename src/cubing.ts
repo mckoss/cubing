@@ -23,11 +23,11 @@ const SIZE = 3;
 // Radians per millisecond
 const SPEED = 2 * Math.PI / 1000;
 
-interface Cubie {
+interface Cubie<T> {
     row: number;
     col: number;
     depth: number;
-    cubie: THREE.Group;
+    cubie: T;
 }
 
 interface Selection {
@@ -53,7 +53,7 @@ let speed = 0;
 
 type Normal = [number, number, number];
 
-const faceNormals: Normal[] = [
+const faceNormals: ReadonlyArray<Normal> = [
     [0, 1, 0],
     [0, 0, 1],
     [1, 0, 0],
@@ -75,8 +75,8 @@ let movingGroup: THREE.Group;
 
 // Array of all created cubies and their current
 // location in the cube.
-const cubies: Cubie[] = [];
-let movingCubies: Cubie[] = [];
+const cubies: Cubie<THREE.Group>[] = [];
+let movingCubies: Cubie<THREE.Group>[] = [];
 
 type ActionMap = {[key: string]: Action};
 
@@ -216,7 +216,7 @@ function initAnimation(millis: number) {
     endTime = startTime + angle / speed;
     lastTime = millis;
 
-    movingCubies = selectCubies(currentAction.selection);
+    movingCubies = selectCubies(cubies, currentAction.selection);
     for (let cubie of movingCubies) {
         movingGroup.attach(cubie.cubie);
     }
@@ -289,11 +289,7 @@ function makeCubie(row: number, column: number, depth:number, size: number): THR
 // Add a face to a cubie (at the origin).
 // It will be oriented so that the visible face is
 // facing outward.
-function addFace(face: Face | undefined, cubie: THREE.Group) {
-    if (face === undefined) {
-        return;
-    }
-
+function addFace(face: Face, cubie: THREE.Group) {
     // Default face is facing forward.
     const g = new THREE.PlaneGeometry(1, 1);
     const color = colors[face];
@@ -346,8 +342,8 @@ function facesOf(row: number, column:number, depth: number, size: number) {
     return faces;
 }
 
-function selectCubies(attrs: Selection): Cubie[] {
-    const selected: Cubie[] = [];
+function selectCubies<T>(cubies: Cubie<T>[], attrs: Selection): Cubie<T>[] {
+    const selected: Cubie<T>[] = [];
 
     for (let cubie of cubies) {
         if (match(attrs, cubie)) {
@@ -357,8 +353,8 @@ function selectCubies(attrs: Selection): Cubie[] {
 
     return selected;
 
-    function match(attrs: Selection, cubie: Cubie): boolean {
-        for (let [attr, value] of Object.entries(attrs) as [keyof Cubie, number][]) {
+    function match(attrs: Selection, cubie: Cubie<T>): boolean {
+        for (let [attr, value] of Object.entries(attrs) as [keyof Cubie<T>, number][]) {
             if (value !== cubie[attr]) {
                 return false;
             }
@@ -381,7 +377,7 @@ function turn(x: number, y: number, turns: number) {
 }
 
 // Update the meta-data in the cubes list to reflect a rotation.
-function rotateCubies(cubies: Cubie[], axis: Axis, turns: number) {
+function rotateCubies<T>(cubies: Cubie<T>[], axis: Axis, turns: number) {
     for (let cubie of cubies) {
         if (axis === 'x') {
             [cubie.depth, cubie.row] = turn(cubie.depth, cubie.row, turns);
