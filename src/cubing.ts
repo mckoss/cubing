@@ -1,10 +1,9 @@
 import * as THREE from "three";
 
-let canvas;
-let renderer;
-let scene;
-let camera;
-let group;
+let canvas: HTMLCanvasElement | undefined;
+let renderer: THREE.WebGLRenderer | undefined;
+let scene: THREE.Scene | undefined;
+let camera: THREE.PerspectiveCamera | undefined;
 
 // Face indexes
 const UP = 0;
@@ -14,7 +13,8 @@ const BACK = 3;
 const LEFT = 4;
 const DOWN = 5;
 
-const colors = ['white', 'green', 'red', 'blue', 'orange', 'yellow'];
+const colors: ReadonlyArray<string> = ['white', 'green', 'red', 'blue', 'orange', 'yellow'];
+type Face = keyof typeof colors;
 
 // Space between cubies (of unit dimension)
 const OFFSET = 1.1;
@@ -23,14 +23,37 @@ const SIZE = 3;
 // Radians per millisecond
 const SPEED = 2 * Math.PI / 1000;
 
-const animationQueue = [];
-let currentAction;
-let startTime;
-let lastTime;
-let endTime;
-let speed;
+interface Cubie {
+    row: number;
+    col: number;
+    depth: number;
+    cubie: THREE.Group;
+}
 
-const faceNormals = [
+interface Selection {
+    row?: number;
+    col?: number;
+    depth?: number;
+}
+
+type Axis = 'x' | 'y' | 'z';
+
+interface Action {
+    axis: Axis;
+    turns: number;
+    selection: Selection;
+}
+
+const animationQueue: Action[] = [];
+let currentAction: Action | undefined;
+let startTime = 0;
+let lastTime = 0;
+let endTime = 0;
+let speed = 0;
+
+type Normal = [number, number, number];
+
+const faceNormals: Normal[] = [
     [0, 1, 0],
     [0, 0, 1],
     [1, 0, 0],
@@ -39,23 +62,25 @@ const faceNormals = [
     [0, -1, 0]
 ];
 
-const AXES = {
+const AXES: {[key in Axis]: THREE.Vector3} = {
     x: new THREE.Vector3(1, 0, 0),
     y: new THREE.Vector3(0, 1, 0),
     z: new THREE.Vector3(0, 0, 1),
 };
 
 // Stationary cubies
-let staticGroup;
+let staticGroup: THREE.Group;
 // Currently rotating cubies
-let movingGroup;
+let movingGroup: THREE.Group;
 
 // Array of all created cubies and their current
 // location in the cube.
-const cubies = [];
-let movingCubies;
+const cubies: Cubie[] = [];
+let movingCubies: Cubie[] = [];
 
-const ACTIONS = {
+type ActionMap = {[key: string]: Action};
+
+const ACTIONS: ActionMap = {
     x: {
         axis: 'x',
         turns: 1,
@@ -120,7 +145,7 @@ const ACTIONS = {
 
 // Initialize THREE.js scene and build a Cubing Cube.
 function init() {
-    canvas = document.getElementById("render-canvas");
+    canvas = document.getElementById("render-canvas") as HTMLCanvasElement;
     scene = new THREE.Scene();
     renderer = new THREE.WebGLRenderer({canvas: canvas});
     camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
@@ -147,7 +172,7 @@ function init() {
     requestAnimationFrame(render);
 }
 
-function handleKey(ev) {
+function handleKey(ev: KeyboardEvent) {
     const key = ev.key.toLowerCase();
 
     if (ACTIONS[key] === undefined) {
@@ -166,7 +191,7 @@ function handleKey(ev) {
 
 // This is the animation loop.  We update the cube's orientation
 // to make it look like it is spinning.
-function render(millis) {
+function render(millis: number) {
     requestAnimationFrame(render);
 
     if (currentAction === undefined) {
@@ -176,15 +201,15 @@ function render(millis) {
 
     animate(millis);
 
-    renderer.render(scene, camera);
+    renderer!.render(scene!, camera!);
 }
 
-function initAnimation(millis) {
+function initAnimation(millis: number) {
     if (animationQueue.length === 0) {
         return;
     }
 
-    currentAction = animationQueue.shift();
+    currentAction = animationQueue.shift()!;
     startTime = millis;
     const angle = -currentAction.turns * Math.PI / 2;
     speed = (angle >= 0 ? 1 : -1) * SPEED;
@@ -197,7 +222,7 @@ function initAnimation(millis) {
     }
 }
 
-function animate(millis) {
+function animate(millis: number) {
     let elapsed = millis - lastTime;
     if (millis > endTime) {
         elapsed = endTime - lastTime;
@@ -206,7 +231,7 @@ function animate(millis) {
 
     const angle = elapsed * speed;
 
-    const axis = AXES[currentAction.axis];
+    const axis = AXES[currentAction!.axis];
     movingGroup.rotateOnWorldAxis(axis, angle);
 
     if (millis > endTime) {
@@ -215,7 +240,7 @@ function animate(millis) {
 }
 
 function finishAnimation() {
-    rotateCubies(movingCubies, currentAction.axis, currentAction.turns);
+    rotateCubies(movingCubies, currentAction!.axis, currentAction!.turns);
     for (let cubie of movingCubies) {
         staticGroup.attach(cubie.cubie);
     }
@@ -224,7 +249,7 @@ function finishAnimation() {
 
 // Make a whole cube by enumerating all the cubies
 // and adding them to a group.
-function buildCube(size, group) {
+function buildCube(size: number): THREE.Group {
     const cube = new THREE.Group();
     for (let depth = 0; depth < size; depth++) {
         for (let row = 0; row < size; row++) {
@@ -245,8 +270,7 @@ function buildCube(size, group) {
 // Build a cubie with all it's visible faces
 // added to one object.  If the cubie is completely hidden
 // we return null.
-function makeCubie(row, column, depth, size) {
-    const g = new THREE.PlaneGeometry(1, 1);
+function makeCubie(row: number, column: number, depth:number, size: number): THREE.Group | null {
     const cubie = new THREE.Group();
     const faces = facesOf(row, column, depth, size);
     if (faces.length === 0) {
@@ -265,7 +289,7 @@ function makeCubie(row, column, depth, size) {
 // Add a face to a cubie (at the origin).
 // It will be oriented so that the visible face is
 // facing outward.
-function addFace(face, cubie) {
+function addFace(face: Face | undefined, cubie: THREE.Group) {
     if (face === undefined) {
         return;
     }
@@ -273,9 +297,11 @@ function addFace(face, cubie) {
     // Default face is facing forward.
     const g = new THREE.PlaneGeometry(1, 1);
     const color = colors[face];
-    const normal = faceNormals[face];
 
-    const m = new THREE.MeshStandardMaterial({ color });
+    // TODO: Why is this cast necessary?
+    const normal: Normal = faceNormals[face] as Normal;
+
+    const m = new THREE.MeshStandardMaterial({ color: color as THREE.ColorRepresentation });
     const sticker = new THREE.Mesh(g, m);
 
     if (normal[0] !== 0) {
@@ -297,7 +323,7 @@ function addFace(face, cubie) {
 
 // Return a list of the visible faces depending on the
 // coordinates of the cubie.
-function facesOf(row, column, depth, size) {
+function facesOf(row: number, column:number, depth: number, size: number) {
     const faces = [];
     if (row === 0) {
         faces.push(DOWN)
@@ -320,8 +346,8 @@ function facesOf(row, column, depth, size) {
     return faces;
 }
 
-function selectCubies(attrs) {
-    const selected = [];
+function selectCubies(attrs: Selection): Cubie[] {
+    const selected: Cubie[] = [];
 
     for (let cubie of cubies) {
         if (match(attrs, cubie)) {
@@ -331,20 +357,19 @@ function selectCubies(attrs) {
 
     return selected;
 
-    function match(attrs, cubie) {
-        for (let [attr, value] of Object.entries(attrs)) {
+    function match(attrs: Selection, cubie: Cubie): boolean {
+        for (let [attr, value] of Object.entries(attrs) as [keyof Cubie, number][]) {
             if (value !== cubie[attr]) {
                 return false;
             }
         }
         return true;
-        return (sel === undefined || sel === value);
     }
 }
 
 // Transform x,y coordinates (0-based) based on
 // the number of 90 degree (clockwise) turns;
-function turn(x, y, turns) {
+function turn(x: number, y: number, turns: number) {
     while (turns < 0) {
         turns += 4;
     }
@@ -356,7 +381,7 @@ function turn(x, y, turns) {
 }
 
 // Update the meta-data in the cubes list to reflect a rotation.
-function rotateCubies(cubies, axis, turns) {
+function rotateCubies(cubies: Cubie[], axis: Axis, turns: number) {
     for (let cubie of cubies) {
         if (axis === 'x') {
             [cubie.depth, cubie.row] = turn(cubie.depth, cubie.row, turns);
