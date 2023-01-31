@@ -52,7 +52,7 @@ function rotateCubies<T>(cubies: Cubie<T>[], axis: Axis, turns: number, size: nu
     }
 }
 
-function selectCubies<T>(cubies: Cubie<T>[], attrs: Selection): Cubie<T>[] {
+function selectCubies<T>(cubies: Cubie<T>[], attrs: Selection, size: number): Cubie<T>[] {
     const selected: Cubie<T>[] = [];
 
     for (let cubie of cubies) {
@@ -65,6 +65,9 @@ function selectCubies<T>(cubies: Cubie<T>[], attrs: Selection): Cubie<T>[] {
 
     function match(attrs: Selection, cubie: Cubie<T>): boolean {
         for (let [attr, value] of Object.entries(attrs) as [keyof Cubie<T>, number][]) {
+            if (value < 0) {
+                value += size;
+            }
             if (value !== cubie[attr]) {
                 return false;
             }

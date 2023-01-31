@@ -3,16 +3,12 @@ import * as THREE from "three";
 import { Face, Axis, Cubie, Selection,
     selectCubies, rotateCubies, buildCube } from "./cubies";
 
-let canvas: HTMLCanvasElement | undefined;
-let renderer: THREE.WebGLRenderer | undefined;
-let scene: THREE.Scene | undefined;
-let camera: THREE.PerspectiveCamera | undefined;
+export { Cubing };
 
 const colors = ['white', 'green', 'red', 'blue', 'orange', 'yellow'] as const;
 
 // Space between cubies (of unit dimension)
 const OFFSET = 1.1;
-const SIZE = 3;
 
 // Radians per millisecond
 const SPEED = 2 * Math.PI / 1000;
@@ -22,13 +18,6 @@ interface Action {
     turns: number;
     selection: Selection;
 }
-
-const animationQueue: Action[] = [];
-let currentAction: Action | undefined;
-let startTime = 0;
-let lastTime = 0;
-let endTime = 0;
-let speed = 0;
 
 type Normal = [number, number, number];
 
@@ -46,16 +35,6 @@ const AXES: {[key in Axis]: THREE.Vector3} = {
     y: new THREE.Vector3(0, 1, 0),
     z: new THREE.Vector3(0, 0, 1),
 } as const;
-
-// Stationary cubies
-let staticGroup: THREE.Group | undefined;
-// Currently rotating cubies
-let movingGroup: THREE.Group | undefined;
-
-// Array of all created cubies and their current
-// location in the cube.
-let cubies: Cubie<THREE.Group>[] = [];
-let movingCubies: Cubie<THREE.Group>[] = [];
 
 type ActionMap = {[key: string]: Action};
 
@@ -78,7 +57,7 @@ const ACTIONS: ActionMap = {
     r: {
         axis: 'x',
         turns: 1,
-        selection: {col: SIZE - 1},
+        selection: {col: - 1},
     },
     f: {
         axis: 'z',
@@ -88,7 +67,7 @@ const ACTIONS: ActionMap = {
     u: {
         axis: 'y',
         turns: 1,
-        selection: {row: SIZE - 1},
+        selection: {row: - 1},
     },
     l: {
         axis: 'x',
@@ -98,7 +77,7 @@ const ACTIONS: ActionMap = {
     b: {
         axis: 'z',
         turns: -1,
-        selection: {depth: SIZE - 1},
+        selection: {depth: - 1},
     },
     d: {
         axis: 'y',
@@ -122,113 +101,139 @@ const ACTIONS: ActionMap = {
     },
 };
 
-// Initialize THREE.js scene and build a Cubing Cube.
-function init() {
-    canvas = document.getElementById("render-canvas") as HTMLCanvasElement;
-    scene = new THREE.Scene();
-    renderer = new THREE.WebGLRenderer({canvas: canvas});
-    camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
-    scene.background = new THREE.Color(0x202020);
+class Cubing {
+    canvas: HTMLCanvasElement;
+    renderer: THREE.WebGLRenderer;
+    scene: THREE.Scene;
+    camera: THREE.PerspectiveCamera;
+    size: number;
 
-    camera.position.x = SIZE;
-    camera.position.y = SIZE;
-    camera.position.z = SIZE * 1.8;
-    camera.lookAt(0, 0, 0);
-    renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
+    animationQueue: Action[] = [];
+    currentAction: Action | undefined;
+    startTime = 0;
+    lastTime = 0;
+    endTime = 0;
+    speed = 0;
 
-    const light = new THREE.HemisphereLight(0xffffff, 0xe0e0e0, 1);
-    scene.add(light);
+    // Stationary cubies
+    staticGroup: THREE.Group;
+    // Currently rotating cubies
+    movingGroup: THREE.Group;
 
-    cubies = buildCube(SIZE, makeCubie);
-    staticGroup = new THREE.Group();
-    for (let cubie of cubies) {
-        staticGroup.add(cubie.cubie);
-    }
-    scene.add(staticGroup);
-    movingGroup = new THREE.Group();
-    scene.add(movingGroup);
+    // Array of all created cubies and their current
+    // location in the cube.
+    cubies: Cubie<THREE.Group>[];
+    movingCubies: Cubie<THREE.Group>[] = [];
 
-    canvas.addEventListener("keydown", handleKey);
-    canvas.focus();
+    constructor(canvas: HTMLCanvasElement, size = 3) {
+        this.canvas = canvas;
+        this.size = size;
 
-    renderer.render(scene, camera);
+        this.scene = new THREE.Scene();
+        this.renderer = new THREE.WebGLRenderer({canvas: canvas});
+        this.camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
+        this.scene.background = new THREE.Color(0x202020);
 
-    requestAnimationFrame(render);
-}
+        this.camera.position.x = size;
+        this.camera.position.y = size;
+        this.camera.position.z = size * 1.8;
+        this.camera.lookAt(0, 0, 0);
+        this.renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
 
-function handleKey(ev: KeyboardEvent) {
-    const key = ev.key.toLowerCase();
+        const light = new THREE.HemisphereLight(0xffffff, 0xe0e0e0, 1);
+        this.scene.add(light);
 
-    if (ACTIONS[key] === undefined) {
-        console.log("Unknown key: " + key);
-        return;
-    }
+        this.cubies = buildCube(size, makeCubie);
+        this.staticGroup = new THREE.Group();
+        for (let cubie of this.cubies) {
+            this.staticGroup.add(cubie.cubie);
+        }
+        this.scene.add(this.staticGroup);
+        this.movingGroup = new THREE.Group();
+        this.scene.add(this.movingGroup);
 
-    const action = {...ACTIONS[key]};
-    // Reverse direction if shift key is pressed
-    if (ev.shiftKey) {
-        action.turns = -action.turns;
-    }
+        canvas.addEventListener("keydown", this.handleKey.bind(this));
+        canvas.focus();
 
-    animationQueue.push(action);
-}
+        this.renderer.render(this.scene, this.camera);
 
-// This is the animation loop.  We update the cube's orientation
-// to make it look like it is spinning.
-function render(millis: number) {
-    requestAnimationFrame(render);
-
-    if (currentAction === undefined) {
-        initAnimation(millis);
-        return;
+        requestAnimationFrame(this.render.bind(this));
     }
 
-    animate(millis);
+    handleKey(ev: KeyboardEvent) {
+        const key = ev.key.toLowerCase();
 
-    renderer!.render(scene!, camera!);
-}
+        if (ACTIONS[key] === undefined) {
+            console.log("Unknown key: " + key);
+            return;
+        }
 
-function initAnimation(millis: number) {
-    if (animationQueue.length === 0) {
-        return;
+        const action = {...ACTIONS[key]};
+        // Reverse direction if shift key is pressed
+        if (ev.shiftKey) {
+            action.turns = -action.turns;
+        }
+
+        this.animationQueue.push(action);
     }
 
-    currentAction = animationQueue.shift()!;
-    startTime = millis;
-    const angle = -currentAction.turns * Math.PI / 2;
-    speed = (angle >= 0 ? 1 : -1) * SPEED;
-    endTime = startTime + angle / speed;
-    lastTime = millis;
+    // This is the animation loop.  We update the cube's orientation
+    // to make it look like it is spinning.
+    render(millis: number) {
+        requestAnimationFrame(this.render.bind(this));
 
-    movingCubies = selectCubies(cubies, currentAction.selection);
-    for (let cubie of movingCubies) {
-        movingGroup!.attach(cubie.cubie);
+        if (this.currentAction === undefined) {
+            this.initAnimation(millis);
+            return;
+        }
+
+        this.animate(millis);
+
+        this.renderer.render(this.scene, this.camera);
     }
-}
 
-function animate(millis: number) {
-    let elapsed = millis - lastTime;
-    if (millis > endTime) {
-        elapsed = endTime - lastTime;
+    initAnimation(millis: number) {
+        if (this.animationQueue.length === 0) {
+            return;
+        }
+
+        this.currentAction = this.animationQueue.shift()!;
+        this.startTime = millis;
+        const angle = -this.currentAction.turns * Math.PI / 2;
+        this.speed = (angle >= 0 ? 1 : -1) * SPEED;
+        this.endTime = this.startTime + angle / this.speed;
+        this.lastTime = millis;
+
+        this.movingCubies = selectCubies(this.cubies, this.currentAction.selection, this.size);
+        for (let cubie of this.movingCubies) {
+            this.movingGroup.attach(cubie.cubie);
+        }
     }
-    lastTime = millis;
 
-    const angle = elapsed * speed;
+    animate(millis: number) {
+        let elapsed = millis - this.lastTime;
+        if (millis > this.endTime) {
+            elapsed = this.endTime - this.lastTime;
+        }
+        this.lastTime = millis;
 
-    const axis = AXES[currentAction!.axis];
-    movingGroup!.rotateOnWorldAxis(axis, angle);
+        const angle = elapsed * this.speed;
 
-    if (millis > endTime) {
-        finishAnimation();
+        const axis = AXES[this.currentAction!.axis];
+        this.movingGroup!.rotateOnWorldAxis(axis, angle);
+
+        if (millis > this.endTime) {
+            this.finishAnimation();
+        }
     }
-}
 
-function finishAnimation() {
-    rotateCubies(movingCubies, currentAction!.axis, currentAction!.turns, SIZE);
-    for (let cubie of movingCubies) {
-        staticGroup!.attach(cubie.cubie);
+    finishAnimation() {
+        rotateCubies(this.movingCubies, this.currentAction!.axis, this.currentAction!.turns, this.size);
+        for (let cubie of this.movingCubies) {
+            this.staticGroup!.attach(cubie.cubie);
+        }
+        this.currentAction = undefined;
     }
-    currentAction = undefined;
 }
 
 // Build a cubie with all it's visible faces
@@ -276,5 +281,3 @@ function addFace(face: Face, cubie: THREE.Group) {
 
     cubie.add(sticker);
 }
-
-init();
