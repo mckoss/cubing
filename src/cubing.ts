@@ -148,7 +148,8 @@ function init() {
     movingGroup = new THREE.Group();
     scene.add(movingGroup);
 
-    window.addEventListener("keydown", handleKey);
+    canvas.addEventListener("keydown", handleKey);
+    canvas.focus();
 
     renderer.render(scene, camera);
 
