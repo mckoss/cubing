@@ -1,5 +1,5 @@
-export { Face, selectCubies, rotateCubies, buildCube };
-export type { Axis, Cubie, Selection };
+export { Face, selectCubies, rotateCubies, buildCube, MOVES };
+export type { Axis, Cubie, Selection, Move };
 
 type Axis = 'x' | 'y' | 'z';
 
@@ -25,6 +25,75 @@ interface Selection {
     col?: number;
     depth?: number;
 }
+
+interface Move {
+    axis: Axis;
+    turns: number;
+    selection: Selection;
+}
+
+const MOVES: {[key: string]: Move} = {
+    X: {
+        axis: 'x',
+        turns: 1,
+        selection: {},
+    },
+    Y: {
+        axis: 'y',
+        turns: 1,
+        selection: {},
+    },
+    Z: {
+        axis: 'z',
+        turns: 1,
+        selection: {},
+    },
+    R: {
+        axis: 'x',
+        turns: 1,
+        selection: {col: - 1},
+    },
+    F: {
+        axis: 'z',
+        turns: 1,
+        selection: {depth: 0},
+    },
+    U: {
+        axis: 'y',
+        turns: 1,
+        selection: {row: - 1},
+    },
+    L: {
+        axis: 'x',
+        turns: -1,
+        selection: {col: 0},
+    },
+    B: {
+        axis: 'z',
+        turns: -1,
+        selection: {depth: - 1},
+    },
+    D: {
+        axis: 'y',
+        turns: -1,
+        selection: {row: 0},
+    },
+    M: {
+        axis: 'x',
+        turns: -1,
+        selection: {col: 1},
+    },
+    E: {
+        axis: 'y',
+        turns: -1,
+        selection: {row: 1},
+    },
+    S: {
+        axis: 'z',
+        turns: 1,
+        selection: {depth: 1},
+    },
+};
 
 // Transform x,y coordinates (0-based) based on
 // the number of 90 degree (clockwise) turns;

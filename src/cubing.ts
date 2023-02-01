@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
-import { Face, Axis, Cubie, Selection,
-    selectCubies, rotateCubies, buildCube } from "./cubies";
+import { Face, Axis, Cubie,
+    selectCubies, rotateCubies, buildCube, Move, MOVES } from "./cubies";
 
 export { Cubing };
 
@@ -12,12 +12,6 @@ const OFFSET = 1.1;
 
 // Radians per millisecond
 const SPEED = 2 * Math.PI / 1000;
-
-interface Action {
-    axis: Axis;
-    turns: number;
-    selection: Selection;
-}
 
 type Normal = [number, number, number];
 
@@ -36,71 +30,6 @@ const AXES: {[key in Axis]: THREE.Vector3} = {
     z: new THREE.Vector3(0, 0, 1),
 } as const;
 
-type ActionMap = {[key: string]: Action};
-
-const ACTIONS: ActionMap = {
-    x: {
-        axis: 'x',
-        turns: 1,
-        selection: {},
-    },
-    y: {
-        axis: 'y',
-        turns: 1,
-        selection: {},
-    },
-    z: {
-        axis: 'z',
-        turns: 1,
-        selection: {},
-    },
-    r: {
-        axis: 'x',
-        turns: 1,
-        selection: {col: - 1},
-    },
-    f: {
-        axis: 'z',
-        turns: 1,
-        selection: {depth: 0},
-    },
-    u: {
-        axis: 'y',
-        turns: 1,
-        selection: {row: - 1},
-    },
-    l: {
-        axis: 'x',
-        turns: -1,
-        selection: {col: 0},
-    },
-    b: {
-        axis: 'z',
-        turns: -1,
-        selection: {depth: - 1},
-    },
-    d: {
-        axis: 'y',
-        turns: -1,
-        selection: {row: 0},
-    },
-    m: {
-        axis: 'x',
-        turns: -1,
-        selection: {col: 1},
-    },
-    e: {
-        axis: 'y',
-        turns: -1,
-        selection: {row: 1},
-    },
-    s: {
-        axis: 'z',
-        turns: 1,
-        selection: {depth: 1},
-    },
-};
-
 class Cubing {
     canvas: HTMLCanvasElement;
     renderer: THREE.WebGLRenderer;
@@ -108,8 +37,8 @@ class Cubing {
     camera: THREE.PerspectiveCamera;
     size: number;
 
-    animationQueue: Action[] = [];
-    currentAction: Action | undefined;
+    animationQueue: Move[] = [];
+    currentAction: Move | undefined;
     startTime = 0;
     lastTime = 0;
     endTime = 0;
@@ -161,20 +90,21 @@ class Cubing {
     }
 
     handleKey(ev: KeyboardEvent) {
-        const key = ev.key.toLowerCase();
+        const key = ev.key.toUpperCase();
 
-        if (ACTIONS[key] === undefined) {
+        if (MOVES[key] === undefined) {
             console.log("Unknown key: " + key);
             return;
         }
 
-        const action = {...ACTIONS[key]};
+        const action = {...MOVES[key]};
         // Reverse direction if shift key is pressed
         if (ev.shiftKey) {
             action.turns = -action.turns;
         }
 
         this.animationQueue.push(action);
+        ev.stopPropagation();
     }
 
     // This is the animation loop.  We update the cube's orientation
