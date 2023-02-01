@@ -1,5 +1,6 @@
 {
   "name": "cubing",
+  "type": "module",
   "version": "1.0.0",
   "description": "",
   "main": "cubing.js",
@@ -13,10 +14,16 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "mersenne-twister": "^1.1.0",
     "three": "^0.148.0"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.4",
+    "@types/mersenne-twister": "^1.1.2",
+    "@types/mocha": "^10.0.1",
     "@types/three": "^0.149.0",
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0",
     "typescript": "^4.9.4",
     "vite": "^4.0.4"
   }

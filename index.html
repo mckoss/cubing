@@ -36,13 +36,21 @@
         <canvas tabindex="0" id="canvas-4"></canvas>
     </div>
 
+    <button id="scramble">Scramble</button>
+
     <p>Type: x, y, z, u, f, r, b, l, d, m, e, s</p>
     <p>Shift-letter to reverse direction</p>
     <script type="module">
-        import {Cubing} from './src/cubing.ts';
-        new Cubing(document.getElementById('canvas-2'), 2);
-        new Cubing(document.getElementById('canvas-3'), 3);
-        new Cubing(document.getElementById('canvas-4'), 4);
+        import { Cubing } from './src/cubing.ts';
+        const cubings = [];
+
+        for (let i = 2; i <= 4; i++) {
+            cubings.push(new Cubing(document.getElementById(`canvas-${i}`), i));
+        }
+
+        document.getElementById('scramble').addEventListener('click', () => {
+            cubings.forEach(cubing => cubing.doScramble());
+        });
     </script>
 </body>
 </html>

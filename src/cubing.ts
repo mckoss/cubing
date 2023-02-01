@@ -3,6 +3,8 @@ import * as THREE from "three";
 import { Face, Axis, Cubie,
     selectCubies, rotateCubies, buildCube, Move, MOVES } from "./cubies";
 
+import { generateScramble, mapMoves } from "./permutations";
+
 export { Cubing };
 
 const colors = ['white', 'green', 'red', 'blue', 'orange', 'yellow'] as const;
@@ -163,6 +165,11 @@ class Cubing {
             this.staticGroup!.attach(cubie.cubie);
         }
         this.currentAction = undefined;
+    }
+
+    doScramble() {
+        const scramble = generateScramble(this.size * 10);
+        this.animationQueue.push(...mapMoves(scramble));
     }
 }
 
