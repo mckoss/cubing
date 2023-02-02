@@ -7,7 +7,7 @@ import { generateScramble, mapMoves } from "./permutations";
 
 export { Cubing };
 
-const colors = ['white', 'green', 'red', 'blue', 'orange', 'yellow'] as const;
+const colors = ['white', 'red', 'blue', 'orange', 'green', 'yellow'] as const;
 
 // Space between cubies (of unit dimension)
 const OFFSET = 1.1;
