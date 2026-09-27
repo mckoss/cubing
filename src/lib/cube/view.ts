@@ -106,13 +106,18 @@ export class CubeView {
 		this.controls.minDistance = size * 2.2;
 		this.controls.maxDistance = size * 6;
 
-		this.scene.add(new THREE.HemisphereLight(0xffffff, 0x404060, 2.2));
+		// Light from all around, so that the bottom (white) still looks white
+		// when the cube is turned to look at it.
+		this.scene.add(new THREE.HemisphereLight(0xffffff, 0x9a9aac, 2.2));
 		const key = new THREE.DirectionalLight(0xffffff, 1.6);
 		key.position.set(4, 8, 6);
 		this.scene.add(key);
 		const fill = new THREE.DirectionalLight(0xffffff, 0.6);
 		fill.position.set(-6, -2, -4);
 		this.scene.add(fill);
+		const below = new THREE.DirectionalLight(0xffffff, 1.2);
+		below.position.set(-2, -8, 3);
+		this.scene.add(below);
 
 		this.cube.add(this.turningGroup);
 		this.root.add(this.cube, this.labels);
