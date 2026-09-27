@@ -95,9 +95,15 @@ test("the method section's sequences can be tried", async ({ page }) => {
 test('the top cross is shown in pictures', async ({ page }) => {
 	await open(page);
 	const steps = page.getByTestId('top-cross-steps');
-	await expect(steps.getByRole('img')).toHaveCount(5);
-	await expect(steps).toContainText('Hold the L at the back and left.');
-	await expect(steps).toContainText('Hold the line left to right.');
+	await expect(steps.getByRole('img')).toHaveCount(4);
+	for (const name of ['Dot', 'L', 'Line', 'Cross']) {
+		await expect(steps.getByText(name, { exact: true })).toBeVisible();
+	}
+	// All four patterns fit on one line, even on a phone.
+	const tops = await steps
+		.getByRole('img')
+		.evaluateAll((imgs) => imgs.map((img) => Math.round(img.getBoundingClientRect().top)));
+	expect(new Set(tops).size).toBe(1);
 });
 
 test('step through a solution by move and by stage', async ({ page }) => {

@@ -1,139 +1,83 @@
 <script lang="ts">
-	// How the top cross comes together: the top face at each step, and what
-	// to do between them. (Checked with the simulator: from a dot, the
-	// sequence makes an L at the front right; from an L at the back left, a
-	// line from left to right; and from that line, the cross.)
+	// The four patterns of the top cross, as in Mike's notes: dot, L, line,
+	// cross, each reached from the one before with the same sequence. The L
+	// and the line are drawn the way to hold them. (Checked with the
+	// simulator: from an L at the back left the sequence makes a line from
+	// left to right, and from that line, the cross.)
 	import TopFace from './TopFace.svelte';
 
 	let { sequence }: { sequence: string } = $props();
 
-	type Step = { up: string; name: string; hold: string } | { move: string; note?: string };
-	const steps: Step[] = $derived([
-		{ up: '', name: 'Dot', hold: 'Hold it any way.' },
-		{ move: sequence },
-		{ up: 'FR', name: 'L', hold: 'Makes an L.' },
-		{ move: 'U2', note: 'Turn the top' },
-		{ up: 'BL', name: 'L at the back left', hold: 'Hold the L at the back and left.' },
-		{ move: sequence },
-		{ up: 'RL', name: 'Line', hold: 'Hold the line left to right.' },
-		{ move: sequence },
-		{ up: 'FRBL', name: 'Cross', hold: 'Done!' }
-	]);
+	const PATTERNS = [
+		{ up: '', name: 'Dot' },
+		{ up: 'BL', name: 'L' },
+		{ up: 'RL', name: 'Line' },
+		{ up: 'FRBL', name: 'Cross' }
+	];
 </script>
 
-<div class="steps" data-testid="top-cross-steps">
-	{#each steps as step, i (i)}
-		{#if 'move' in step}
-			<div class="arrow">
-				{#if step.note}<span class="note">{step.note}</span>{/if}
-				<code>{step.move}</code>
-				<span class="across" aria-hidden="true">→</span>
-				<span class="down" aria-hidden="true">↓</span>
+<figure class="top-cross" data-testid="top-cross-steps">
+	<div class="row">
+		{#each PATTERNS as { up, name }, i (name)}
+			{#if i > 0}<span class="arrow" aria-hidden="true">⇒</span>{/if}
+			<div class="pattern">
+				<TopFace {up} label={`${name}: the top face with ${up ? up.length : 'no'} yellow edges`} />
+				<span>{name}</span>
 			</div>
-		{:else}
-			<figure>
-				<TopFace
-					up={step.up}
-					label={`${step.name}: top face with ${step.up || 'no'} edges yellow`}
-				/>
-				<figcaption><strong>{step.name}</strong><br />{step.hold}</figcaption>
-			</figure>
-		{/if}
-	{/each}
-</div>
-<p class="warning">
-	Hold it the wrong way and the sequence won't help: an L at any other corner just comes back as the
-	same L, and a line from front to back goes back to a dot. Turn the top (U) first.
-</p>
+		{/each}
+	</div>
+	<figcaption>
+		The top face, with the front edge at the bottom. Each arrow is <code>{sequence}</code>. Turn the
+		top (U) to hold the L at the back and left, and the line from left to right, as drawn. Held any
+		other way, the sequence doesn't move you forward.
+	</figcaption>
+</figure>
 
 <style>
-	.steps {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.75rem 0.5rem;
-		align-items: center;
+	.top-cross {
 		margin: 0.75rem 0 0.5rem;
 	}
 
-	figure {
+	.row {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.4rem;
+	}
+
+	.pattern {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		width: 7.5rem;
-		margin: 0;
-		text-align: center;
-	}
-
-	figcaption {
-		margin-top: 0.25rem;
+		gap: 0.2rem;
+		width: 3.75rem;
 		font-size: 0.8rem;
-		line-height: 1.3;
 		color: var(--muted);
-	}
-
-	figcaption strong {
-		color: var(--text);
 	}
 
 	.arrow {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.1rem;
-		font-size: 0.8rem;
+		margin-top: 1rem;
+		font-size: 1.3rem;
+		line-height: 1;
 		color: var(--muted);
 	}
 
-	.arrow code {
-		white-space: nowrap;
-	}
-
-	.arrow span[aria-hidden] {
-		font-size: 1.4rem;
-		line-height: 1;
-	}
-
-	.down {
-		display: none;
-	}
-
-	/* On narrow screens, read the steps from top to bottom. */
-	@media (max-width: 640px) {
-		.steps {
-			flex-direction: column;
-			align-items: flex-start;
-			gap: 0.4rem;
-		}
-
-		figure {
-			flex-direction: row;
-			align-items: center;
-			gap: 0.75rem;
-			width: auto;
-			text-align: left;
+	@media (min-width: 641px) {
+		.pattern {
+			width: 5rem;
 		}
 
 		.arrow {
-			flex-direction: row;
-			gap: 0.5rem;
-			padding-left: 1.6rem;
-		}
-
-		.across {
-			display: none;
-		}
-
-		.down {
-			display: inline;
+			margin-top: 1.5rem;
 		}
 	}
 
-	.note {
-		font-size: 0.75rem;
-	}
-
-	.warning {
+	figcaption {
+		margin-top: 0.5rem;
 		font-size: 0.9rem;
 		color: var(--muted);
+	}
+
+	code {
+		white-space: nowrap;
 	}
 </style>
