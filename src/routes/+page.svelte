@@ -18,6 +18,7 @@
 	import { CubeView, SPEEDS, type Speed } from '$lib/cube/view';
 	import HistoryBlock from '$lib/components/HistoryBlock.svelte';
 	import TopCrossSteps from '$lib/components/TopCrossSteps.svelte';
+	import CaseDiagram, { type Case } from '$lib/components/CaseDiagram.svelte';
 
 	const moveList = new MoveList();
 	let canvas: HTMLCanvasElement;
@@ -244,7 +245,15 @@
 		{ name: 'z', label: 'Turn the whole cube (like F)' }
 	];
 
-	const METHOD_STEPS: { title: string; text: string; sequences: [string, string][] }[] = [
+	interface MethodSequence {
+		label: string;
+		moves: string;
+		// A picture of what to look for (see CaseDiagram), and a caption.
+		diagram?: Case;
+		look?: string;
+	}
+
+	const METHOD_STEPS: { title: string; text: string; sequences: MethodSequence[] }[] = [
 		{
 			title: 'First face',
 			text: 'Solve the white face, with the edges and corners matching the centers around it. (My notes skip this step as obvious; the simulator uses the first layer of the Singmaster solution.) Then hold the white face down.',
@@ -254,34 +263,71 @@
 			title: 'Middle layer',
 			text: 'Find an edge on top that belongs in the middle layer. Turn the top until its front color matches the front center, then move it down to the left or the right, where its top color matches. If an edge is in the middle layer but in the wrong place, insert any edge there to bring it to the top.',
 			sequences: [
-				['Down and to the left', SEQUENCES.insertLeft],
-				['Down and to the right', SEQUENCES.insertRight]
+				{
+					label: 'Down and to the left',
+					moves: SEQUENCES.insertLeft,
+					diagram: 'middle-left',
+					look: 'The top edge is blue in front, like the front center, and red on top, like the left center.'
+				},
+				{
+					label: 'Down and to the right',
+					moves: SEQUENCES.insertRight,
+					diagram: 'middle-right',
+					look: 'The top edge is blue in front, and orange on top, like the right center.'
+				}
 			]
 		},
 		{
 			title: 'Top cross',
 			text: 'Make a cross of the top color (yellow) on top, one step at a time, with the same sequence each time. How you hold the cube matters, as the pictures show.',
-			sequences: [['Next step toward the cross', SEQUENCES.topCross]]
+			sequences: [{ label: 'Next step toward the cross', moves: SEQUENCES.topCross }]
 		},
 		{
 			title: 'Top edges',
 			text: 'Turn the top until two edges match their sides. If they are next to each other, hold them at the back and right, and swap the front and left edges. If they are across from each other, swap once from anywhere and try again.',
-			sequences: [['Swap front and left edges', SEQUENCES.swapEdges]]
+			sequences: [
+				{
+					label: 'Swap the front and left edges',
+					moves: SEQUENCES.swapEdges,
+					diagram: 'swap-edges',
+					look: 'The back and right edges match their sides; the front and left edges are swapped.'
+				}
+			]
 		},
 		{
 			title: 'Top corners',
 			text: 'Find a corner in its place (it may be twisted), and cycle the other three around it. If no corner is in place, cycle any three first.',
 			sequences: [
-				['Cycle the corners, keeping the front right', SEQUENCES.cycleCorners],
-				['Cycle them the other way, keeping the front left', SEQUENCES.cycleCornersBack]
+				{
+					label: 'Cycle the corners, keeping the front right',
+					moves: SEQUENCES.cycleCorners,
+					diagram: 'corners',
+					look: 'The front right corner is in place. The others go back right to back left, to front left, and back to back right.'
+				},
+				{
+					label: 'Cycle them the other way, keeping the front left',
+					moves: SEQUENCES.cycleCornersBack,
+					diagram: 'corners-back',
+					look: 'The front left corner is in place. The others go back left to back right, to front right, and back to back left.'
+				}
 			]
 		},
 		{
 			title: 'Twist the corners',
-			text: 'Hold a twisted corner at the front right, and twist it until its top color is on top. The bottom layer is scrambled along the way, but comes back once every corner is done. Then turn the top (not the whole cube) to bring the next twisted corner to the front right.',
+			text: "Hold a twisted corner at the front right, and repeat the sequence for the way its yellow sticker faces until it's on top. The bottom layer is scrambled along the way, but comes back once every corner is done. Then turn the top (not the whole cube) to bring the next twisted corner to the front right.",
 			sequences: [
-				['Twist one way', SEQUENCES.twistCorner],
-				['Twist the other way', SEQUENCES.twistCornerBack]
+				{
+					label: 'Yellow facing right',
+					moves: SEQUENCES.twistCorner,
+					diagram: 'twist',
+					look: "The front right corner's yellow sticker faces right."
+				},
+				{
+					label: 'Yellow facing front',
+					moves: SEQUENCES.twistCornerBack,
+					diagram: 'twist-back',
+					look: "The front right corner's yellow sticker faces front."
+				}
 			]
 		}
 	];
@@ -454,13 +500,21 @@
 			<li>
 				<h3>{step.title}</h3>
 				<p>{step.text}</p>
-				{#each step.sequences as [label, moves] (moves)}
-					<div class="sequence">
-						<span>{label}:</span>
-						<code>{moves}</code>
-						<button onclick={() => play(to2003Notation(parseMoves(moves)), `Try It: ${label}`)}
-							>Try it</button
-						>
+				{#each step.sequences as { label, moves, diagram, look } (moves)}
+					<div class="sequence" class:with-diagram={diagram}>
+						{#if diagram}
+							<CaseDiagram kind={diagram} label={look ?? label} />
+						{/if}
+						<div class="sequence-text">
+							<span class="sequence-label">{label}:</span>
+							{#if look}<span class="look">{look}</span>{/if}
+							<span class="sequence-moves">
+								<code>{moves}</code>
+								<button onclick={() => play(to2003Notation(parseMoves(moves)), `Try It: ${label}`)}
+									>Try it</button
+								>
+							</span>
+						</div>
 					</div>
 				{/each}
 				{#if step.title === 'Top cross'}
@@ -837,6 +891,39 @@
 		gap: 0.25rem 0.75rem;
 		align-items: center;
 		margin: 0.25rem 0;
+	}
+
+	.sequence.with-diagram {
+		flex-wrap: nowrap;
+		margin: 0.75rem 0;
+	}
+
+	.sequence-text {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 0.75rem;
+		align-items: center;
+	}
+
+	.with-diagram .sequence-text {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.sequence-label {
+		font-weight: 600;
+	}
+
+	.look {
+		color: var(--muted);
+		font-size: 0.9rem;
+	}
+
+	.sequence-moves {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 0.75rem;
+		align-items: center;
 	}
 
 	.sequence code {
