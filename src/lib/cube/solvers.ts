@@ -52,9 +52,9 @@ export const SOLVERS: Solver[] = [
 		}
 	},
 	{
-		name: "Mike's Beginner Method",
+		name: 'Basic Modern Solution',
 		description:
-			"The common beginner's method Mike uses today, from his handwritten notes: first face, middle layer, then the top.",
+			'The simple, basic modern layer-by-layer solution, as Mike learned it: first face, middle layer, then the top.',
 		solve(perm, moveList) {
 			new Beginner(moveList).solve(placeCenters(perm, moveList));
 		}

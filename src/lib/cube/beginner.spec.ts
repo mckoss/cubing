@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Permutation } from './permutation';
-import { applyMoves, from2003Notation, permutationOf, type Move } from './moves';
+import { applyMoves, from2003Notation, parseMoves, permutationOf, type Move } from './moves';
 import { MoveList } from './move-list';
 import { Beginner, SEQUENCES } from './beginner';
 
@@ -14,7 +14,7 @@ function solve(start: Permutation) {
 	return list;
 }
 
-describe("Mike's beginner method", () => {
+describe('Basic Modern Solution', () => {
 	it('uses the sequences from the notes', () => {
 		// Each sequence does what the notes draw.
 		expect(permutationOf(SEQUENCES.insertRight).apply('FU')).toBe('FR');
@@ -48,7 +48,7 @@ describe("Mike's beginner method", () => {
 		const names = list.blocks.map((b) => b.name);
 		expect(names).toEqual(
 			expect.arrayContaining([
-				"Mike's Beginner Method",
+				'Basic Modern Solution',
 				'First Face (White)',
 				'Middle',
 				'Top Cross',
@@ -57,5 +57,50 @@ describe("Mike's beginner method", () => {
 				'Twist Corners'
 			])
 		);
+	});
+});
+
+describe('top cross pictures', () => {
+	// Which top edges show the top color (U), in the order F R B L.
+	const pattern = (p: Permutation) => {
+		const inverse = p.inverse();
+		return [...'FRBL'].filter((f) => inverse.apply('U' + f).charAt(0) === 'U').join('');
+	};
+
+	// Cubes reached by the top cross sequence and turns of the top.
+	const cubes = () => {
+		const cross = parseMoves(SEQUENCES.topCross);
+		const turns = ['U', 'U2', "U'"].map((m) => parseMoves(m));
+		const flipTwo = parseMoves("F U R U' R' F'");
+		const found: Permutation[] = [];
+		let seed = 11;
+		const rand = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+		for (let i = 0; i < 500; i++) {
+			let p = new Permutation();
+			for (let k = 0; k < 8; k++) {
+				p = applyMoves(p, rand() < 0.5 ? cross : turns[Math.floor(rand() * 3)]);
+			}
+			if (rand() < 0.3) p = applyMoves(p, flipTwo);
+			found.push(p);
+		}
+		return found;
+	};
+
+	it('match what the sequence does', () => {
+		const after = new Map<string, Set<string>>();
+		for (const p of cubes()) {
+			const before = pattern(p);
+			if (!after.has(before)) after.set(before, new Set());
+			after.get(before)!.add(pattern(applyMoves(p, parseMoves(SEQUENCES.topCross))));
+		}
+		// Dot -> L at the front right; L at the back left -> line from left to
+		// right; line -> cross.
+		expect([...after.get('')!]).toEqual(['FR']);
+		expect([...after.get('BL')!]).toEqual(['RL']);
+		expect([...after.get('RL')!]).toEqual(['FRBL']);
+		// Held the wrong way: an L elsewhere stays an L; a line front to back
+		// goes back to a dot.
+		expect([...after.get('RB')!]).toEqual(['RB']);
+		expect([...after.get('FB')!]).toEqual(['']);
 	});
 });

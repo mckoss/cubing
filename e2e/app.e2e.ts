@@ -71,13 +71,13 @@ test('scramble, then solve with the Singmaster solver', async ({ page }) => {
 	expect(errors).toEqual([]);
 });
 
-test("solve with Mike's beginner method", async ({ page }) => {
+test('solve with the Basic Modern Solution', async ({ page }) => {
 	test.setTimeout(SOLVE_TIMEOUT);
 	const errors = await open(page);
 	await page.getByTestId('scramble').click();
-	await page.getByLabel('Solver').selectOption("Mike's Beginner Method");
+	await page.getByLabel('Solver').selectOption('Basic Modern Solution');
 	await page.getByTestId('solve').click();
-	await expect(history(page)).toContainText("Mike's Beginner Method");
+	await expect(history(page)).toContainText('Basic Modern Solution');
 	await expect(history(page)).toContainText('Middle');
 	await expect(page.getByTestId('solved')).toBeVisible({ timeout: SOLVE_TIMEOUT });
 	expect(errors).toEqual([]);
@@ -90,6 +90,14 @@ test("the method section's sequences can be tried", async ({ page }) => {
 	await method.getByRole('button', { name: 'Try it' }).first().click();
 	await expect(permutation(page)).not.toHaveText('Solved');
 	await expect(history(page)).toContainText('Try It: Down and to the left');
+});
+
+test('the top cross is shown in pictures', async ({ page }) => {
+	await open(page);
+	const steps = page.getByTestId('top-cross-steps');
+	await expect(steps.getByRole('img')).toHaveCount(5);
+	await expect(steps).toContainText('Hold the L at the back and left.');
+	await expect(steps).toContainText('Hold the line left to right.');
 });
 
 test('step through a solution by move and by stage', async ({ page }) => {

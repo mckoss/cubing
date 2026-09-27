@@ -1,5 +1,5 @@
-// Mike's method: the common beginner's layer-by-layer solution, as written
-// in his notes (see the page for the original).
+// The Basic Modern Solution: the simple layer-by-layer solution most people
+// learn today, as written in Mike's notes (see the page for the original).
 //
 // It uses the same kind of rules as the 2003 Singmaster solver: turn the
 // cube (or a face) with a "generator" move until a piece reaches a known
@@ -54,7 +54,7 @@ export class Beginner {
 	}
 
 	solve(perm: Permutation) {
-		const block = this.moveList.openBlock("Mike's Beginner Method");
+		const block = this.moveList.openBlock('Basic Modern Solution');
 		this.perm = perm;
 
 		this.solveFirstFace();
