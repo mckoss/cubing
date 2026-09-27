@@ -332,9 +332,15 @@
 		}
 	];
 
+	// Pieces are named in lower case, as Singmaster did, so that "urf" (a
+	// cubie) can't be mistaken for moves (U R F).
+	function cycles(p: Permutation): string {
+		return p.toString().toLowerCase();
+	}
+
 	const catalog = CATALOG.map((entry) => ({
 		...entry,
-		effect: permutationOf(entry.moves).toString()
+		effect: cycles(permutationOf(entry.moves))
 	}));
 </script>
 
@@ -431,7 +437,7 @@
 
 		<section class="card">
 			<h2>Current Permutation</h2>
-			<p class="perm" data-testid="permutation">{solved ? 'Solved' : perm.toString()}</p>
+			<p class="perm" data-testid="permutation">{solved ? 'Solved' : cycles(perm)}</p>
 		</section>
 
 		<section class="card history">
@@ -455,8 +461,9 @@
 	<p class="note">
 		Sequences from my 2003 notes, labeled as in David Singmaster's <cite
 			>Notes on Rubik's Magic Cube</cite
-		>. The simulator computes the effect of each in cycle notation: <code>(UF UR UB)</code> moves
-		the piece at UF to UR, the one at UR to UB, and the one at UB back to UF. A <code>+</code> or
+		>. The simulator computes the effect of each in cycle notation: <code>(uf ur ub)</code> moves
+		the piece at uf to ur, the one at ur to ub, and the one at ub back to uf. Pieces are named in
+		lower case, as Singmaster did, so they aren't mistaken for moves. A <code>+</code> or
 		<code>-</code> after a cycle means its pieces come back twisted or flipped.
 	</p>
 	<div class="table-wrap">
