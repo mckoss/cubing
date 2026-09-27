@@ -17,6 +17,7 @@
 	import { SEQUENCES } from '$lib/cube/beginner';
 	import { CubeView, SPEEDS, type Speed } from '$lib/cube/view';
 	import HistoryBlock from '$lib/components/HistoryBlock.svelte';
+	import TopCrossSteps from '$lib/components/TopCrossSteps.svelte';
 
 	const moveList = new MoveList();
 	let canvas: HTMLCanvasElement;
@@ -259,7 +260,7 @@
 		},
 		{
 			title: 'Top cross',
-			text: 'Make a cross of top color on top, one step at a time: from a dot, to an L (held at the back and left), to a line (held left to right), to a cross.',
+			text: 'Make a cross of the top color (yellow) on top, one step at a time, with the same sequence each time. How you hold the cube matters: see the pictures below, which show the top face with the front edge at the bottom.',
 			sequences: [['Next step toward the cross', SEQUENCES.topCross]]
 		},
 		{
@@ -440,11 +441,13 @@
 </section>
 
 <section class="method" data-testid="method">
-	<h2>My Beginner's Method</h2>
+	<h2>The Basic Modern Solution</h2>
 	<p>
-		This is the method I use today to solve a cube by hand: one of the most common simple solutions.
-		Choose <em>Mike's Beginner Method</em> next to the Solve button to watch the simulator solve the cube
-		this way; it follows the same kind of rules as the 2003 Singmaster solver.
+		This is the simple, basic modern solution, the layer-by-layer method most people learn today. I
+		didn't invent it; it's the one I learned and use to solve a cube by hand. With normal manual
+		dexterity, it solves a cube in about two minutes. Choose <em>Basic Modern Solution</em> next to the
+		Solve button to watch the simulator solve the cube this way; it follows the same kind of rules as
+		the 2003 Singmaster solver.
 	</p>
 	<ol>
 		{#each METHOD_STEPS as step (step.title)}
@@ -460,6 +463,9 @@
 						>
 					</div>
 				{/each}
+				{#if step.title === 'Top cross'}
+					<TopCrossSteps sequence={SEQUENCES.topCross} />
+				{/if}
 			</li>
 		{/each}
 	</ol>

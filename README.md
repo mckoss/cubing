@@ -30,8 +30,8 @@ generator moves).
   Singmaster's layer-by-layer solution from _Notes on Rubik's Magic Cube_
   (1981), ported from the 2003 JavaScript. It makes exactly the same moves as
   the 2003 code (tested against its output).
-- **Mike's Beginner Method** ([beginner.ts](src/lib/cube/beginner.ts)): the
-  common beginner's method, from Mike's handwritten notes
+- **Basic Modern Solution** ([beginner.ts](src/lib/cube/beginner.ts)): the
+  simple layer-by-layer solution most people learn today, from Mike's handwritten notes
   ([src/lib/assets/basic-solution.png](src/lib/assets/basic-solution.png)).
 
 ## Development
@@ -68,7 +68,7 @@ set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to its path.
 | [src/lib/cube/moves.ts](src/lib/cube/moves.ts)             | Moves, notation (standard and 2003), history reduction |
 | [src/lib/cube/move-list.ts](src/lib/cube/move-list.ts)     | Move history in named blocks (from 2003)               |
 | [src/lib/cube/singmaster.ts](src/lib/cube/singmaster.ts)   | Singmaster solver and the `solveVia` rule engine       |
-| [src/lib/cube/beginner.ts](src/lib/cube/beginner.ts)       | Mike's beginner method                                 |
+| [src/lib/cube/beginner.ts](src/lib/cube/beginner.ts)       | The Basic Modern Solution                              |
 | [src/lib/cube/catalog.ts](src/lib/cube/catalog.ts)         | The 2003 Move Catalog                                  |
 | [src/lib/cube/view.ts](src/lib/cube/view.ts)               | Three.js view (from the 2023 version)                  |
 | [src/lib/cube/cubies.ts](src/lib/cube/cubies.ts)           | Cubie positions for an NxN cube (2023)                 |
