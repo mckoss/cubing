@@ -256,7 +256,7 @@
 	const METHOD_STEPS: { title: string; text: string; sequences: MethodSequence[] }[] = [
 		{
 			title: 'First face',
-			text: 'Solve the white face, with the edges and corners matching the centers around it. (My notes skip this step as obvious; the simulator uses the first layer of the Singmaster solution.) Then hold the white face down.',
+			text: 'Hold the white face down, and solve it with the edges and corners matching the centers around it. (My notes skip this step as obvious.) Find a white piece on top, turn the top until it is over its place, and put it down: the edges first, then the corners. A white piece on the bottom in the wrong place, or in the middle layer, goes up to the top first.',
 			sequences: []
 		},
 		{

@@ -67,6 +67,45 @@ describe('Basic Modern Solution', () => {
 	});
 });
 
+describe('first face, white down', () => {
+	it('never turns the cube over', () => {
+		const rand = random(2003);
+		for (let i = 0; i < 100; i++) {
+			const moves = Array.from({ length: 30 }, () => ({
+				name: 'UDLRFB'[Math.floor(rand() * 6)],
+				turns: 1 + Math.floor(rand() * 3)
+			})) as Move[];
+			const list = solve(permutationOf(moves));
+			const first = list.blocks.find((b) => b.name === 'First Face (White)')!;
+			// Only turns of the whole cube about the vertical axis (y).
+			const turns = from2003Notation(list.moves.slice(first.start, first.end));
+			expect(turns.filter((m) => m.name === 'x' || m.name === 'z')).toEqual([]);
+			expect(list.blocks.map((b) => b.name)).toEqual(
+				expect.arrayContaining(['Bottom Edges', 'Bottom Corners'])
+			);
+		}
+	});
+
+	it('puts pieces down without disturbing the pieces already down', () => {
+		// The edges go first, so the edges may move the bottom corners.
+		const edges = ['DF', 'DR', 'DB', 'DL'];
+		const cases: [string, string[], string[]][] = [
+			['DF', ['F2', "U' R' F R"], edges],
+			['DFR', ["R U R'", "F' U' F", "R U2 R' U' R U R'"], [...edges, 'DRB', 'DBL', 'DLF']]
+		];
+		for (const [piece, sequences, bottom] of cases) {
+			for (const moves of sequences) {
+				const p = permutationOf(moves);
+				const start = permutationOf(invertMoves(parseMoves(moves))).apply(piece);
+				expect(start, moves).toContain('U');
+				for (const other of bottom.filter((b) => b !== piece)) {
+					expect(p.apply(other), `${moves} moves ${other}`).toBe(other);
+				}
+			}
+		}
+	});
+});
+
 describe('top cross pictures', () => {
 	// Which top edges show the top color (U), in the order F R B L.
 	const pattern = (p: Permutation) => {
