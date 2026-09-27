@@ -7,9 +7,9 @@
 // here in standard notation, as in Mike's notes; "P" undoes the generator.
 
 import { Permutation } from './permutation';
-import { apply2003, parseMoves, to2003Notation } from './moves';
+import { apply2003, invertMoves, parseMoves, permutationOf, to2003Notation } from './moves';
 import type { MoveList } from './move-list';
-import { Singmaster, solveVia, type Rule } from './singmaster';
+import { solveVia, type Rule } from './singmaster';
 
 // Convert a sequence in standard notation to the 2003 notation the rules
 // use, keeping any "P".
@@ -39,6 +39,51 @@ const S = Object.fromEntries(
 const WHOLE_CUBE_TURN = seq('y');
 const WHOLE_CUBE_TURN_BACK = seq("y'");
 
+// A place, ignoring which way the piece in it faces (e.g. "DF" for FD).
+function slot(place: string): string {
+	return [...place].sort().join('');
+}
+
+// Where a piece must be for moves to put it in its place.
+function placeFor(moves: string, piece: string): string {
+	return permutationOf(invertMoves(parseMoves(moves))).apply(piece);
+}
+
+// Putting a piece down from above its place, for each way it can face.
+function downRules(piece: string, sequences: string[]): Rule[] {
+	return [['u', sequences.map((moves) => [placeFor(moves, piece), seq(moves)])]];
+}
+
+// The bottom front edge, from the top front.
+const EDGE_DOWN = downRules('DF', ['F2', "U' R' F R"]);
+
+// The bottom front right corner, from the top front right.
+const CORNER_DOWN = downRules('DFR', ["R U R'", "F' U' F", "R U2 R' U' R U R'"]);
+
+// Moving a piece to the top from a place on the bottom or in the middle,
+// without disturbing the other pieces on the bottom.
+const EDGE_OUT: Record<string, string> = Object.fromEntries(
+	Object.entries({
+		DF: 'F2',
+		DR: 'R2',
+		BD: 'B2',
+		DL: 'L2',
+		FR: "R U R'",
+		BR: "R' U R",
+		BL: "L U L'",
+		FL: "L' U L"
+	}).map(([place, moves]) => [place, seq(moves)])
+);
+
+const CORNER_OUT: Record<string, string> = Object.fromEntries(
+	Object.entries({
+		DFR: "R U R'",
+		BDR: "R' U' R",
+		BDL: "L U L'",
+		DFL: "L' U' L"
+	}).map(([place, moves]) => [place, seq(moves)])
+);
+
 function rotate(st: string, n: number): string {
 	return st.substring(n) + st.substring(0, n);
 }
@@ -67,18 +112,41 @@ export class Beginner {
 		block.close();
 	}
 
-	// The first face (white, on the bottom) isn't in Mike's notes ("obvious");
-	// this turns the cube over and uses the Singmaster solver's first layer.
+	// The first face isn't in Mike's notes ("obvious").  It's solved with the
+	// white face down, as it's held for the rest of the solution: bring each
+	// piece to the top, turn the top until it's over its place, and put it
+	// down.  A piece stuck in the wrong place on the bottom (or in the middle)
+	// is first moved up to the top.
 	private solveFirstFace() {
 		const face = ['DF', 'DR', 'DB', 'DL', 'DFR', 'DRB', 'DBL', 'DLF'];
 		if (face.every((piece) => this.perm.apply(piece) === piece)) {
 			return;
 		}
 		const block = this.moveList.openBlock('First Face (White)');
-		this.move('kk');
-		this.perm = new Singmaster(this.moveList).solveFirstLayer(this.perm);
-		this.move('kk');
+		const edges = this.moveList.openBlock('Bottom Edges');
+		for (let i = 0; i < 4; i++) {
+			this.placeBottomPiece('DF', EDGE_OUT, EDGE_DOWN);
+			this.move(WHOLE_CUBE_TURN);
+		}
+		edges.close();
+		const corners = this.moveList.openBlock('Bottom Corners');
+		for (let i = 0; i < 4; i++) {
+			this.placeBottomPiece('DFR', CORNER_OUT, CORNER_DOWN);
+			this.move(WHOLE_CUBE_TURN);
+		}
+		corners.close();
 		block.close();
+	}
+
+	private placeBottomPiece(piece: string, out: Record<string, string>, down: Rule[]) {
+		const at = this.perm.apply(piece);
+		if (at === piece) {
+			return;
+		}
+		if (!at.includes('U')) {
+			this.move(out[slot(at)]);
+		}
+		this.move(solveVia(this.perm, piece, down));
 	}
 
 	// Middle edges: turn the top until the edge for the front-right slot is
