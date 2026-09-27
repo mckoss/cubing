@@ -260,7 +260,7 @@
 		},
 		{
 			title: 'Top cross',
-			text: 'Make a cross of the top color (yellow) on top, one step at a time, with the same sequence each time. How you hold the cube matters: see the pictures below, which show the top face with the front edge at the bottom.',
+			text: 'Make a cross of the top color (yellow) on top, one step at a time, with the same sequence each time. How you hold the cube matters, as the pictures show.',
 			sequences: [['Next step toward the cross', SEQUENCES.topCross]]
 		},
 		{
