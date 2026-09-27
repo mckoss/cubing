@@ -84,31 +84,44 @@
 			[3, b1, a0]
 		]);
 	}
-	// The whole cube, with the front right top corner's stickers colored to
-	// show where its yellow sticker is.
+	// The whole cube, solved but for two top corners: the front right one,
+	// colored to show where its yellow sticker is, and another corner twisted
+	// the other way (a single corner can't be twisted by itself).
 	function twistCube(yellowOn: 'F' | 'R') {
 		const faces: { points: string; fill: string }[] = [];
-		// The corner's stickers, turned: with yellow facing right, the orange
-		// sticker is in front and the blue one on top; with yellow facing
-		// front, blue is on the right and orange on top.
-		const corner =
+		// With yellow facing right, the orange sticker is in front and the
+		// blue one on top; the back right corner is twisted the other way
+		// (yellow on the right, green on top).  With yellow facing front, blue
+		// is on the right and orange on top; the front left corner is twisted
+		// the other way (yellow in front, red on top).
+		const twisted =
 			yellowOn === 'R' ? { U: BLUE, F: ORANGE, R: YELLOW } : { U: ORANGE, F: YELLOW, R: BLUE };
+		// The other corner: where its top sticker is (x, z) and its color, and
+		// the face and place (a, b) of its yellow sticker.
+		const other =
+			yellowOn === 'R'
+				? { top: [2, 0], color: GREEN, face: 'R', at: [0, 2] }
+				: { top: [0, 2], color: RED, face: 'F', at: [0, 2] };
+		const is = (p: number[], a: number, b: number) => p[0] === a && p[1] === b;
+		const yellow = (face: string, a: number, b: number) =>
+			face === other.face && is(other.at, a, b);
 		for (let a = 0; a < 3; a++) {
 			for (let b = 0; b < 3; b++) {
-				// Top: x = a, z = b; the corner is at x = 2, z = 2.
+				const corner = a === 2 && b === 2;
+				// Top: x = a, z = b; the front right corner is at x = 2, z = 2.
 				faces.push({
 					points: sticker('U', a, b),
-					fill: a === 2 && b === 2 ? corner.U : YELLOW
+					fill: corner ? twisted.U : is(other.top, a, b) ? other.color : YELLOW
 				});
-				// Front: x = a, y = b; the corner is at x = 2, y = 2.
+				// Front: x = a, y = b.
 				faces.push({
 					points: sticker('F', a, b),
-					fill: a === 2 && b === 2 ? corner.F : b === 2 ? GRAY : BLUE
+					fill: corner ? twisted.F : yellow('F', a, b) ? YELLOW : BLUE
 				});
-				// Right: z = a, y = b; the corner is at z = 2, y = 2.
+				// Right: z = a, y = b.
 				faces.push({
 					points: sticker('R', a, b),
-					fill: a === 2 && b === 2 ? corner.R : b === 2 ? GRAY : ORANGE
+					fill: corner ? twisted.R : yellow('R', a, b) ? YELLOW : ORANGE
 				});
 			}
 		}
@@ -135,9 +148,9 @@
 		])
 	];
 
-	// Grids used by the flat pictures.
+	// The front face, with a tab above it.
 	const G = { x: 14, y: 20, s: 24 };
-	// The top face with side strips around it.
+	// The top face, with tabs around it.
 	const T = { x: 14, y: 14, s: 24 };
 </script>
 
@@ -175,9 +188,11 @@
 			rx="2"
 			fill={right ? ORANGE : RED}
 		/>
-		<!-- The edge on top has blue (the front color) on the front; the slot
-		     it goes to is outlined. -->
-		{#each cells(G.x, G.y, G.s, (r, c) => (c === 1 && r < 2 ? BLUE : GRAY)) as cell, i (i)}
+		<!-- The first layer is solved (the bottom row is blue), and so may be
+		     the other middle slot. The edge on top has blue (the front color)
+		     on the front; the slot it goes to is outlined. The top corners
+		     could be any color (gray). -->
+		{#each cells( G.x, G.y, G.s, (r, c) => ((r === 0 && c !== 1) || (r === 1 && c === (right ? 2 : 0)) ? GRAY : BLUE) ) as cell, i (i)}
 			<rect x={cell.x} y={cell.y} width={cell.s} height={cell.s} rx="3" fill={cell.fill} />
 		{/each}
 		{@const slot = at(G.x, G.y, G.s, 1, right ? 2 : 0)}
@@ -206,7 +221,8 @@
 	{:else if kind === 'swap-edges'}
 		<!-- The top face, with the side colors of the top edges around it. -->
 		<rect x={T.x - 3} y={T.y - 3} width={T.s * 3 + 6} height={T.s * 3 + 6} rx="6" fill={BODY} />
-		{#each cells(T.x, T.y, T.s, () => YELLOW) as cell, i (i)}
+		<!-- The top cross is done; the corners may not be yellow yet. -->
+		{#each cells(T.x, T.y, T.s, (r, c) => (r !== 1 && c !== 1 ? GRAY : YELLOW)) as cell, i (i)}
 			<rect x={cell.x} y={cell.y} width={cell.s} height={cell.s} rx="3" fill={cell.fill} />
 		{/each}
 		<!-- Back and right already match (green, orange); front and left are
@@ -230,14 +246,21 @@
 		/>
 	{:else if kind === 'corners' || kind === 'corners-back'}
 		{@const back = kind === 'corners-back'}
-		<rect x={G.x - 3} y={G.y - 3} width={G.s * 3 + 6} height={G.s * 3 + 6} rx="6" fill={BODY} />
-		{#each cells(G.x, G.y, G.s, () => YELLOW) as cell, i (i)}
+		<!-- The top cross and the top edges are done (their side colors match
+		     the sides); the corners are in the wrong places, and may be
+		     twisted. -->
+		<rect x={T.x - 3} y={T.y - 3} width={T.s * 3 + 6} height={T.s * 3 + 6} rx="6" fill={BODY} />
+		{#each cells(T.x, T.y, T.s, (r, c) => (r !== 1 && c !== 1 ? GRAY : YELLOW)) as cell, i (i)}
 			<rect x={cell.x} y={cell.y} width={cell.s} height={cell.s} rx="3" fill={cell.fill} />
 		{/each}
-		{@const bl = at(G.x, G.y, G.s, 0, 0)}
-		{@const br = at(G.x, G.y, G.s, 0, 2)}
-		{@const fl = at(G.x, G.y, G.s, 2, 0)}
-		{@const fr = at(G.x, G.y, G.s, 2, 2)}
+		<rect x={T.x + T.s + 2} y={T.y - 12} width={T.s - 4} height="6" rx="2" fill={GREEN} />
+		<rect x={T.x + T.s * 3 + 6} y={T.y + T.s + 2} width="6" height={T.s - 4} rx="2" fill={ORANGE} />
+		<rect x={T.x + T.s + 2} y={T.y + T.s * 3 + 6} width={T.s - 4} height="6" rx="2" fill={BLUE} />
+		<rect x={T.x - 12} y={T.y + T.s + 2} width="6" height={T.s - 4} rx="2" fill={RED} />
+		{@const bl = at(T.x, T.y, T.s, 0, 0)}
+		{@const br = at(T.x, T.y, T.s, 0, 2)}
+		{@const fl = at(T.x, T.y, T.s, 2, 0)}
+		{@const fr = at(T.x, T.y, T.s, 2, 2)}
 		{@const path = back ? [bl, br, fr, bl] : [br, bl, fl, br]}
 		{@const stays = back ? fl : fr}
 		{#each [0, 1, 2] as i (i)}

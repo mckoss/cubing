@@ -320,13 +320,13 @@
 					label: 'Yellow facing right',
 					moves: SEQUENCES.twistCorner,
 					diagram: 'twist',
-					look: "The front right corner's yellow sticker faces right."
+					look: "The front right corner's yellow sticker faces right. (Another corner is twisted the other way: one corner can't be twisted alone.)"
 				},
 				{
 					label: 'Yellow facing front',
 					moves: SEQUENCES.twistCornerBack,
 					diagram: 'twist-back',
-					look: "The front right corner's yellow sticker faces front."
+					look: "The front right corner's yellow sticker faces front. (Another corner is twisted the other way.)"
 				}
 			]
 		}
