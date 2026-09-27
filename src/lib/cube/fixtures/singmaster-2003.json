@@ -1,0 +1,722 @@
+[
+	{
+		"scramble": "",
+		"moves": "kkkk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 4],
+			["Solve U Edges", 0, 0],
+			["Solve U Corners", 0, 0],
+			["Solve Middle Edges", 2, 2],
+			["Orient D Edges", 2, 2],
+			["Place D Edges", 2, 2],
+			["Place D Corners", 2, 2],
+			["Orient D Corners", 2, 2]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "f",
+		"moves": "Fkkkk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 5],
+			["Solve U Edges", 0, 1],
+			["Solve U Corners", 1, 1],
+			["Solve Middle Edges", 3, 3],
+			["Orient D Edges", 3, 3],
+			["Place D Edges", 3, 3],
+			["Place D Corners", 3, 3],
+			["Orient D Corners", 3, 3]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "u",
+		"moves": "UffuffjdffjdffjdffjufdFUfDFjufdFUfDFjDfDFRddrjRdrjkkyBUrruurruurrUbYBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjUlUffuuffuuffULjjbluLUBurURLruRUlfdFDfdFDufdFDfdFDuufdFDfdFDukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 210],
+			["Solve U Edges", 0, 19],
+			["Solve U Corners", 19, 50],
+			["Solve Middle Edges", 52, 163],
+			["Orient D Edges", 163, 170],
+			["Place D Edges", 170, 170],
+			["Place D Corners", 170, 180],
+			["Orient D Corners", 180, 208]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "fr",
+		"moves": "ufUUrujffJdfDFkkuulUffuuffuuffULJuuBUrruurruurrUbjuurrDuuRlffrLdrrLurURlruRUufdFDfdFDufdFDfdFDufdFDfdFDukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 106],
+			["Solve U Edges", 0, 10],
+			["Solve U Corners", 10, 14],
+			["Solve Middle Edges", 16, 50],
+			["Orient D Edges", 50, 50],
+			["Place D Edges", 50, 66],
+			["Place D Corners", 66, 76],
+			["Orient D Corners", 76, 104]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "rUfLdB",
+		"moves": "uffUffjDFUrujfUrujddFUrujfDFjRddrfddFjuRddrUfddFjDRdrjkkBUrruurruurrUbjuBUrruurruurrUbjUBUrruurruurrUbjUlUffuuffuuffULjjjbulULBurrddbbdllffllffllffDbbddrrJurURLruRUlfdFDfdFDUdfDFdfDFukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 185],
+			["Solve U Edges", 0, 25],
+			["Solve U Corners", 25, 54],
+			["Solve Middle Edges", 56, 119],
+			["Orient D Edges", 119, 127],
+			["Place D Edges", 127, 154],
+			["Place D Corners", 154, 165],
+			["Orient D Corners", 165, 183]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "lrurdBrLFuLURBDbrdbRLDUdL",
+		"moves": "uuffUUffjdFUrujufUUrujDffjuufdFUUfDFjfDFRddrjdfDFjDfDFRddrjkkUBUrruurruurrUbjlUffuuffuuffULuBUrruurruurrUbjulUffuuffuuffULjlUffuuffuuffULuBUrruurruurrUbjJbulULBrrddbbdllffllffllffDbbddrrjjLurURlruRUfdFDfdFDuufdFDfdFDufdFDfdFDukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 228],
+			["Solve U Edges", 0, 26],
+			["Solve U Corners", 26, 59],
+			["Solve Middle Edges", 61, 153],
+			["Orient D Edges", 153, 160],
+			["Place D Edges", 160, 186],
+			["Place D Corners", 186, 198],
+			["Orient D Corners", 198, 226]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "bDBuRUFdRBUlfDrFuLdLRbDlB",
+		"moves": "dFUrujdffjdFUrujffjfDFjDfDFRddrjDRdrjddfDFjkkuBUrruurruurrUbjuuBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjuBUrruurruurrUbjjjbulULBjurrDRlffrLuudrrfdFDfdFDufdFDfdFDufdFDfdFDuukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 180],
+			["Solve U Edges", 0, 19],
+			["Solve U Corners", 19, 43],
+			["Solve Middle Edges", 45, 126],
+			["Orient D Edges", 126, 134],
+			["Place D Edges", 134, 150],
+			["Place D Corners", 150, 150],
+			["Orient D Corners", 150, 178]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "uFlBUBUbluBdRufDuBUfDruFl",
+		"moves": "YFyjFjFUrujfUrujddfDFRddrjddfDFjDDRdrjDDRdrjkkBUrruurruurrUbjuBUrruurruurrUbjuulUffuuffuuffULjlUffuuffuuffULjjbulULBjjrrDRlffrLuudrrdfDFdfDFUfdFDfdFDukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 152],
+			["Solve U Edges", 0, 16],
+			["Solve U Corners", 16, 44],
+			["Solve Middle Edges", 46, 109],
+			["Orient D Edges", 109, 116],
+			["Place D Edges", 116, 132],
+			["Place D Corners", 132, 132],
+			["Orient D Corners", 132, 150]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "fRBrUfLFBdUBFdFubFblFLrbf",
+		"moves": "ufUUrujddffjYFyjdffjURddrufddFjuRddrUfddFjdfDFjdRdrjkkjyyBUrruurruurrUbYYBUrruurruurrUbjuuBUrruurruurrUbjuuBUrruurruurrUbjbluLUBjjbulULBUrrDRlffrLuudrrjbluLUluLUluLUBdfDFdfDFuufdFDfdFDuukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 188],
+			["Solve U Edges", 0, 20],
+			["Solve U Corners", 20, 52],
+			["Solve Middle Edges", 54, 122],
+			["Orient D Edges", 122, 136],
+			["Place D Edges", 136, 151],
+			["Place D Corners", 151, 166],
+			["Orient D Corners", 166, 186]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "lFdUBDbDUdrBDURdldLuLBdrf",
+		"moves": "ffjufUUrujFjdFUrujufddFURddrjRdrjdfDFjdfDFjkkYBUrruurruurrUbyBUrruurruurrUbjyylUffuuffuuffULYYuBUrruurruurrUbjulUffuuffuuffULjulUffuuffuuffULjjbulULBjUrrDRlffrLuudrrJLurURlruRUdfDFdfDFufdFDfdFDudfDFdfDFufdFDfdFDukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 214],
+			["Solve U Edges", 0, 18],
+			["Solve U Corners", 18, 43],
+			["Solve Middle Edges", 45, 142],
+			["Orient D Edges", 142, 149],
+			["Place D Edges", 149, 165],
+			["Place D Corners", 165, 176],
+			["Orient D Corners", 176, 212]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "ULUfrUDLUDblblurdbRLUBDRu",
+		"moves": "jfjfUrujyyFYYjjdRdrjdfDFjfDFRddrjkkulUffuuffuuffULjyBUrruurruurrUbYBUrruurruurrUbjUlUffuuffuuffULjuulUffuuffuuffULjJbulULBuurrDuuRlffrLdrrbluLUluLUluLUBfdFDfdFDuufdFDfdFDufdFDfdFDukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 182],
+			["Solve U Edges", 0, 14],
+			["Solve U Corners", 14, 33],
+			["Solve Middle Edges", 35, 115],
+			["Orient D Edges", 115, 122],
+			["Place D Edges", 122, 138],
+			["Place D Corners", 138, 152],
+			["Orient D Corners", 152, 180]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "UbdfBLFBufuFbrDfBdRbDBRUr",
+		"moves": "FUrujfUrujyyFYYjjufddFURddrjDRdrjjdRdrjkklUffuuffuuffULuBUrruurruurrUbjuBUrruurruurrUbjlUffuuffuuffULuBUrruurruurrUbjlUffuuffuuffULuBUrruurruurrUbjjbluLUBfdFDfdFDufdFDfdFDuufdFDfdFDukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 184],
+			["Solve U Edges", 0, 17],
+			["Solve U Corners", 17, 39],
+			["Solve Middle Edges", 41, 147],
+			["Orient D Edges", 147, 154],
+			["Place D Edges", 154, 154],
+			["Place D Corners", 154, 154],
+			["Orient D Corners", 154, 182]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "DlDBrBdrubdblRbRDBfRBUDUr",
+		"moves": "uufurujDFUrujdffjYfyjRdrjDfDFRddrjDRdrjRdrjkkjlUffuuffuuffULuBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjlUffuuffuuffULuBUrruurruurrUbjjjbulULBubluLUluLUluLUBkk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 163],
+			["Solve U Edges", 0, 21],
+			["Solve U Corners", 21, 43],
+			["Solve Middle Edges", 45, 138],
+			["Orient D Edges", 138, 146],
+			["Place D Edges", 146, 147],
+			["Place D Corners", 147, 161],
+			["Orient D Corners", 161, 161]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "uLDLuFldburfRuLDLRLFBFRLU",
+		"moves": "ddffjddFUrujdffjyFYjdRdrjDfDFjdRdrjddfDFjkkuBUrruurruurrUbjBUrruurruurrUbjlUffuuffuuffULuBUrruurruurrUbjuulUffuuffuuffULjbulULBjjrrDRlffrLuudrrjurURLruRUldfDFdfDFuudfDFdfDFudfDFdfDFukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 184],
+			["Solve U Edges", 0, 20],
+			["Solve U Corners", 20, 41],
+			["Solve Middle Edges", 43, 121],
+			["Orient D Edges", 121, 127],
+			["Place D Edges", 127, 143],
+			["Place D Corners", 143, 154],
+			["Orient D Corners", 154, 182]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "BdUrbFdufUbDlfdRLubrBuRfl",
+		"moves": "UffuffjyfYjyFYjyFYjufddFURddrjuRddrUfddFjfDFRddrjRdrjkkuBUrruurruurrUbjlUffuuffuuffULuBUrruurruurrUbjuuBUrruurruurrUbjulUffuuffuuffULjjjbulULBjjurrDRlffrLuudrrfdFDfdFDufdFDfdFDudfDFdfDFudfDFdfDFukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 197],
+			["Solve U Edges", 0, 19],
+			["Solve U Corners", 19, 53],
+			["Solve Middle Edges", 55, 134],
+			["Orient D Edges", 134, 142],
+			["Place D Edges", 142, 159],
+			["Place D Corners", 159, 159],
+			["Orient D Corners", 159, 195]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "lDUdRlbufLdUbUBDRbDlrbUFD",
+		"moves": "DffjFjufUUrujfUrujDfDFRddrjdRdrjjDfDFRddrjkkYlUffuuffuuffULyuBUrruurruurrUbjuulUffuuffuuffULjBUrruurruurrUbjulUffuuffuuffULjbluLUBjjbulULBUrrDuuRlffrLdrrurURLruRUlfdFDfdFDUdfDFdfDFukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 183],
+			["Solve U Edges", 0, 18],
+			["Solve U Corners", 18, 42],
+			["Solve Middle Edges", 44, 124],
+			["Orient D Edges", 124, 138],
+			["Place D Edges", 138, 153],
+			["Place D Corners", 153, 163],
+			["Orient D Corners", 163, 181]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "ubrUrdLdulrldlflrULRUDflD",
+		"moves": "jdffjddffjddffjddfDFRddrjddfDFRddrjRdrjddfDFjkkuuBUrruurruurrUbjuBUrruurruurrUbjlUffuuffuuffULjlUffuuffuuffULuBUrruurruurrUbjbulULBuuJLurURlruRUfdFDfdFDuudfDFdfDFuukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 166],
+			["Solve U Edges", 0, 15],
+			["Solve U Corners", 15, 45],
+			["Solve Middle Edges", 47, 125],
+			["Orient D Edges", 125, 131],
+			["Place D Edges", 131, 133],
+			["Place D Corners", 133, 144],
+			["Orient D Corners", 144, 164]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "FLbrdBfbLDfBDRdRBurBULuBL",
+		"moves": "DFUrujyyFYYjFUrujddffjUfdFufDFjddfDFRddrjDfDFRddrjddfDFRddrjkkUlUffuuffuuffULjyylUffuuffuuffULYYuBUrruurruurrUbjuulUffuuffuuffULjuBUrruurruurrUbjbluLUBuuudfDFdfDFuufdFDfdFDukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 175],
+			["Solve U Edges", 0, 22],
+			["Solve U Corners", 22, 60],
+			["Solve Middle Edges", 62, 145],
+			["Orient D Edges", 145, 151],
+			["Place D Edges", 151, 153],
+			["Place D Corners", 153, 153],
+			["Orient D Corners", 153, 173]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "ufdlUfrlBDluDBUDbFLBurbul",
+		"moves": "UfrujfUrujddFUrujdffjRdrjjdfDFRddrjddfDFjkkulUffuuffuuffULjBUrruurruurrUbjUlUffuuffuuffULjUlUffuuffuuffULjJbulULBUrrDuuRlffrLdrrurURLruRUlkk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 140],
+			["Solve U Edges", 0, 21],
+			["Solve U Corners", 21, 41],
+			["Solve Middle Edges", 43, 106],
+			["Orient D Edges", 106, 113],
+			["Place D Edges", 113, 128],
+			["Place D Corners", 128, 138],
+			["Orient D Corners", 138, 138]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "FlFLfLFlBFRFUBdfuFBUfrLuB",
+		"moves": "yyfYYjuufurujddFUrujfjDfDFjfDFjDfDFRddrjDDRdrjkkyyBUrruurruurrUbYYBUrruurruurrUbjlUffuuffuuffULjulUffuuffuuffULjjbluLUBjjbulULBrrDRlffrLuudrrRbbfrFRfrFRfrFRbbrfdFDfdFDudfDFdfDFudfDFdfDFufdFDfdFDukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 197],
+			["Solve U Edges", 0, 22],
+			["Solve U Corners", 22, 46],
+			["Solve Middle Edges", 48, 113],
+			["Orient D Edges", 113, 127],
+			["Place D Edges", 127, 141],
+			["Place D Corners", 141, 159],
+			["Orient D Corners", 159, 195]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "RUfrudlDLbRlDflrFUDbUFuRU",
+		"moves": "YFyjDffjffjFUrujuRddrUfddFjuufddFUURddrjfddFRddrjjkkyBUrruurruurrUbYBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjBUrruurruurrUbjuulUffuuffuuffULjbulULBrrddbbdllffllffllffDbbddrrjbluLUluLUluLUBudfDFdfDFuufdFDfdFDukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 216],
+			["Solve U Edges", 0, 16],
+			["Solve U Corners", 16, 50],
+			["Solve Middle Edges", 52, 147],
+			["Orient D Edges", 147, 153],
+			["Place D Edges", 153, 179],
+			["Place D Corners", 179, 194],
+			["Orient D Corners", 194, 214]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "FuLrdlublDLDBurfdLdrdBFbR",
+		"moves": "dffjuffUffjFUrujFUrujDDRdrjuRddrUfddFjDDRdrjddfDFjkkBUrruurruurrUbjlUffuuffuuffULjuBUrruurruurrUbjUBUrruurruurrUbjUrrDuuRlffrLdrrLurURlruRUdfDFdfDFudfDFdfDFuudfDFdfDFukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 169],
+			["Solve U Edges", 0, 21],
+			["Solve U Corners", 21, 50],
+			["Solve Middle Edges", 52, 114],
+			["Orient D Edges", 114, 114],
+			["Place D Edges", 114, 129],
+			["Place D Corners", 129, 139],
+			["Orient D Corners", 139, 167]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "BrUDRBLDbfLdurFDLrUBUBURL",
+		"moves": "ufUUrujufUUrujuffUffjFUrujddfDFRddrjufddFURddrjdfDFRddrjdfDFRddrjkklUffuuffuuffULjjlUffuuffuuffULuBUrruurruurrUbjuuBUrruurruurrUbjjbluLUBurrDuuRlffrLdrrurURLruRUlfdFDfdFDufdFDfdFDufdFDfdFDuukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 192],
+			["Solve U Edges", 0, 26],
+			["Solve U Corners", 26, 65],
+			["Solve Middle Edges", 67, 130],
+			["Orient D Edges", 130, 137],
+			["Place D Edges", 137, 152],
+			["Place D Corners", 152, 162],
+			["Orient D Corners", 162, 190]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "bdBUbULDbrLBDubDFUrdBFldf",
+		"moves": "UfrujYfyjufUUrujyFYjdfDFjdfDFRddrjfDFjDRdrjkkjlUffuuffuuffULuBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjuuBUrruurruurrUbjrrddbbdllffllffllffDbbddrrjurURLruRUldfDFdfDFufdFDfdFDUkk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 182],
+			["Solve U Edges", 0, 20],
+			["Solve U Corners", 20, 43],
+			["Solve Middle Edges", 45, 125],
+			["Orient D Edges", 125, 125],
+			["Place D Edges", 125, 151],
+			["Place D Corners", 151, 162],
+			["Orient D Corners", 162, 180]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "DlBFrudRBdUfudLrFUFRBUfrF",
+		"moves": "UfrujuffUffjDffjdffjfDFRddrjRdrjddfDFRddrjjkkUlUffuuffuuffULjyBUrruurruurrUbYBUrruurruurrUbjuuBUrruurruurrUbjjjbulULBjUrrDRlffrLuudrrjLurURlruRUdfDFdfDFuudfDFdfDFudfDFdfDFukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 174],
+			["Solve U Edges", 0, 20],
+			["Solve U Corners", 20, 43],
+			["Solve Middle Edges", 45, 110],
+			["Orient D Edges", 110, 117],
+			["Place D Edges", 117, 133],
+			["Place D Corners", 133, 144],
+			["Orient D Corners", 144, 172]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "FBrDrudfrubFRFruLuLRluldb",
+		"moves": "yfYjyfYjyfYjfUrujuRddrUfddFjfDFRddrjufdFUfDFjdfDFRddrjkklUffuuffuuffULjuuBUrruurruurrUbjlUffuuffuuffULjlUffuuffuuffULjbulULBUbluLUluLUluLUBfdFDfdFDudfDFdfDFudfDFdfDFufdFDfdFDukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 177],
+			["Solve U Edges", 0, 17],
+			["Solve U Corners", 17, 54],
+			["Solve Middle Edges", 56, 118],
+			["Orient D Edges", 118, 124],
+			["Place D Edges", 124, 125],
+			["Place D Corners", 125, 139],
+			["Orient D Corners", 139, 175]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "UdfRFBfdufruLBubDFRluBUbr",
+		"moves": "UffuffjfjDFUrujyFYjDfDFRddrjdRdrjDfDFjDRdrjkklUffuuffuuffULuBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjyBUrruurruurrUbYBUrruurruurrUbjlUffuuffuuffULjbulULBuujLurURlruRUdfDFdfDFufdFDfdFDufdFDfdFDudfDFdfDFukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 210],
+			["Solve U Edges", 0, 19],
+			["Solve U Corners", 19, 43],
+			["Solve Middle Edges", 45, 153],
+			["Orient D Edges", 153, 159],
+			["Place D Edges", 159, 161],
+			["Place D Corners", 161, 172],
+			["Orient D Corners", 172, 208]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "ulBDudfDLBrudFURLBRLFdUDF",
+		"moves": "FUrujuffUffjyfYjDffjuuRddrUUfddFjdfDFRddrjfddFRddrjddfDFjkkyylUffuuffuuffULYYuBUrruurruurrUbjjUlUffuuffuuffULjlUffuuffuuffULjjbulULBjjuurrDRlffrLuudrrJLurURlruRUdfDFdfDFuudfDFdfDFudfDFdfDFukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 191],
+			["Solve U Edges", 0, 20],
+			["Solve U Corners", 20, 57],
+			["Solve Middle Edges", 59, 125],
+			["Orient D Edges", 125, 132],
+			["Place D Edges", 132, 150],
+			["Place D Corners", 150, 161],
+			["Orient D Corners", 161, 189]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "dRUdUBludLdLUrUDfLbDflbuf",
+		"moves": "fUrujufUUrujFjfjfDFjdRdrjddfDFjDfDFjkklUffuuffuuffULjuuBUrruurruurrUbjUBUrruurruurrUbjjjbulULBjjrrDRlffrLuudrrRbbfrFRfrFRfrFRbbrudfDFdfDFudfDFdfDFudfDFdfDFukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 158],
+			["Solve U Edges", 0, 16],
+			["Solve U Corners", 16, 36],
+			["Solve Middle Edges", 38, 87],
+			["Orient D Edges", 87, 94],
+			["Place D Edges", 94, 110],
+			["Place D Corners", 110, 128],
+			["Orient D Corners", 128, 156]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "FLUFDbdfDuRdLRURFBDudBlrf",
+		"moves": "yFYjyFYjyfYjdFUrujDfDFjjDfDFjdfDFRddrjkkyylUffuuffuuffULYYuBUrruurruurrUbjyyBUrruurruurrUbYYBUrruurruurrUbjUlUffuuffuuffULjjjjbulULBUrrddbbdllffllffllffDbbddrrjLurURlruRUkk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 172],
+			["Solve U Edges", 0, 18],
+			["Solve U Corners", 18, 38],
+			["Solve Middle Edges", 40, 124],
+			["Orient D Edges", 124, 132],
+			["Place D Edges", 132, 159],
+			["Place D Corners", 159, 170],
+			["Orient D Corners", 170, 170]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "flblBRFLUbfbLFDFDBfldLRDF",
+		"moves": "yyfYYjyFYjdFUrujYFyjuuRddrUUfddFjdRdrjDDRdrjjkkulUffuuffuuffULjuuBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjulUffuuffuuffULjjjbulULBurrDuuRlffrLdrrjLurURlruRUdfDFdfDFuudfDFdfDFudfDFdfDFukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 192],
+			["Solve U Edges", 0, 20],
+			["Solve U Corners", 20, 45],
+			["Solve Middle Edges", 47, 128],
+			["Orient D Edges", 128, 136],
+			["Place D Edges", 136, 151],
+			["Place D Corners", 151, 162],
+			["Orient D Corners", 162, 190]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "LUDrDRuLFdLDlfrdFRfblUfrF",
+		"moves": "yFYjuffUffjdffjFUrujfddFRddrjuuRddrUUfddFJkkBUrruurruurrUbjuuBUrruurruurrUbjUBUrruurruurrUbjUBUrruurruurrUbjbulULBjjurrDRlffrLuudrrjLurURlruRUdfDFdfDFuudfDFdfDFudfDFdfDFukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 172],
+			["Solve U Edges", 0, 20],
+			["Solve U Corners", 20, 42],
+			["Solve Middle Edges", 44, 108],
+			["Orient D Edges", 108, 114],
+			["Place D Edges", 114, 131],
+			["Place D Corners", 131, 142],
+			["Orient D Corners", 142, 170]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "DlbfuRfLFLDUbFDlFduRlFdFl",
+		"moves": "DffjddffjYFyjddffjRddrfddFjjddfDFRddrjdfDFjkkjyyBUrruurruurrUbYYBUrruurruurrUbjUBUrruurruurrUbjUlUffuuffuuffULjjbulULBrrDuuRlffrLdrrjLurURlruRUfdFDfdFDuufdFDfdFDufdFDfdFDukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 173],
+			["Solve U Edges", 0, 18],
+			["Solve U Corners", 18, 43],
+			["Solve Middle Edges", 45, 111],
+			["Orient D Edges", 111, 118],
+			["Place D Edges", 118, 132],
+			["Place D Corners", 132, 143],
+			["Orient D Corners", 143, 171]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "FLUfRbubLfBuFLUDubdbrlfdR",
+		"moves": "yyfYYjufUUrujdffjYFyjDfDFRddrjfDFjddfDFjjkkulUffuuffuuffULjyBUrruurruurrUbYBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjBUrruurruurrUbjbluLUBjjbulULBrrDRlffrLuudrrkk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 167],
+			["Solve U Edges", 0, 21],
+			["Solve U Corners", 21, 41],
+			["Solve Middle Edges", 43, 137],
+			["Orient D Edges", 137, 151],
+			["Place D Edges", 151, 165],
+			["Place D Corners", 165, 165],
+			["Orient D Corners", 165, 165]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "bFdLUDbufrUdlBufubrFbFlfD",
+		"moves": "DFUrujuffUffjfUrujDffjddfDFRddrjddfDFRddrjufddFURddrjfddFRddrjkkUlUffuuffuuffULjBUrruurruurrUbjUlUffuuffuuffULjuBUrruurruurrUbjjbluLUBrrddbbdllffllffllffDbbddrrjjLurURlruRUdfDFdfDFufdFDfdFDufdFDfdFDudfDFdfDFukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 210],
+			["Solve U Edges", 0, 22],
+			["Solve U Corners", 22, 62],
+			["Solve Middle Edges", 64, 127],
+			["Orient D Edges", 127, 134],
+			["Place D Edges", 134, 160],
+			["Place D Corners", 160, 172],
+			["Orient D Corners", 172, 208]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "rDurFLuFUDUlDrfuBUFbfbFBf",
+		"moves": "uuffUUffjddffjDffjddFUrujufdFUfDFjDfDFRddrjfDFjddfDFRddrjkkyBUrruurruurrUbYBUrruurruurrUbjUBUrruurruurrUbjjUlUffuuffuuffULjbluLUBjjbulULBuurrDuuRlffrLdrrJurURLruRUldfDFdfDFufdFDfdFDudfDFdfDFufdFDfdFDukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 202],
+			["Solve U Edges", 0, 25],
+			["Solve U Corners", 25, 57],
+			["Solve Middle Edges", 59, 123],
+			["Orient D Edges", 123, 137],
+			["Place D Edges", 137, 153],
+			["Place D Corners", 153, 164],
+			["Orient D Corners", 164, 200]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "UFRdBRULBfBRFBflDlbrurfBR",
+		"moves": "FjyyFYYjddFUrujddFUrujddfDFjjfddFRddrjfddFRddrjkkyylUffuuffuuffULYYuBUrruurruurrUbjlUffuuffuuffULjylUffuuffuuffULYuBUrruurruurrUbjBUrruurruurrUbjjbluLUBrrDuuRlffrLdrrjLurURlruRUdfDFdfDFufdFDfdFDufdFDfdFDudfDFdfDFukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 215],
+			["Solve U Edges", 0, 22],
+			["Solve U Corners", 22, 47],
+			["Solve Middle Edges", 49, 145],
+			["Orient D Edges", 145, 152],
+			["Place D Edges", 152, 166],
+			["Place D Corners", 166, 177],
+			["Orient D Corners", 177, 213]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "RDruFrlRDurUFDRlDruDRLRlR",
+		"moves": "yyFYYjyyfYYjfjdFUrujfddFRddrjuufddFUURddrjfDFRddrjjkkuuBUrruurruurrUbjuuBUrruurruurrUbjBUrruurruurrUbjjbluLUBRbbfrFRfrFRfrFRbbrudfDFdfDFuufdFDfdFDukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 149],
+			["Solve U Edges", 0, 20],
+			["Solve U Corners", 20, 51],
+			["Solve Middle Edges", 53, 103],
+			["Orient D Edges", 103, 109],
+			["Place D Edges", 109, 109],
+			["Place D Corners", 109, 127],
+			["Orient D Corners", 127, 147]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "bluRlrdRUduRUFBuRLudlBFur",
+		"moves": "FjfjyFYjddffjddfDFRddrjuufddFUURddrjjdRdrjkkUlUffuuffuuffULjulUffuuffuuffULjBUrruurruurrUbjuuBUrruurruurrUbjbluLUBjjbulULBUrrDuuRlffrLdrrJurURLruRUldfDFdfDFudfDFdfDFuudfDFdfDFukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 178],
+			["Solve U Edges", 0, 13],
+			["Solve U Corners", 13, 42],
+			["Solve Middle Edges", 44, 108],
+			["Orient D Edges", 108, 122],
+			["Place D Edges", 122, 137],
+			["Place D Corners", 137, 148],
+			["Orient D Corners", 148, 176]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "DuRurLrfDULRbdBFludFRLfld",
+		"moves": "yyFYYjYFyjdffjDffjuufddFUURddrjfDFRddrjDDRdrjdfDFRddrjkkUBUrruurruurrUbjUBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjuuBUrruurruurrUbjjbluLUBjjrrDRlffrLuudrrurURLruRUldfDFdfDFufdFDfdFDUkk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 190],
+			["Solve U Edges", 0, 18],
+			["Solve U Corners", 18, 54],
+			["Solve Middle Edges", 56, 137],
+			["Orient D Edges", 137, 144],
+			["Place D Edges", 144, 160],
+			["Place D Corners", 160, 170],
+			["Orient D Corners", 170, 188]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "brURbdLbLDrlRDRubuFRlfUrB",
+		"moves": "DffjjYfyjjdfDFjfDFjRddrfddFjDRdrjkkYlUffuuffuuffULyuBUrruurruurrUbjjyBUrruurruurrUbYBUrruurruurrUbjUBUrruurruurrUbjbluLUBjuurrDRlffrLuudrrLurURlruRUudfDFdfDFuufdFDfdFDukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 170],
+			["Solve U Edges", 0, 10],
+			["Solve U Corners", 10, 33],
+			["Solve Middle Edges", 35, 115],
+			["Orient D Edges", 115, 121],
+			["Place D Edges", 121, 138],
+			["Place D Corners", 138, 148],
+			["Orient D Corners", 148, 168]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "dUlbrubdbDFrFbRBUdRuLdfdB",
+		"moves": "fjfUrujyyfYYjyyfYYjufdFUfDFjfDFjfddFRddrjdfDFjkkBUrruurruurrUbjyBUrruurruurrUbYBUrruurruurrUbjUBUrruurruurrUbjuuBUrruurruurrUbjbluLUBjjbulULBjrrDRlffrLuudrrjbluLUluLUluLUBfdFDfdFDufdFDfdFDuufdFDfdFDukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 201],
+			["Solve U Edges", 0, 19],
+			["Solve U Corners", 19, 46],
+			["Solve Middle Edges", 48, 127],
+			["Orient D Edges", 127, 141],
+			["Place D Edges", 141, 156],
+			["Place D Corners", 156, 171],
+			["Orient D Corners", 171, 199]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "RlUDuBDBUBUFdlFrFLduDfDbf",
+		"moves": "uffUffjdFUrujDffjjDfDFRddrjfDFRddrjfDFjdRdrjkkBUrruurruurrUbjUBUrruurruurrUbjBUrruurruurrUbjjbluLUBrrDuuRlffrLdrrLurURlruRUdfDFdfDFuudfDFdfDFudfDFdfDFukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 153],
+			["Solve U Edges", 0, 18],
+			["Solve U Corners", 18, 44],
+			["Solve Middle Edges", 46, 93],
+			["Orient D Edges", 93, 99],
+			["Place D Edges", 99, 113],
+			["Place D Corners", 113, 123],
+			["Orient D Corners", 123, 151]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "DRLuLfULRUflFDflDLRBdldlu",
+		"moves": "ufUUrujufUUrujfUrujfUrujURddrufddFjufdFUfDFjfDFjDfDFjkkUBUrruurruurrUbjuulUffuuffuuffULjulUffuuffuuffULjuuBUrruurruurrUbjjjbulULBjuurrDRlffrLuudrrJLurURlruRUfdFDfdFDUdfDFdfDFukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 177],
+			["Solve U Edges", 0, 24],
+			["Solve U Corners", 24, 53],
+			["Solve Middle Edges", 55, 121],
+			["Orient D Edges", 121, 129],
+			["Place D Edges", 129, 146],
+			["Place D Corners", 146, 157],
+			["Orient D Corners", 157, 175]
+		],
+		"final": "I"
+	},
+	{
+		"scramble": "FlRLFuDfBFlRLBLUdfdlfBlBf",
+		"moves": "FUrujYfyjdffjFUrujddfDFRddrjdfDFjjddfDFRddrjkkYBUrruurruurrUbyBUrruurruurrUbjuuBUrruurruurrUbjjBUrruurruurrUbjjjbulULBjjurrDRlffrLuudrrJLurURlruRUdfDFdfDFudfDFdfDFuudfDFdfDFukk",
+		"blocks": [
+			["Move History", 0, null],
+			["David Singmaster Solution", 0, 176],
+			["Solve U Edges", 0, 18],
+			["Solve U Corners", 18, 44],
+			["Solve Middle Edges", 46, 110],
+			["Orient D Edges", 110, 118],
+			["Place D Edges", 118, 135],
+			["Place D Corners", 135, 146],
+			["Orient D Corners", 146, 174]
+		],
+		"final": "I"
+	}
+]
