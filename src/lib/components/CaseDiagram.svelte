@@ -164,18 +164,17 @@
 
 	{#if kind === 'middle-left' || kind === 'middle-right'}
 		{@const right = kind === 'middle-right'}
-		<!-- The front face, with the top face's front row peeking above it. -->
-		<rect x={G.x - 3} y={G.y - 13} width={G.s * 3 + 6} height={G.s * 3 + 16} rx="6" fill={BODY} />
-		{#each [0, 1, 2] as c (c)}
-			<rect
-				x={G.x + c * G.s + 1}
-				y={G.y - 10}
-				width={G.s - 2}
-				height="7"
-				rx="2"
-				fill={c === 1 ? (right ? ORANGE : RED) : GRAY}
-			/>
-		{/each}
+		<!-- The front face, like the top face in the swap picture: the color
+		     of the top edge's top sticker is a tab above it. -->
+		<rect x={G.x - 3} y={G.y - 3} width={G.s * 3 + 6} height={G.s * 3 + 6} rx="6" fill={BODY} />
+		<rect
+			x={G.x + G.s + 2}
+			y={G.y - 12}
+			width={G.s - 4}
+			height="6"
+			rx="2"
+			fill={right ? ORANGE : RED}
+		/>
 		<!-- The edge on top has blue (the front color) on the front; the slot
 		     it goes to is outlined. -->
 		{#each cells(G.x, G.y, G.s, (r, c) => (c === 1 && r < 2 ? BLUE : GRAY)) as cell, i (i)}
