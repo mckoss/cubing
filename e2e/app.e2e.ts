@@ -24,7 +24,7 @@ test('starts solved', async ({ page }) => {
 test('move buttons turn the cube and show the permutation', async ({ page }) => {
 	await open(page);
 	await page.getByTestId('move-R').click();
-	await expect(permutation(page)).toHaveText('(RFU RUB RBD RDF) (RU RB RD RF)');
+	await expect(permutation(page)).toHaveText('(rfu rub rbd rdf) (ru rb rd rf)');
 	await expect(history(page)).toContainText('R');
 	await page.getByTestId('move-R-prime').click();
 	await expect(permutation(page)).toHaveText('Solved');
@@ -46,7 +46,7 @@ test('keyboard moves, with Shift for counterclockwise', async ({ page }) => {
 test('slice moves and whole cube turns', async ({ page }) => {
 	await open(page);
 	await page.keyboard.press('m');
-	await expect(permutation(page)).toContainText('(U F D B)');
+	await expect(permutation(page)).toContainText('(u f d b)');
 	await page.keyboard.press('x');
 	await page.keyboard.press('Shift+M');
 	await page.keyboard.press('Shift+X');
