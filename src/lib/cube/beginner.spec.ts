@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { Permutation } from './permutation';
-import { applyMoves, from2003Notation, parseMoves, permutationOf, type Move } from './moves';
+import {
+	applyMoves,
+	from2003Notation,
+	invertMoves,
+	parseMoves,
+	permutationOf,
+	type Move
+} from './moves';
 import { MoveList } from './move-list';
 import { Beginner, SEQUENCES } from './beginner';
 
@@ -102,5 +109,55 @@ describe('top cross pictures', () => {
 		// goes back to a dot.
 		expect([...after.get('RB')!]).toEqual(['RB']);
 		expect([...after.get('FB')!]).toEqual(['']);
+	});
+});
+
+describe('case pictures', () => {
+	// The arrangement a sequence fixes is the one its inverse makes.
+	const fixes = (moves: string) => permutationOf(invertMoves(parseMoves(moves)));
+
+	it('twist the front right corner the way its yellow sticker faces', () => {
+		// (R' D' R D)x2 when yellow (the U sticker) faces right...
+		expect(fixes(SEQUENCES.twistCorner).apply('URF')).toBe('RFU');
+		// ...and (D' R' D R)x2 when it faces front.
+		expect(fixes(SEQUENCES.twistCornerBack).apply('URF')).toBe('FUR');
+	});
+
+	it('insert the top front edge down to the left or right', () => {
+		// The front sticker stays in front; the top sticker goes to the side.
+		expect(permutationOf(SEQUENCES.insertLeft).apply('FU')).toBe('FL');
+		expect(permutationOf(SEQUENCES.insertRight).apply('FU')).toBe('FR');
+	});
+
+	it('swap the left and front edges, and cycle corners around a fixed one', () => {
+		const swap = permutationOf(SEQUENCES.swapEdges);
+		expect([swap.apply('UL'), swap.apply('UF'), swap.apply('UB'), swap.apply('UR')]).toEqual([
+			'UF',
+			'UL',
+			'UB',
+			'UR'
+		]);
+		// Where a corner goes, ignoring its twist (the next step fixes that).
+		const place = (p: Permutation, corner: string) => {
+			let at = p.apply(corner);
+			while (!at.startsWith('U')) at = at.substring(1) + at.charAt(0);
+			return at;
+		};
+		const corners = permutationOf(SEQUENCES.cycleCorners);
+		// Back right -> back left -> front left -> back right; front right stays.
+		expect(['UBR', 'ULB', 'UFL', 'URF'].map((c) => place(corners, c))).toEqual([
+			'ULB',
+			'UFL',
+			'UBR',
+			'URF'
+		]);
+		const back = permutationOf(SEQUENCES.cycleCornersBack);
+		// Back left -> back right -> front right -> back left; front left stays.
+		expect(['ULB', 'UBR', 'URF', 'UFL'].map((c) => place(back, c))).toEqual([
+			'UBR',
+			'URF',
+			'ULB',
+			'UFL'
+		]);
 	});
 });

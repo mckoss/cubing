@@ -106,6 +106,17 @@ test('the top cross is shown in pictures', async ({ page }) => {
 	expect(new Set(tops).size).toBe(1);
 });
 
+test('each sequence shows the case it solves', async ({ page }) => {
+	await open(page);
+	const diagrams = page.locator('svg.case');
+	await expect(diagrams).toHaveCount(7);
+	for (const label of await diagrams.evaluateAll((svgs) =>
+		svgs.map((svg) => svg.getAttribute('aria-label'))
+	)) {
+		expect(label).toBeTruthy();
+	}
+});
+
 test('step through a solution by move and by stage', async ({ page }) => {
 	test.setTimeout(SOLVE_TIMEOUT);
 	await open(page);
