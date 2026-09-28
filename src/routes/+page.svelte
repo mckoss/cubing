@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { Permutation } from '$lib/cube/permutation';
 	import { applyMoves, parseMoves, permutationOf } from '$lib/cube/moves';
-	import type { Face, Move, MoveName, Notation } from '$lib/cube/types';
+	import type { Cube, Face, Move, MoveName, Notation } from '$lib/cube/types';
 	import { MoveList } from '$lib/cube/move-list';
 	import { CATALOG, type CatalogEntry } from '$lib/cube/catalog';
 	import { SOLVERS } from '$lib/cube/solvers';
@@ -17,7 +17,7 @@
 	let view: CubeView | undefined = $state();
 
 	// The arrangement shown (updated as each move finishes turning).
-	let perm = $state(new Permutation());
+	let perm: Cube = $state(new Permutation());
 	// The move (a quarter turn) now turning, if any.
 	let turning: Move | undefined = $state();
 	// Bumped whenever the move list changes, to update the page.
@@ -102,7 +102,7 @@
 	}
 
 	// The arrangement once all queued moves are made.
-	function finalPerm(): Permutation {
+	function finalPerm(): Cube {
 		return applyMoves(perm, [...(turning ? [turning] : []), ...moveList.pending]);
 	}
 
