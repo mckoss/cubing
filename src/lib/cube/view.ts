@@ -8,43 +8,53 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {
-	Face,
+	ModelFace,
 	MOVES,
 	buildCube,
 	rotateCubies,
 	selectCubies,
 	type Axis,
-	type Cubie,
-	type Move as CubieMove
+	type CubieModel,
+	type ModelTurn
 } from './cubies';
-import { isRotation, type Move } from './moves';
+import type { Move } from './types';
+
+// Every face of the model.
+const MODEL_FACES: readonly ModelFace[] = [
+	ModelFace.UP,
+	ModelFace.FRONT,
+	ModelFace.RIGHT,
+	ModelFace.BACK,
+	ModelFace.LEFT,
+	ModelFace.DOWN
+];
 
 // The 2003 colors.
-const FACE_COLORS: Record<Face, string> = {
-	[Face.UP]: 'rgb(238, 209, 0)',
-	[Face.FRONT]: 'rgb(53, 110, 239)',
-	[Face.RIGHT]: 'rgb(255, 71, 19)',
-	[Face.BACK]: 'rgb(57, 166, 59)',
-	[Face.LEFT]: 'rgb(167, 31, 31)',
-	[Face.DOWN]: 'rgb(255, 243, 253)'
+const FACE_COLORS: Record<ModelFace, string> = {
+	[ModelFace.UP]: 'rgb(238, 209, 0)',
+	[ModelFace.FRONT]: 'rgb(53, 110, 239)',
+	[ModelFace.RIGHT]: 'rgb(255, 71, 19)',
+	[ModelFace.BACK]: 'rgb(57, 166, 59)',
+	[ModelFace.LEFT]: 'rgb(167, 31, 31)',
+	[ModelFace.DOWN]: 'rgb(255, 243, 253)'
 };
 
-const FACE_NAMES: Record<Face, string> = {
-	[Face.UP]: 'Up',
-	[Face.FRONT]: 'Front',
-	[Face.RIGHT]: 'Right',
-	[Face.BACK]: 'Back',
-	[Face.LEFT]: 'Left',
-	[Face.DOWN]: 'Down'
+const FACE_NAMES: Record<ModelFace, string> = {
+	[ModelFace.UP]: 'Up',
+	[ModelFace.FRONT]: 'Front',
+	[ModelFace.RIGHT]: 'Right',
+	[ModelFace.BACK]: 'Back',
+	[ModelFace.LEFT]: 'Left',
+	[ModelFace.DOWN]: 'Down'
 };
 
-const FACE_NORMALS: Record<Face, THREE.Vector3> = {
-	[Face.UP]: new THREE.Vector3(0, 1, 0),
-	[Face.FRONT]: new THREE.Vector3(0, 0, 1),
-	[Face.RIGHT]: new THREE.Vector3(1, 0, 0),
-	[Face.BACK]: new THREE.Vector3(0, 0, -1),
-	[Face.LEFT]: new THREE.Vector3(-1, 0, 0),
-	[Face.DOWN]: new THREE.Vector3(0, -1, 0)
+const FACE_NORMALS: Record<ModelFace, THREE.Vector3> = {
+	[ModelFace.UP]: new THREE.Vector3(0, 1, 0),
+	[ModelFace.FRONT]: new THREE.Vector3(0, 0, 1),
+	[ModelFace.RIGHT]: new THREE.Vector3(1, 0, 0),
+	[ModelFace.BACK]: new THREE.Vector3(0, 0, -1),
+	[ModelFace.LEFT]: new THREE.Vector3(-1, 0, 0),
+	[ModelFace.DOWN]: new THREE.Vector3(0, -1, 0)
 };
 
 const AXES: Record<Axis, THREE.Vector3> = {
@@ -59,13 +69,14 @@ const OFFSET = 1.04;
 // Turning speeds, in degrees per second (as in 2003).
 export const SPEEDS = { Slow: 180, Fast: 360, Fastest: 10000 } as const;
 export type Speed = keyof typeof SPEEDS;
+export const SPEED_NAMES: readonly Speed[] = ['Slow', 'Fast', 'Fastest'];
 
 interface Turning {
 	axis: THREE.Vector3;
 	remaining: number;
 	direction: number;
-	cubies: Cubie<THREE.Group>[];
-	move: CubieMove;
+	cubies: CubieModel<THREE.Group>[];
+	move: ModelTurn;
 	done: () => void;
 }
 
@@ -81,7 +92,7 @@ export class CubeView {
 	private cube = new THREE.Group();
 	private turningGroup = new THREE.Group();
 	private labels = new THREE.Group();
-	private cubies: Cubie<THREE.Group>[] = [];
+	private cubies: CubieModel<THREE.Group>[] = [];
 	private turning: Turning | undefined;
 	private flipRemaining = 0;
 	private lastTime: number | undefined;
@@ -142,8 +153,8 @@ export class CubeView {
 		if (this.turning !== undefined) {
 			throw new Error('Already turning');
 		}
-		const base = MOVES[isRotation(move.name) ? move.name.toUpperCase() : move.name];
-		const cubieMove: CubieMove = {
+		const base = MOVES[move.name];
+		const cubieMove: ModelTurn = {
 			...base,
 			turns: base.turns * (move.turns === 3 ? -1 : move.turns)
 		};
@@ -167,14 +178,14 @@ export class CubeView {
 	}
 
 	// Turn the view of the cube upside down (not a move).
-	flip() {
+	flip(): void {
 		if (this.flipRemaining === 0) {
 			this.flipRemaining = Math.PI;
 		}
 	}
 
 	// Put the cube back in its solved state.
-	reset() {
+	reset(): void {
 		if (this.turning !== undefined) {
 			this.finishTurn();
 		}
@@ -188,7 +199,7 @@ export class CubeView {
 		this.labels.visible = show;
 	}
 
-	dispose() {
+	dispose(): void {
 		cancelAnimationFrame(this.frame);
 		this.resizeObserver.disconnect();
 		this.controls.dispose();
@@ -198,7 +209,7 @@ export class CubeView {
 		this.renderer.dispose();
 	}
 
-	private render = (time: number) => {
+	private render = (time: number): void => {
 		this.frame = requestAnimationFrame(this.render);
 		const elapsed = this.lastTime === undefined ? 0 : (time - this.lastTime) / 1000;
 		this.lastTime = time;
@@ -221,8 +232,11 @@ export class CubeView {
 		this.renderer.render(this.scene, this.camera);
 	};
 
-	private finishTurn() {
-		const { cubies, move, done } = this.turning!;
+	private finishTurn(): void {
+		if (this.turning === undefined) {
+			return;
+		}
+		const { cubies, move, done } = this.turning;
 		rotateCubies(cubies, move.axis, move.turns, this.size);
 		for (const cubie of cubies) {
 			this.cube.attach(cubie.cubie);
@@ -235,7 +249,7 @@ export class CubeView {
 
 	// Remove any rounding errors: put the cubie exactly in its place, turned
 	// by an exact multiple of 90 degrees.
-	private snap(cubie: Cubie<THREE.Group>) {
+	private snap(cubie: CubieModel<THREE.Group>): void {
 		const group = cubie.cubie;
 		group.position.copy(this.positionOf(cubie.row, cubie.col, cubie.depth));
 		const m = new THREE.Matrix4().makeRotationFromQuaternion(group.quaternion);
@@ -253,15 +267,15 @@ export class CubeView {
 		);
 	}
 
-	private buildCubies() {
+	private buildCubies(): void {
 		const body = new RoundedBoxGeometry(1, 1, 1, 3, 0.12);
 		const plastic = new THREE.MeshStandardMaterial({ color: 0x111114, roughness: 0.5 });
 		const sticker = new RoundedBoxGeometry(0.86, 0.86, 0.04, 2, 0.02);
-		const materials = new Map<Face, THREE.Material>();
-		for (const [face, color] of Object.entries(FACE_COLORS)) {
+		const materials = new Map<ModelFace, THREE.Material>();
+		for (const face of MODEL_FACES) {
 			materials.set(
-				Number(face) as Face,
-				new THREE.MeshStandardMaterial({ color, roughness: 0.35 })
+				face,
+				new THREE.MeshStandardMaterial({ color: FACE_COLORS[face], roughness: 0.35 })
 			);
 		}
 		this.disposables.push(body, plastic, sticker, ...materials.values());
@@ -284,13 +298,16 @@ export class CubeView {
 	}
 
 	// Face names floating by each face, as in 2003.
-	private buildLabels() {
-		for (const [face, name] of Object.entries(FACE_NAMES)) {
-			const f = Number(face) as Face;
+	private buildLabels(): void {
+		for (const f of MODEL_FACES) {
+			const name = FACE_NAMES[f];
 			const canvas = document.createElement('canvas');
 			canvas.width = 256;
 			canvas.height = 96;
-			const ctx = canvas.getContext('2d')!;
+			const ctx = canvas.getContext('2d');
+			if (ctx === null) {
+				throw new Error('No 2D canvas context');
+			}
 			ctx.font = '600 56px system-ui, sans-serif';
 			ctx.textAlign = 'center';
 			ctx.textBaseline = 'middle';
@@ -312,7 +329,7 @@ export class CubeView {
 		}
 	}
 
-	private resize() {
+	private resize(): void {
 		const { clientWidth: width, clientHeight: height } = this.canvas;
 		if (width === 0 || height === 0) {
 			return;

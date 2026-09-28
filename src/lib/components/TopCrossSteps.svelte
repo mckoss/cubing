@@ -4,15 +4,17 @@
 	// and the line are drawn the way to hold them. (Checked with the
 	// simulator: from an L at the back left the sequence makes a line from
 	// left to right, and from that line, the cross.)
+	import type { Face, Notation } from '$lib/cube/types';
 	import TopFace from './TopFace.svelte';
 
-	let { sequence }: { sequence: string } = $props();
+	let { sequence }: { sequence: Notation } = $props();
 
-	const PATTERNS = [
-		{ up: '', name: 'Dot' },
-		{ up: 'BL', name: 'L' },
-		{ up: 'RL', name: 'Line' },
-		{ up: 'FRBL', name: 'Cross' }
+	// The top edges showing yellow in each pattern.
+	const PATTERNS: readonly { up: readonly Face[]; name: string }[] = [
+		{ up: [], name: 'Dot' },
+		{ up: ['B', 'L'], name: 'L' },
+		{ up: ['R', 'L'], name: 'Line' },
+		{ up: ['F', 'R', 'B', 'L'], name: 'Cross' }
 	];
 </script>
 
@@ -21,7 +23,10 @@
 		{#each PATTERNS as { up, name }, i (name)}
 			{#if i > 0}<span class="arrow" aria-hidden="true">⇒</span>{/if}
 			<div class="pattern">
-				<TopFace {up} label={`${name}: the top face with ${up ? up.length : 'no'} yellow edges`} />
+				<TopFace
+					{up}
+					label={`${name}: the top face with ${up.length > 0 ? up.length : 'no'} yellow edges`}
+				/>
 				<span>{name}</span>
 			</div>
 		{/each}

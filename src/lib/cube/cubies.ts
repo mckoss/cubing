@@ -1,10 +1,15 @@
-export { Face, selectCubies, rotateCubies, buildCube, MOVES };
-export type { Axis, Cubie, Selection, Move };
+// The 3D model's pieces: each cubie of the model, with its current
+// coordinates, and the turns that move them.
+
+import type { MoveName } from './types';
+
+export { ModelFace, selectCubies, rotateCubies, buildCube, MOVES };
+export type { Axis, CubieModel, Selection, ModelTurn, MakeCubie };
 
 type Axis = 'x' | 'y' | 'z';
 
-// Face indexes
-enum Face {
+// Face indexes of the model (not the Face move names in types.ts).
+enum ModelFace {
 	UP,
 	FRONT,
 	RIGHT,
@@ -13,7 +18,8 @@ enum Face {
 	DOWN
 }
 
-interface Cubie<T> {
+// One piece of the model, at its current coordinates (0-based).
+interface CubieModel<T> {
 	row: number;
 	col: number;
 	depth: number;
@@ -26,24 +32,25 @@ interface Selection {
 	depth?: number;
 }
 
-interface Move {
+// A turn of the model: the cubies selected turn about an axis.
+interface ModelTurn {
 	axis: Axis;
 	turns: number;
 	selection: Selection;
 }
 
-const MOVES: { [key: string]: Move } = {
-	X: {
+const MOVES: Readonly<Record<MoveName, ModelTurn>> = {
+	x: {
 		axis: 'x',
 		turns: 1,
 		selection: {}
 	},
-	Y: {
+	y: {
 		axis: 'y',
 		turns: 1,
 		selection: {}
 	},
-	Z: {
+	z: {
 		axis: 'z',
 		turns: 1,
 		selection: {}
@@ -97,7 +104,7 @@ const MOVES: { [key: string]: Move } = {
 
 // Transform x,y coordinates (0-based) based on
 // the number of 90 degree (clockwise) turns;
-function turn(x: number, y: number, turns: number, size: number) {
+function turn(x: number, y: number, turns: number, size: number): [number, number] {
 	while (turns < 0) {
 		turns += 4;
 	}
@@ -109,7 +116,7 @@ function turn(x: number, y: number, turns: number, size: number) {
 }
 
 // Update the meta-data in the cubes list to reflect a rotation.
-function rotateCubies<T>(cubies: Cubie<T>[], axis: Axis, turns: number, size: number) {
+function rotateCubies<T>(cubies: CubieModel<T>[], axis: Axis, turns: number, size: number): void {
 	for (const cubie of cubies) {
 		if (axis === 'x') {
 			[cubie.depth, cubie.row] = turn(cubie.depth, cubie.row, turns, size);
@@ -121,8 +128,8 @@ function rotateCubies<T>(cubies: Cubie<T>[], axis: Axis, turns: number, size: nu
 	}
 }
 
-function selectCubies<T>(cubies: Cubie<T>[], attrs: Selection, size: number): Cubie<T>[] {
-	const selected: Cubie<T>[] = [];
+function selectCubies<T>(cubies: CubieModel<T>[], attrs: Selection, size: number): CubieModel<T>[] {
+	const selected: CubieModel<T>[] = [];
 
 	for (const cubie of cubies) {
 		if (match(attrs, cubie)) {
@@ -132,8 +139,8 @@ function selectCubies<T>(cubies: Cubie<T>[], attrs: Selection, size: number): Cu
 
 	return selected;
 
-	function match(attrs: Selection, cubie: Cubie<T>): boolean {
-		for (const [attr, index] of Object.entries(attrs) as [keyof Cubie<T>, number][]) {
+	function match(attrs: Selection, cubie: CubieModel<T>): boolean {
+		for (const [attr, index] of Object.entries(attrs) as [keyof Selection, number][]) {
 			// Negative indexes count from the far side.
 			const value = index < 0 ? index + size : index;
 			if (value !== cubie[attr]) {
@@ -146,35 +153,41 @@ function selectCubies<T>(cubies: Cubie<T>[], attrs: Selection, size: number): Cu
 
 // Return a list of the visible faces depending on the
 // coordinates of the cubie.
-function facesOf(row: number, column: number, depth: number, size: number) {
-	const faces = [];
+function facesOf(row: number, column: number, depth: number, size: number): ModelFace[] {
+	const faces: ModelFace[] = [];
 	if (row === 0) {
-		faces.push(Face.DOWN);
+		faces.push(ModelFace.DOWN);
 	}
 	if (row === size - 1) {
-		faces.push(Face.UP);
+		faces.push(ModelFace.UP);
 	}
 	if (column === 0) {
-		faces.push(Face.LEFT);
+		faces.push(ModelFace.LEFT);
 	}
 	if (column === size - 1) {
-		faces.push(Face.RIGHT);
+		faces.push(ModelFace.RIGHT);
 	}
 	if (depth === 0) {
-		faces.push(Face.FRONT);
+		faces.push(ModelFace.FRONT);
 	}
 	if (depth === size - 1) {
-		faces.push(Face.BACK);
+		faces.push(ModelFace.BACK);
 	}
 	return faces;
 }
 
-type MakeCubie<T> = (row: number, col: number, depth: number, size: number, faces: Face[]) => T;
+type MakeCubie<T> = (
+	row: number,
+	col: number,
+	depth: number,
+	size: number,
+	faces: ModelFace[]
+) => T;
 
 // Make a whole cube by enumerating all the cubies
 // and adding them to a group.
-function buildCube<T>(size: number, makeCubie: MakeCubie<T>): Cubie<T>[] {
-	const cubies: Cubie<T>[] = [];
+function buildCube<T>(size: number, makeCubie: MakeCubie<T>): CubieModel<T>[] {
+	const cubies: CubieModel<T>[] = [];
 	for (let depth = 0; depth < size; depth++) {
 		for (let row = 0; row < size; row++) {
 			for (let col = 0; col < size; col++) {

@@ -1,19 +1,24 @@
 <script lang="ts">
 	// The top face of the cube, seen from above with the front edge at the
 	// bottom. `up` lists the edges (F, R, B, L) showing the top color.
-	let { up, label }: { up: string; label: string } = $props();
+	import type { Face } from '$lib/cube/types';
+
+	// A cell of the grid: an edge's face, the center (C), or a corner ('').
+	type GridCell = Face | 'C' | '';
+
+	let { up, label }: { up: readonly Face[]; label: string } = $props();
 
 	const YELLOW = 'rgb(238, 209, 0)';
 	const OTHER = '#8b93a1';
 
 	// Grid cells, row by row from the back: which edge (if any) each one is.
-	const CELLS = [
+	const CELLS: readonly (readonly GridCell[])[] = [
 		['', 'B', ''],
 		['L', 'C', 'R'],
 		['', 'F', '']
 	];
 
-	function color(cell: string): string {
+	function color(cell: GridCell): string {
 		return cell === 'C' || (cell !== '' && up.includes(cell)) ? YELLOW : OTHER;
 	}
 </script>

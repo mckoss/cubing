@@ -1,15 +1,18 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
-async function open(page: Page) {
+// Open the app at the fastest speed; returns the page errors seen.
+async function open(page: Page): Promise<string[]> {
 	const errors: string[] = [];
-	page.on('pageerror', (e) => errors.push(e.message));
+	page.on('pageerror', (e): void => {
+		errors.push(e.message);
+	});
 	await page.goto('./');
 	await page.getByRole('button', { name: 'Fastest' }).click();
 	return errors;
 }
 
-const permutation = (page: Page) => page.getByTestId('permutation');
-const history = (page: Page) => page.getByTestId('history');
+const permutation = (page: Page): Locator => page.getByTestId('permutation');
+const history = (page: Page): Locator => page.getByTestId('history');
 
 test('starts solved', async ({ page }) => {
 	const errors = await open(page);
