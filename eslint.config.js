@@ -34,8 +34,15 @@ export default defineConfig(
 		}
 	},
 	{
-		// Override or add rule settings here, such as:
-		// 'svelte/button-has-type': 'error'
-		rules: {}
+		// Strict typing (2026 refactoring). Warnings for now; they become
+		// errors once the code base is fully typed.
+		rules: {
+			'@typescript-eslint/explicit-function-return-type': [
+				'warn',
+				{ allowExpressions: false, allowTypedFunctionExpressions: true }
+			],
+			'@typescript-eslint/no-explicit-any': 'warn',
+			'@typescript-eslint/no-non-null-assertion': 'warn'
+		}
 	}
 );
