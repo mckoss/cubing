@@ -327,15 +327,9 @@
 		}
 	];
 
-	// Pieces are named in lower case, as Singmaster did, so that "urf" (a
-	// cubie) can't be mistaken for moves (U R F).
-	function cycles(p: Permutation): string {
-		return p.toString().toLowerCase();
-	}
-
 	const catalog = CATALOG.map((entry) => ({
 		...entry,
-		effect: cycles(permutationOf(entry.moves))
+		effect: permutationOf(entry.moves).toString()
 	}));
 </script>
 
@@ -432,7 +426,7 @@
 
 		<section class="card">
 			<h2>Current Permutation</h2>
-			<p class="perm" data-testid="permutation">{solved ? 'Solved' : cycles(perm)}</p>
+			<p class="perm" data-testid="permutation">{solved ? 'Solved' : perm.toString()}</p>
 		</section>
 
 		<section class="card history">

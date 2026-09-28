@@ -11,13 +11,14 @@
 // and repeated turns (e.g. U2 U) are written out, so that the solver makes
 // exactly the moves the 2003 solver did.
 
-import { Permutation } from './permutation';
+import { Permutation, type Path } from './permutation';
+import { rotateName, type Location } from './types';
 import { applyMoves, invertMoves, parseMoves, type Move } from './moves';
 import type { MoveList } from './move-list';
 
-// A place is a piece's location (e.g. "FD": the UF edge is at DF, flipped),
+// A place is a piece's location (e.g. "fd": the uf edge is at df, flipped),
 // or a path of pieces (see Permutation.hasMap).
-export type Place = string | string[];
+export type Place = Location | Path;
 // A generator and sequences are in standard notation; a sequence may use
 // "P" to undo the generator moves made so far.  An empty sequence means the
 // piece is already where it should be.
@@ -35,13 +36,18 @@ function expand(sequence: string, generated: Move[]): Move[] {
 // Try the generator up to three times, looking for the piece (or path) at
 // one of the places in a rule.  Returns the generator moves and the sequence
 // for that place (undefined if none match).
-export function solveVia(perm: Permutation, piece: string, rules: Rule[]): Move[] | undefined {
+// The piece is '' when the rules' places are all paths.
+export function solveVia(
+	perm: Permutation,
+	piece: Location | '',
+	rules: Rule[]
+): Move[] | undefined {
 	for (const [generator, cases] of rules) {
 		const turn = parseMoves(generator);
 		let p = perm;
 		let moves: Move[] = [];
 		for (let i = 0; i < 4; i++) {
-			const loc = p.apply(piece);
+			const loc = piece === '' ? '' : p.apply(piece);
 			for (const [place, sequence] of cases) {
 				if (typeof place === 'string' ? place === loc : p.hasMap(place)) {
 					return [...moves, ...expand(sequence, moves)];
@@ -104,29 +110,29 @@ export class Singmaster {
 			[
 				'D',
 				[
-					['DF', 'F2'],
-					['FD', "F' U' R U"]
+					['df', 'F2'],
+					['fd', "F' U' R U"]
 				]
 			],
 			[
 				"E'",
 				[
-					['LF', 'F P'],
-					['RF', "F' P"]
+					['lf', 'F P'],
+					['rf', "F' P"]
 				]
 			],
 			[
 				'U',
 				[
-					['UF', 'F2 P F2'],
-					['FU', "F P U' R U"]
+					['uf', 'F2 P F2'],
+					['fu', "F P U' R U"]
 				]
 			]
 		];
 
 		const block = this.moveList.openBlock('Solve U Edges');
 		for (let i = 0; i < 4; i++) {
-			this.move([...(solveVia(this.perm, 'UF', rules) ?? []), ...Y]);
+			this.move([...(solveVia(this.perm, 'uf', rules) ?? []), ...Y]);
 		}
 		block.close();
 	}
@@ -136,24 +142,24 @@ export class Singmaster {
 			[
 				'D',
 				[
-					['RDF', "D F D' F'"],
-					['FRD', "D' R' D R"],
-					['DFR', "F D' F' R' D2 R"]
+					['rdf', "D F D' F'"],
+					['frd', "D' R' D R"],
+					['dfr', "F D' F' R' D2 R"]
 				]
 			],
 			[
 				'U',
 				[
-					['URF', "F D F' P F D' F'"],
-					['RFU', "R' D2 R P F D2 F'"],
-					['FUR', "F D2 F' P R' D2 R"]
+					['urf', "F D F' P F D' F'"],
+					['rfu', "R' D2 R P F D2 F'"],
+					['fur', "F D2 F' P R' D2 R"]
 				]
 			]
 		];
 
 		const block = this.moveList.openBlock('Solve U Corners');
 		for (let i = 0; i < 4; i++) {
-			this.move([...(solveVia(this.perm, 'URF', rules) ?? []), ...Y]);
+			this.move([...(solveVia(this.perm, 'urf', rules) ?? []), ...Y]);
 		}
 		block.close();
 	}
@@ -163,8 +169,8 @@ export class Singmaster {
 			[
 				"E'",
 				[
-					['RF', "B' U' R2 U2 R2 U2 R2 U2 U B P"],
-					['FR', "L U' F2 U2 F2 U2 F2 U2 U L' P"]
+					['rf', "B' U' R2 U2 R2 U2 R2 U2 U B P"],
+					['fr', "L U' F2 U2 F2 U2 F2 U2 U L' P"]
 				]
 			]
 		];
@@ -172,18 +178,18 @@ export class Singmaster {
 			[
 				'U',
 				[
-					['UB', "B' U' R2 U2 R2 U2 R2 U2 U B"],
-					['LU', "L U' F2 U2 F2 U2 F2 U2 U L'"]
+					['ub', "B' U' R2 U2 R2 U2 R2 U2 U B"],
+					['lu', "L U' F2 U2 F2 U2 F2 U2 U L'"]
 				]
 			]
 		];
 
 		const block = this.moveList.openBlock('Solve Middle Edges');
 		for (let i = 0; i < 4; i++) {
-			if (this.perm.apply('RF') !== 'RF') {
-				this.move(solveVia(this.perm, 'RF', prepare) ?? []);
+			if (this.perm.apply('rf') !== 'rf') {
+				this.move(solveVia(this.perm, 'rf', prepare) ?? []);
 			}
-			this.move([...(solveVia(this.perm, 'RF', rules) ?? []), ...Y]);
+			this.move([...(solveVia(this.perm, 'rf', rules) ?? []), ...Y]);
 		}
 		block.close();
 	}
@@ -192,8 +198,8 @@ export class Singmaster {
 		// Which pieces are in each place (the inverse of where each piece is).
 		const inverse = this.perm.inverse();
 		let up = '';
-		for (const face of 'FRBL') {
-			up += inverse.apply('U' + face).charAt(0) === 'U' ? 'U' : 'X';
+		for (const face of ['f', 'r', 'b', 'l'] as const) {
+			up += inverse.apply(`u${face}`).charAt(0) === 'u' ? 'U' : 'X';
 		}
 
 		const block = this.moveList.openBlock('Orient D Edges');
@@ -221,11 +227,11 @@ export class Singmaster {
 			[
 				'U',
 				[
-					[['UF', 'UR', 'UB', 'UF'], "R2 D' U2 R' L F2 R L' D R2"],
-					[['UF', 'UB', 'UR', 'UF'], "R2 D' R' L F2 R L' U2 D R2"],
-					[['UF', 'UR', 'UF', '', 'UL', 'UB', 'UL'], "R2 D2 B2 D L2 F2 L2 F2 L2 F2 D' B2 D2 R2"],
+					[['uf', 'ur', 'ub', 'uf'], "R2 D' U2 R' L F2 R L' D R2"],
+					[['uf', 'ub', 'ur', 'uf'], "R2 D' R' L F2 R L' U2 D R2"],
+					[['uf', 'ur', 'uf', '', 'ul', 'ub', 'ul'], "R2 D2 B2 D L2 F2 L2 F2 L2 F2 D' B2 D2 R2"],
 					// Already in place.
-					[['UF', 'UF', '', 'UR', 'UR', '', 'UB', 'UB', '', 'UL', 'UL'], '']
+					[['uf', 'uf', '', 'ur', 'ur', '', 'ub', 'ub', '', 'ul', 'ul'], '']
 				]
 			]
 		];
@@ -247,16 +253,16 @@ export class Singmaster {
 	}
 
 	private placeDCorners(): void {
-		const corners = ['ULB', 'UBR', 'URF', 'UFL'];
+		const corners: Location[] = ['ulb', 'ubr', 'urf', 'ufl'];
 		const rules: Rule[] = [
 			[
 				'y',
 				[
-					[['UFL', 'ULB', 'UBR', 'UFL'], "L' U R U' R' L R U R' U'"],
-					[['UFL', 'UBR', 'ULB', 'UFL'], "U R U' R' L' R U R' U' L"],
-					[['UFL', 'URF', 'UFL', '', 'ULB', 'UBR', 'ULB'], "B L U L' U' L U L' U' L U L' U' B'"],
+					[['ufl', 'ulb', 'ubr', 'ufl'], "L' U R U' R' L R U R' U'"],
+					[['ufl', 'ubr', 'ulb', 'ufl'], "U R U' R' L' R U R' U' L"],
+					[['ufl', 'urf', 'ufl', '', 'ulb', 'ubr', 'ulb'], "B L U L' U' L U L' U' L U L' U' B'"],
 					[
-						['UFL', 'UBR', 'UFL', '', 'URF', 'ULB', 'URF'],
+						['ufl', 'ubr', 'ufl', '', 'urf', 'ulb', 'urf'],
 						"R' B2 F R F' R' F R F' R' F R F' R' B2 R"
 					]
 				]
@@ -267,8 +273,8 @@ export class Singmaster {
 		const perm = new Permutation();
 		for (const corner of corners) {
 			let target = this.perm.apply(corner);
-			while (target.charAt(0) !== 'U') {
-				target = rotate(target, 1);
+			while (target.charAt(0) !== 'u') {
+				target = rotateName(target);
 			}
 			perm.addMap(target, corner);
 		}
@@ -283,9 +289,9 @@ export class Singmaster {
 			[
 				'',
 				[
-					['RFU', "D F D' F' D F D' F'"], // counterclockwise
-					['FUR', "F D F' D' F D F' D'"], // clockwise
-					['URF', '']
+					['rfu', "D F D' F' D F D' F'"], // counterclockwise
+					['fur', "F D F' D' F D F' D'"], // clockwise
+					['urf', '']
 				]
 			]
 		];
@@ -293,7 +299,7 @@ export class Singmaster {
 		const block = this.moveList.openBlock('Orient D Corners');
 		let perm = this.perm;
 		for (let j = 0; j < 4; j++) {
-			this.move([...(solveVia(perm, 'URF', rules) ?? []), ...U]);
+			this.move([...(solveVia(perm, 'urf', rules) ?? []), ...U]);
 			perm = applyMoves(perm, Y);
 		}
 		block.close();

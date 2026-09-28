@@ -5,20 +5,9 @@
 // that looks solved is the identity.
 
 import { Permutation } from './permutation';
+import type { Face, Location, Move, MoveName, Rotation, Slice, Turns } from './types';
 
-export type Face = 'U' | 'D' | 'L' | 'R' | 'F' | 'B';
-export type Slice = 'M' | 'E' | 'S';
-export type Rotation = 'x' | 'y' | 'z';
-export type MoveName = Face | Slice | Rotation;
-
-// A quarter turn clockwise (1), half turn (2), or quarter turn
-// counterclockwise (3).
-export type Turns = 1 | 2 | 3;
-
-export interface Move {
-	name: MoveName;
-	turns: Turns;
-}
+export type { Face, Slice, Rotation, MoveName, Turns, Move } from './types';
 
 export const FACES: readonly Face[] = ['U', 'D', 'L', 'R', 'F', 'B'];
 export const SLICES: readonly Slice[] = ['M', 'E', 'S'];
@@ -30,47 +19,47 @@ export function isRotation(name: MoveName): name is Rotation {
 }
 
 // Clockwise quarter turns (as seen looking at the face).
-const FACE_CYCLES: Record<Face, string[][]> = {
+const FACE_CYCLES: Record<Face, Location[][]> = {
 	L: [
-		['LUF', 'LFD', 'LDB', 'LBU'],
-		['LU', 'LF', 'LD', 'LB']
+		['luf', 'lfd', 'ldb', 'lbu'],
+		['lu', 'lf', 'ld', 'lb']
 	],
 	R: [
-		['RFU', 'RUB', 'RBD', 'RDF'],
-		['RU', 'RB', 'RD', 'RF']
+		['rfu', 'rub', 'rbd', 'rdf'],
+		['ru', 'rb', 'rd', 'rf']
 	],
 	D: [
-		['DLF', 'DFR', 'DRB', 'DBL'],
-		['DF', 'DR', 'DB', 'DL']
+		['dlf', 'dfr', 'drb', 'dbl'],
+		['df', 'dr', 'db', 'dl']
 	],
 	U: [
-		['UFL', 'ULB', 'UBR', 'URF'],
-		['UF', 'UL', 'UB', 'UR']
+		['ufl', 'ulb', 'ubr', 'urf'],
+		['uf', 'ul', 'ub', 'ur']
 	],
 	F: [
-		['FLU', 'FUR', 'FRD', 'FDL'],
-		['FU', 'FR', 'FD', 'FL']
+		['flu', 'fur', 'frd', 'fdl'],
+		['fu', 'fr', 'fd', 'fl']
 	],
 	B: [
-		['BUL', 'BLD', 'BDR', 'BRU'],
-		['BU', 'BL', 'BD', 'BR']
+		['bul', 'bld', 'bdr', 'bru'],
+		['bu', 'bl', 'bd', 'br']
 	]
 };
 
-// Slices, as defined in 2003: turning like R, U, and B.  In standard
-// notation these are M', E', and S'.
-const SLICE_CYCLES_2003: Record<Slice, string[][]> = {
+// Slices turning like R, U, and B: M', E', and S' (as the 2003 simulator
+// defined its slices).
+const SLICE_PRIME_CYCLES: Record<Slice, Location[][]> = {
 	M: [
-		['FU', 'UB', 'BD', 'DF'],
-		['F', 'U', 'B', 'D']
+		['fu', 'ub', 'bd', 'df'],
+		['f', 'u', 'b', 'd']
 	],
 	E: [
-		['FL', 'LB', 'BR', 'RF'],
-		['F', 'L', 'B', 'R']
+		['fl', 'lb', 'br', 'rf'],
+		['f', 'l', 'b', 'r']
 	],
 	S: [
-		['UL', 'LD', 'DR', 'RU'],
-		['U', 'L', 'D', 'R']
+		['ul', 'ld', 'dr', 'ru'],
+		['u', 'l', 'd', 'r']
 	]
 };
 
@@ -80,7 +69,7 @@ for (const face of FACES) {
 	BASE.set(face, new Permutation(FACE_CYCLES[face]));
 }
 for (const slice of SLICES) {
-	const reversed = new Permutation(SLICE_CYCLES_2003[slice]);
+	const reversed = new Permutation(SLICE_PRIME_CYCLES[slice]);
 	BASE.set(slice, reversed.inverse());
 	POWERS.set(slice + 3, reversed);
 }

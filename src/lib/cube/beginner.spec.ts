@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Permutation } from './permutation';
 import { applyMoves, invertMoves, parseMoves, permutationOf, type Move } from './moves';
 import { MoveList } from './move-list';
+import { rotateName, type Location } from './types';
 import { Beginner, SEQUENCES } from './beginner';
 
 function random(seed: number) {
@@ -17,11 +18,11 @@ function solve(start: Permutation) {
 describe('Basic Modern Solution', () => {
 	it('uses the sequences from the notes', () => {
 		// Each sequence does what the notes draw.
-		expect(permutationOf(SEQUENCES.insertRight).apply('FU')).toBe('FR');
-		expect(permutationOf(SEQUENCES.insertLeft).apply('FU')).toBe('FL');
-		expect(permutationOf(SEQUENCES.swapEdges).toString()).toContain('(UL UF)');
-		expect(permutationOf(SEQUENCES.cycleCorners).toString()).toBe('(UBR LBU LUF)');
-		expect(permutationOf(SEQUENCES.cycleCornersBack).toString()).toBe('(ULB RUB RFU)');
+		expect(permutationOf(SEQUENCES.insertRight).apply('fu')).toBe('fr');
+		expect(permutationOf(SEQUENCES.insertLeft).apply('fu')).toBe('fl');
+		expect(permutationOf(SEQUENCES.swapEdges).toString()).toContain('(ul uf)');
+		expect(permutationOf(SEQUENCES.cycleCorners).toString()).toBe('(ubr lbu luf)');
+		expect(permutationOf(SEQUENCES.cycleCornersBack).toString()).toBe('(ulb rub rfu)');
 	});
 
 	it('leaves a solved cube alone', () => {
@@ -37,7 +38,7 @@ describe('Basic Modern Solution', () => {
 			})) as Move[];
 			const start = permutationOf(moves);
 			const list = solve(start);
-			expect(applyMoves(start, list.moves).toString(), `scramble ${i}`).toBe('<Identity>');
+			expect(applyMoves(start, list.moves).toString(), `scramble ${i}`).toBe('()');
 		}
 	});
 
@@ -79,16 +80,16 @@ describe('first face, white down', () => {
 
 	it('puts pieces down without disturbing the pieces already down', () => {
 		// The edges go first, so the edges may move the bottom corners.
-		const edges = ['DF', 'DR', 'DB', 'DL'];
-		const cases: [string, string[], string[]][] = [
-			['DF', ['F2', "U' R' F R"], edges],
-			['DFR', ["R U R'", "F' U' F", "R U2 R' U' R U R'"], [...edges, 'DRB', 'DBL', 'DLF']]
+		const edges: Location[] = ['df', 'dr', 'db', 'dl'];
+		const cases: [Location, string[], Location[]][] = [
+			['df', ['F2', "U' R' F R"], edges],
+			['dfr', ["R U R'", "F' U' F", "R U2 R' U' R U R'"], [...edges, 'drb', 'dbl', 'dlf']]
 		];
 		for (const [piece, sequences, bottom] of cases) {
 			for (const moves of sequences) {
 				const p = permutationOf(moves);
 				const start = permutationOf(invertMoves(parseMoves(moves))).apply(piece);
-				expect(start, moves).toContain('U');
+				expect(start, moves).toContain('u');
 				for (const other of bottom.filter((b) => b !== piece)) {
 					expect(p.apply(other), `${moves} moves ${other}`).toBe(other);
 				}
@@ -98,10 +99,12 @@ describe('first face, white down', () => {
 });
 
 describe('top cross pictures', () => {
-	// Which top edges show the top color (U), in the order F R B L.
+	// Which top edges show the top color (u), in the order f r b l.
 	const pattern = (p: Permutation) => {
 		const inverse = p.inverse();
-		return [...'FRBL'].filter((f) => inverse.apply('U' + f).charAt(0) === 'U').join('');
+		return (['f', 'r', 'b', 'l'] as const)
+			.filter((f) => inverse.apply(`u${f}`).charAt(0) === 'u')
+			.join('');
 	};
 
 	// Cubes reached by the top cross sequence and turns of the top.
@@ -132,13 +135,13 @@ describe('top cross pictures', () => {
 		}
 		// Dot -> L at the front right; L at the back left -> line from left to
 		// right; line -> cross.
-		expect([...after.get('')!]).toEqual(['FR']);
-		expect([...after.get('BL')!]).toEqual(['RL']);
-		expect([...after.get('RL')!]).toEqual(['FRBL']);
+		expect([...after.get('')!]).toEqual(['fr']);
+		expect([...after.get('bl')!]).toEqual(['rl']);
+		expect([...after.get('rl')!]).toEqual(['frbl']);
 		// Held the wrong way: an L elsewhere stays an L; a line front to back
 		// goes back to a dot.
-		expect([...after.get('RB')!]).toEqual(['RB']);
-		expect([...after.get('FB')!]).toEqual(['']);
+		expect([...after.get('rb')!]).toEqual(['rb']);
+		expect([...after.get('fb')!]).toEqual(['']);
 	});
 });
 
@@ -148,46 +151,46 @@ describe('case pictures', () => {
 
 	it('twist the front right corner the way its yellow sticker faces', () => {
 		// (R' D' R D)x2 when yellow (the U sticker) faces right...
-		expect(fixes(SEQUENCES.twistCorner).apply('URF')).toBe('RFU');
+		expect(fixes(SEQUENCES.twistCorner).apply('urf')).toBe('rfu');
 		// ...and (D' R' D R)x2 when it faces front.
-		expect(fixes(SEQUENCES.twistCornerBack).apply('URF')).toBe('FUR');
+		expect(fixes(SEQUENCES.twistCornerBack).apply('urf')).toBe('fur');
 	});
 
 	it('insert the top front edge down to the left or right', () => {
 		// The front sticker stays in front; the top sticker goes to the side.
-		expect(permutationOf(SEQUENCES.insertLeft).apply('FU')).toBe('FL');
-		expect(permutationOf(SEQUENCES.insertRight).apply('FU')).toBe('FR');
+		expect(permutationOf(SEQUENCES.insertLeft).apply('fu')).toBe('fl');
+		expect(permutationOf(SEQUENCES.insertRight).apply('fu')).toBe('fr');
 	});
 
 	it('swap the left and front edges, and cycle corners around a fixed one', () => {
 		const swap = permutationOf(SEQUENCES.swapEdges);
-		expect([swap.apply('UL'), swap.apply('UF'), swap.apply('UB'), swap.apply('UR')]).toEqual([
-			'UF',
-			'UL',
-			'UB',
-			'UR'
+		expect([swap.apply('ul'), swap.apply('uf'), swap.apply('ub'), swap.apply('ur')]).toEqual([
+			'uf',
+			'ul',
+			'ub',
+			'ur'
 		]);
 		// Where a corner goes, ignoring its twist (the next step fixes that).
-		const place = (p: Permutation, corner: string) => {
+		const place = (p: Permutation, corner: Location): Location => {
 			let at = p.apply(corner);
-			while (!at.startsWith('U')) at = at.substring(1) + at.charAt(0);
+			while (!at.startsWith('u')) at = rotateName(at);
 			return at;
 		};
 		const corners = permutationOf(SEQUENCES.cycleCorners);
 		// Back right -> back left -> front left -> back right; front right stays.
-		expect(['UBR', 'ULB', 'UFL', 'URF'].map((c) => place(corners, c))).toEqual([
-			'ULB',
-			'UFL',
-			'UBR',
-			'URF'
+		expect((['ubr', 'ulb', 'ufl', 'urf'] as const).map((c) => place(corners, c))).toEqual([
+			'ulb',
+			'ufl',
+			'ubr',
+			'urf'
 		]);
 		const back = permutationOf(SEQUENCES.cycleCornersBack);
 		// Back left -> back right -> front right -> back left; front left stays.
-		expect(['ULB', 'UBR', 'URF', 'UFL'].map((c) => place(back, c))).toEqual([
-			'UBR',
-			'URF',
-			'ULB',
-			'UFL'
+		expect((['ulb', 'ubr', 'urf', 'ufl'] as const).map((c) => place(back, c))).toEqual([
+			'ubr',
+			'urf',
+			'ulb',
+			'ufl'
 		]);
 	});
 });

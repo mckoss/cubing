@@ -15,15 +15,15 @@ import reference from './fixtures/reference-2003.json';
 // The 2003 code didn't move the centers; drop their cycles before comparing.
 function centerlessCycles(cycles: string): string {
 	const kept = cycles.match(/\([^)]*\)[+-]?/g)?.filter((c) => /\w\w/.test(c)) ?? [];
-	return kept.length === 0 ? '<Identity>' : kept.join(' ');
+	return kept.length === 0 ? '()' : kept.join(' ');
 }
 
 describe('Permutation', () => {
 	it('maps rotated names', () => {
-		const p = new Permutation([['UFL', 'ULB']]);
-		expect(p.apply('UFL')).toBe('ULB');
-		expect(p.apply('FLU')).toBe('LBU');
-		expect(p.apply('UF')).toBe('UF');
+		const p = new Permutation([['ufl', 'ulb']]);
+		expect(p.apply('ufl')).toBe('ulb');
+		expect(p.apply('flu')).toBe('lbu');
+		expect(p.apply('uf')).toBe('uf');
 	});
 
 	it('composes, inverts and powers', () => {
@@ -35,8 +35,8 @@ describe('Permutation', () => {
 	});
 
 	it('shows twisted cycles', () => {
-		expect(permutationOf("F U F' U'").toString()).toBe('(FLU DLF)+ (FL FU RU) (UBR FUR)-');
-		expect(permutationOf('').toString()).toBe('<Identity>');
+		expect(permutationOf("F U F' U'").toString()).toBe('(flu dlf)+ (fl fu ru) (ubr fur)-');
+		expect(permutationOf('').toString()).toBe('()');
 	});
 });
 
