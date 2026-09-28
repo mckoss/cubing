@@ -12,10 +12,10 @@ import type {
 	Move,
 	MoveName,
 	MoveToken,
-	Notation,
 	Rotation,
 	Slice,
-	Turns
+	Turns,
+	CheckedAlg
 } from './types';
 
 export type { Face, Slice, Rotation, MoveName, Turns, Move } from './types';
@@ -129,8 +129,8 @@ export function applyMoves(p: Cube, moves: Move[]): Cube {
 	return p;
 }
 
-export function permutationOf(moves: Move[] | Notation): Permutation {
-	return applyMoves(new Permutation(), typeof moves === 'string' ? parseMoves(moves) : moves);
+export function permutationOf(moves: Move[]): Permutation {
+	return applyMoves(new Permutation(), moves);
 }
 
 const INVERSE_TURNS: Readonly<Record<Turns, Turns>> = { 1: 3, 2: 2, 3: 1 };
@@ -149,7 +149,14 @@ export function invertMoves(moves: Move[]): Move[] {
 const MOVE_PATTERN = /([UDLRFBMESxyz])(2'?|'|’)?/g;
 
 // Parse standard notation, e.g. "R U R' U2".
-export function parseMoves(st: Notation): Move[] {
+// Moves written in source code, checked at compile time: alg("R U R' U'").
+export function alg<S extends string>(text: CheckedAlg<S>): Move[] {
+	return parseMoves(text);
+}
+
+// Parse text in standard notation (e.g. typed or pasted in); throws on
+// anything that isn't a move.
+export function parseMoves(st: string): Move[] {
 	const moves: Move[] = [];
 	const unknown = st.replace(MOVE_PATTERN, '').replace(/[\s()]/g, '');
 	if (unknown !== '') {
@@ -171,7 +178,7 @@ export function formatMove({ name, turns }: Move): MoveToken {
 	return `${name}${TURNS_SUFFIX[turns]}`;
 }
 
-export function formatMoves(moves: Move[]): Notation {
+export function formatMoves(moves: Move[]): string {
 	return moves.map(formatMove).join(' ');
 }
 

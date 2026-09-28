@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { Permutation } from './permutation';
-import { applyMoves, FACES, invertMoves, parseMoves, permutationOf } from './moves';
+import {
+	alg,
+	applyMoves,
+	FACES,
+	formatMoves,
+	invertMoves,
+	parseMoves,
+	permutationOf
+} from './moves';
 import { MoveList } from './move-list';
 import {
 	rotateName,
@@ -9,7 +17,6 @@ import {
 	type Location,
 	type Move,
 	type MoveName,
-	type Notation,
 	type Turns
 } from './types';
 import { Beginner, SEQUENCES } from './beginner';
@@ -75,7 +82,7 @@ describe('Basic Modern Solution', () => {
 	});
 
 	it('names each stage in the history', () => {
-		const list = solve(permutationOf("R U F' L2 D B' R2 U'"));
+		const list = solve(permutationOf(alg("R U F' L2 D B' R2 U'")));
 		const names = list.blocks.map((b) => b.name);
 		expect(names).toEqual(
 			expect.arrayContaining([
@@ -113,17 +120,21 @@ describe('first face, white down', () => {
 	it('puts pieces down without disturbing the pieces already down', () => {
 		// The edges go first, so the edges may move the bottom corners.
 		const edges: Cubie[] = ['df', 'dr', 'db', 'dl'];
-		const cases: [Cubie, Notation[], Cubie[]][] = [
-			['df', ['F2', "U' R' F R"], edges],
-			['dfr', ["R U R'", "F' U' F", "R U2 R' U' R U R'"], [...edges, 'drb', 'dbl', 'dlf']]
+		const cases: [Cubie, Move[][], Cubie[]][] = [
+			['df', [alg('F2'), alg("U' R' F R")], edges],
+			[
+				'dfr',
+				[alg("R U R'"), alg("F' U' F"), alg("R U2 R' U' R U R'")],
+				[...edges, 'drb', 'dbl', 'dlf']
+			]
 		];
 		for (const [piece, sequences, bottom] of cases) {
 			for (const moves of sequences) {
 				const p = permutationOf(moves);
-				const start = permutationOf(invertMoves(parseMoves(moves))).apply(piece);
-				expect(start, moves).toContain('u');
+				const start = permutationOf(invertMoves(moves)).apply(piece);
+				expect(start, formatMoves(moves)).toContain('u');
 				for (const other of bottom.filter((b) => b !== piece)) {
-					expect(p.apply(other), `${moves} moves ${other}`).toBe(other);
+					expect(p.apply(other), `${formatMoves(moves)} moves ${other}`).toBe(other);
 				}
 			}
 		}
@@ -141,7 +152,7 @@ describe('top cross pictures', () => {
 
 	// Cubes reached by the top cross sequence and turns of the top.
 	const cubes = (): Cube[] => {
-		const cross = parseMoves(SEQUENCES.topCross);
+		const cross = SEQUENCES.topCross;
 		const turns = ['U', 'U2', "U'"].map((m) => parseMoves(m));
 		const flipTwo = parseMoves("F U R U' R' F'");
 		const found: Cube[] = [];
@@ -163,7 +174,7 @@ describe('top cross pictures', () => {
 			const before = pattern(p);
 			const seen = after.get(before) ?? new Set<string>();
 			after.set(before, seen);
-			seen.add(pattern(applyMoves(p, parseMoves(SEQUENCES.topCross))));
+			seen.add(pattern(applyMoves(p, SEQUENCES.topCross)));
 		}
 		const patternsAfter = (before: string): string[] => [...defined(after.get(before), before)];
 		// Dot -> L at the front right; L at the back left -> line from left to
@@ -180,7 +191,7 @@ describe('top cross pictures', () => {
 
 describe('case pictures', () => {
 	// The arrangement a sequence fixes is the one its inverse makes.
-	const fixes = (moves: Notation): Cube => permutationOf(invertMoves(parseMoves(moves)));
+	const fixes = (moves: Move[]): Cube => permutationOf(invertMoves(moves));
 
 	it('twist the front right corner the way its yellow sticker faces', () => {
 		// (R' D' R D)x2 when yellow (the U sticker) faces right...

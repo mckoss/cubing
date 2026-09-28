@@ -6,8 +6,8 @@
 
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { FACES, MOVE_NAMES, formatMove, formatMoves, permutationOf } from './moves';
-import type { MoveName, Notation, Turns } from './types';
+import { FACES, MOVE_NAMES, formatMove, formatMoves, parseMoves, permutationOf } from './moves';
+import type { MoveName, Turns } from './types';
 import { MoveList, type HistoryBlock } from './move-list';
 import { SOLVERS } from './solvers';
 
@@ -15,7 +15,7 @@ const FILE = new URL('./fixtures/solvers-golden.json', import.meta.url);
 
 interface Golden {
 	solver: string;
-	scramble: Notation;
+	scramble: string;
 	history: unknown[];
 }
 
@@ -24,9 +24,9 @@ function random(seed: number): () => number {
 }
 
 // Random scrambles, some with slice moves and whole cube turns.
-function scrambles(): Notation[] {
+function scrambles(): string[] {
 	const rand = random(2026);
-	const result: Notation[] = [];
+	const result: string[] = [];
 	const pick = <T>(list: readonly T[]): T => {
 		const item = list[Math.floor(rand() * list.length)];
 		if (item === undefined) {
@@ -61,7 +61,7 @@ function record(): Golden[] {
 	for (const solver of SOLVERS) {
 		for (const scramble of scrambles()) {
 			const list = new MoveList();
-			solver.solve(permutationOf(scramble), list);
+			solver.solve(permutationOf(parseMoves(scramble)), list);
 			out.push({ solver: solver.name, scramble, history: describeHistory(list.history()) });
 		}
 	}

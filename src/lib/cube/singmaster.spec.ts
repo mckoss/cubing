@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { applyMoves, FACES, formatMoves, MOVE_NAMES, permutationOf } from './moves';
+import {
+	alg,
+	applyMoves,
+	FACES,
+	formatMoves,
+	MOVE_NAMES,
+	parseMoves,
+	permutationOf
+} from './moves';
 import { MoveList } from './move-list';
-import { Singmaster } from './singmaster';
-import type { Move, MoveName, Notation, Turns } from './types';
+import { rule, Singmaster, solveVia, UNDO } from './singmaster';
+import type { Move, MoveName, Turns } from './types';
 import reference from './fixtures/singmaster-2003.json';
 
 const TURNS: readonly Turns[] = [1, 2, 3];
@@ -30,9 +38,9 @@ function random(seed: number): () => number {
 // The fixture holds the 2003 program's solutions, in quarter turns (as the
 // 2003 program recorded them, one letter per quarter turn), with the block
 // positions counted in quarter turns.
-function solve(scramble: Notation): MoveList {
+function solve(scramble: string): MoveList {
 	const list = new MoveList();
-	new Singmaster(list).solve(permutationOf(scramble));
+	new Singmaster(list).solve(permutationOf(parseMoves(scramble)));
 	return list;
 }
 
@@ -62,7 +70,7 @@ describe('Singmaster solver', () => {
 	it('solves every reference scramble', () => {
 		for (const { scramble } of reference) {
 			const list = solve(scramble);
-			expect(applyMoves(permutationOf(scramble), list.moves).isIdentity()).toBe(true);
+			expect(applyMoves(permutationOf(parseMoves(scramble)), list.moves).isIdentity()).toBe(true);
 		}
 	});
 
@@ -91,5 +99,20 @@ describe('solvers', () => {
 				expect(applyMoves(start, list.moves).isIdentity(), solver.name).toBe(true);
 			}
 		}
+	});
+});
+
+describe('rules', () => {
+	it('undo the search turns where a rule says P', () => {
+		expect(rule('F2 P F2')).toEqual([...alg('F2'), UNDO, ...alg('F2')]);
+		expect(rule("F' P")).toEqual([...alg("F'"), UNDO]);
+	});
+
+	it('expand P to the inverse of the search turns', () => {
+		// The uf edge is at ur: one U turn brings it over its place, F2 parks
+		// it below, P turns the top back, and F2 puts it in place.
+		const cube = permutationOf(alg("U'"));
+		const moves = solveVia(cube, 'uf', [[alg('U'), [['uf', rule('F2 P F2')]]]]);
+		expect(moves && formatMoves(moves)).toBe("U F2 U' F2");
 	});
 });

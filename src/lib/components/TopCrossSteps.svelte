@@ -4,10 +4,11 @@
 	// and the line are drawn the way to hold them. (Checked with the
 	// simulator: from an L at the back left the sequence makes a line from
 	// left to right, and from that line, the cross.)
-	import type { Face, Notation } from '$lib/cube/types';
+	import { formatMoves } from '$lib/cube/moves';
+	import type { Face, Move } from '$lib/cube/types';
 	import TopFace from './TopFace.svelte';
 
-	let { sequence }: { sequence: Notation } = $props();
+	let { sequence }: { sequence: Move[] } = $props();
 
 	// The top edges showing yellow in each pattern.
 	const PATTERNS: readonly { up: readonly Face[]; name: string }[] = [
@@ -32,9 +33,10 @@
 		{/each}
 	</div>
 	<figcaption>
-		The top face, with the front edge at the bottom. Each arrow is <code>{sequence}</code>. Turn the
-		top (U) to hold the L at the back and left, and the line from left to right, as drawn. Held any
-		other way, the sequence doesn't move you forward.
+		The top face, with the front edge at the bottom. Each arrow is <code
+			>{formatMoves(sequence)}</code
+		>. Turn the top (U) to hold the L at the back and left, and the line from left to right, as
+		drawn. Held any other way, the sequence doesn't move you forward.
 	</figcaption>
 </figure>
 

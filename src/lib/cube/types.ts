@@ -94,14 +94,36 @@ export interface Move {
 // One move written in standard notation, e.g. "R", "U2", or "F'".
 export type MoveToken = `${MoveName}${'' | '2' | "'"}`;
 
-// A sequence of moves written in standard notation, e.g. "R U R' U'"
-// (parse it with parseMoves).  Any string is allowed here, so prefer
-// Move[] for values that have been parsed.
-export type Notation = string;
+// In a solver's rule, "P" undoes the moves made while searching for a case
+// (see singmaster.ts).
+export type UndoToken = 'P';
 
-// A permutation written in cycle notation, e.g. "(uf ur ub) (urf)+", or
-// "()" for the identity.
-export type CycleNotation = string;
+// Checks, at compile time, that a string literal is a sequence of tokens
+// (moves in standard notation, or also "P" for rules) separated by spaces,
+// e.g. "R U R' U'"; two spaces may separate groups.  It is the literal
+// itself if it's valid, and otherwise a message naming the bad token,
+// which then shows up in the compiler's error.
+export type ValidAlg<S extends string, Token extends string = MoveToken> = string extends S
+	? 'Needs a string literal; use parseMoves() for other text'
+	: CheckAlg<S, S, Token>;
+
+// The parameter type for a checked literal: the literal itself if it's
+// valid, or the message naming the bad token (so the compiler's error says
+// e.g. 'not assignable to "Not a move: Q"').
+export type CheckedAlg<S extends string, Token extends string = MoveToken> =
+	S extends ValidAlg<S, Token> ? S : ValidAlg<S, Token>;
+
+type CheckAlg<
+	S extends string,
+	Rest extends string,
+	Token extends string
+> = Rest extends `${infer T} ${infer More}`
+	? T extends Token | ''
+		? CheckAlg<S, More, Token>
+		: `Not a move: ${T}`
+	: Rest extends Token | ''
+		? S
+		: `Not a move: ${Rest}`;
 
 export const FACE_LETTERS: readonly FaceLetter[] = ['u', 'd', 'f', 'b', 'l', 'r'];
 
