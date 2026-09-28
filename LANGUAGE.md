@@ -233,6 +233,19 @@ be used as a permutation, not the reverse), Int, Bool.
 | `if <cond> { … }`                | plain condition                                                                                                                                                 |
 | `fn name(p) = …`                 | small helper returning a sequence                                                                                                                               |
 
+### Stages
+
+A stage names a sub-goal of the solution, **for documentation and
+display**: it shows which part of the move sequence accomplishes what.
+
+- The simulator's history groups moves by stage ("Top Cross: 14 moves"),
+  with turn counts for each, and "next stage" steps through them.
+- The file reads the way the method is taught: first face, middle layer,
+  top cross, …
+- Stages don't change which moves are made: without them, a solution makes
+  exactly the same moves.
+- Stages nest (Bottom Edges inside First Face).
+
 ### Generalization
 
 Keep a puzzle-independent core (permutations, patterns, control) and put
@@ -312,6 +325,12 @@ or the move list.
     `3Rw`); the pyraminx's lower case tip moves clash with lower case place
     names; face pictures for triangles; a sticker-numbered engine (as GAP
     does) under the names.
+17. **Stage goals:** a stage could state its goal, e.g.
+    `stage "Middle" goal solved(layer(D) layer(E)) { … }` — documentation
+    that can be checked: a solve that ends a stage without reaching its goal
+    fails there, naming the stage; a stage whose goal already holds is
+    skipped (replacing `skip if`); the page could show each goal; and each
+    stage could be tested alone.
 
 ## Problems with the current design
 
