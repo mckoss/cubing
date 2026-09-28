@@ -20,11 +20,24 @@ the simulator runs the JSON.
 basic.cube  --(Peggy parser + compiler)-->  basic.json  --(solver runtime)-->  moves
 ```
 
-Every solution must pass the same test the solvers pass today:
+Every solution must pass one test: after the scramble and the solution's
+moves, the cube is solved, however it's held.
 
 ```
-assert c basic(c) == ()          # the cube, then the moves: solved
+assert solved(c basic(c))
 ```
+
+## The model in brief
+
+- **Names are places.** `uf`, `fu`, `urf`, `u` are locations on the cube,
+  including which way the piece in them faces.
+- **Patterns describe what's in a place.** `/u_/`, `/!u!u/`, `/df/`.
+- **A pattern with no wildcards is a cubie:** `/df/` is the down-front
+  piece, identified by its colors.
+- **`is` tests a place against a pattern:** `uf is /df/` — the df piece is
+  at uf, with its d sticker on the u side.
+- **Permutations move places:** `(uf ur ub)`, `R(urf)`.
+- **Everything is relative to the cube as it's held** (its centers).
 
 ## Settled
 
@@ -34,53 +47,105 @@ assert c basic(c) == ()          # the cube, then the moves: solved
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `# …`                                   | Comment to the end of the line                                                                                                    |
 | `U D L R F B`, `M E S`, `x y z`, `Rw` … | Moves, in standard (WCA) notation: capitals; `'` and `2` are part of the move (`R'`, `U2`); wide turns are `Rw`, never lower case |
-| `urf`, `uf`, `u`                        | Cubies: lower case face letters                                                                                                   |
-| `@urf`                                  | Locations (see below)                                                                                                             |
+| `urf`, `uf`, `u`                        | Locations: lower case face letters                                                                                                |
+| `/u__/`, `/df/`, `/u_/r`                | Patterns (see below)                                                                                                              |
 | other lower case words                  | Variables and keywords (`x`, `y`, `z` are reserved: they're moves)                                                                |
 
 - Items are separated by spaces, moves included (`R U R' U'`, not `RUR'U'`).
 - A variable whose name is only face letters (`fur`, `bud`) is an error: it
-  would read as a cubie.
+  would read as a location.
 - Brackets: `( )` are parentheses, `[ ]` brackets, `{ }` braces.
 
-### Cubies and locations
+Every special character and its uses:
 
-- A **cubie** is a piece, named by its home: `urf`. The order of the letters
-  picks a sticker, so `rfu` is the same piece read from its r sticker; this
-  is how orientation is written.
+| Token    | Meaning                                                                           |
+| -------- | --------------------------------------------------------------------------------- |
+| `#`      | comment to the end of the line                                                    |
+| `'` `2`  | part of a move: `R'`, `U2`                                                        |
+| `^`      | power: `p^3`, `p^-1`                                                              |
+| `( )`    | grouping `(R U)^3`; a cycle `(uf ur ub)`; the identity `()`; arguments `order(p)` |
+| `+` `-`  | after a cycle: its pieces come back turned, `(urf)+`                              |
+| `/ /`    | a pattern, `/u__/`; followed by `r`, any rotation, `/ulb/r`                       |
+| `[ ]`    | a face picture, rows separated by `/`: `face U [_u_/uuu/_u_]`                     |
+| `_`      | in a pattern or picture: any sticker                                              |
+| `!`      | in a pattern or picture: any sticker but, `!u`                                    |
+| `{ }`    | a block: `stage "…" { … }`, `each y { … }`                                        |
+| `->`     | a case and what to do: `case … -> do R U R'`                                      |
+| `=` `==` | `let` binding; equality                                                           |
+| `,`      | separates arguments and generators: `using y, U`                                  |
+| `:`      | in `all c in …: …`                                                                |
+| `" "`    | a string: stage names, captions                                                   |
+
+Keywords so far: `solution for stage let fn do each match case otherwise
+using turns until max skip if not and or in is all has face` (and, if the
+named search is adopted, `find by as at else`).
+
+### Locations
+
+- A **location** (Singmaster's _cubicle_) is a place **and which way the
+  piece in it faces**: the first letter says which of the piece's stickers
+  is on which face. `uf` and `fu` are the same place, read from different
+  stickers; so are `urf`, `rfu`, and `fur`.
 - **Corners are named clockwise**, reading the corner's faces clockwise as
-  seen from outside the cube: `urf`, `rfu`, and `fur` all name the up-right-
-  front corner, but `ufr` (counterclockwise) is not a name, and neither are
-  its rotations `fru` and `ruf`. The eight corners are `urf ufl ulb ubr` and
-  `dfr dlf dbl drb` (as Singmaster and Kociemba write them). This gives each
-  corner exactly three names, one per sticker, and keeps a name's rotations
-  meaningful: rotating a clockwise name gives the same corner from the next
-  sticker. A counterclockwise name is an error that suggests the clockwise
-  one.
-- A **location** (Singmaster's _cubicle_) is a place, with which way the
-  piece in it faces: `@urf`, `@rfu`. `@` is our invention; the literature
-  uses the same name for both and relies on context.
+  seen from outside the cube. The eight corners are `urf ufl ulb ubr` and
+  `dfr dlf dbl drb` (as Singmaster and Kociemba write them), each with its
+  three rotations. `ufr` (counterclockwise) is not a name, nor are `fru` or
+  `ruf`; a counterclockwise name is an error that suggests the clockwise
+  one. Each corner has exactly three names, one per sticker.
+- There are 54 locations: 6 centers, 24 edge stickers, 24 corner stickers.
 - **All names are relative to the cube as it's held now** (relative to the
-  centers): after `y`, `fr` means the piece that now belongs at the front
-  right, and `@fr` the place now at the front right. Face turns never rename
-  anything; whole cube turns (`x y z`) and slices (`M E S`) move the centers,
-  so they rename everything consistently. This is what lets `each y { … }`
-  write a rule once for all four sides.
-- To follow one physical piece through rotations, bind it:
-  `let piece = cubie(@df)`.
+  centers): after `y`, `fr` is the place now at the front right. Face turns
+  never rename anything; whole cube turns (`x y z`) and slices (`M E S`)
+  move the centers, so they rename everything consistently. This is what
+  lets `each y { … }` write a rule once for all four sides.
 
 ### Colors
 
-- A color is named by the face it belongs on: `u` is "the color of the up
-  center". There are no color names in rules, so `@uf == u_` means "the top
-  color faces up at uf".
+- A color is named by the face it belongs on: `u` is "the color of the
+  center now on top". There are no color names in rules.
 - A color scheme is only for display (the simulator, pictures, captions):
   `colors { u: yellow, f: blue, r: orange, l: red, b: green, d: white }`.
 
+### Patterns and cubies
+
+A **pattern** describes the stickers of a piece, one cell per sticker, read
+in the letter order of the place it's tested against:
+
+| Cell | Matches        |
+| ---- | -------------- |
+| `u`  | the color of u |
+| `_`  | anything       |
+| `!u` | anything but u |
+
+- **`is`** tests the piece in a place: `uf is /u_/` (the top color faces up
+  at uf); `rfu is /u__/` (reading the urf corner from its r sticker, that
+  sticker is the top color: yellow faces right).
+- **A pattern with no wildcards is a cubie**, identified by its colors:
+  `/df/` is the down-front edge. So
+  - `uf is /df/`: the df piece is at uf, with its d sticker up;
+  - `fu is /df/`: the same piece at the same place, flipped;
+  - `df is /df/`: df is home, the right way round (`solved(df)`).
+- **`r` means any rotation**: `/df/r` matches the df piece either way round;
+  `/ulb/r` the ulb corner in any of its three twists; `/u__/r` any corner
+  with a top-color sticker. (A corner has only three clockwise rotations, so
+  `/ulb/r` is exactly "the ulb piece, however twisted".) Patterns like
+  `/!u!u/` match every rotation anyway.
+- **Face pictures**: a pattern for a whole face, as seen looking at it, in
+  brackets, rows separated by `/`; each cell is one sticker (`u`, `_`, or
+  `!u`), and spaces are optional. Read in a fixed order (for U: back row
+  `ulb ub ubr`, then `ul u ur`, then front `ufl uf urf`):
+
+  ```
+  face U [_!u_ / uuu / _!u_]          # the line, left to right
+  face U [ _ !u _ /  u u u  / _ !u _ ] # the same, spaced out
+  ```
+
+  Negative cells make cases exclusive, so case order doesn't matter.
+
 ### Permutations
 
-- **Cycle notation**, printed and read the same way (what the page shows can
-  be pasted back): `(uf ur ub) (urf)+`.
+- **Cycle notation** on locations, printed and read the same way (what the
+  page shows can be pasted back): `(uf ur ub) (urf)+`.
 - Letter order is orientation: `(uf ub)` swaps two edges; `(uf bu)` swaps
   them and flips both.
 - A suffix means the pieces come back turned: `+` once (corners clockwise,
@@ -95,58 +160,60 @@ assert c basic(c) == ()          # the cube, then the moves: solved
 
 ### Operators
 
-| Expression | Types          | Result   | Meaning                                                        |
-| ---------- | -------------- | -------- | -------------------------------------------------------------- |
-| `p q`      | Perm, Perm     | Perm     | p, then q (left to right, like moves; as in GAP)               |
-| `p(q)`     | Perm, Perm     | Perm     | q, then p (inside out, like functions)                         |
-| `p(@x)`    | Perm, Location | Location | where the piece at x ends up                                   |
-| `p^n`      | Perm, Int      | Perm     | p repeated; `p^-1` is the inverse; `p^0` is `()`               |
-| `R'`, `R2` | move           | Move     | part of a single move: `R' == R^-1 == inverse(R)`, `R2 == R^2` |
-| `p == q`   |                | Bool     | same effect                                                    |
+| Expression  | Types             | Result   | Meaning                                                        |
+| ----------- | ----------------- | -------- | -------------------------------------------------------------- |
+| `p q`       | Perm, Perm        | Perm     | p, then q (left to right, like moves; as in GAP)               |
+| `p(q)`      | Perm, Perm        | Perm     | q, then p (inside out, like functions)                         |
+| `p(uf)`     | Perm, Location    | Location | where the piece at uf ends up                                  |
+| `p^n`       | Perm, Int         | Perm     | p repeated; `p^-1` is the inverse; `p^0` is `()`               |
+| `R'`, `R2`  | move              | Move     | part of a single move: `R' == R^-1 == inverse(R)`, `R2 == R^2` |
+| `p == q`    |                   | Bool     | same effect                                                    |
+| `uf == fu`  | Location          | Bool     | same place, same facing (false here)                           |
+| `uf is /…/` | Location, Pattern | Bool     | the piece at uf matches the pattern                            |
+| `uf is c`   | Location, Cubie   | Bool     | the piece at uf is the (physical) cubie c                      |
 
 - `p^3`, not `p3`, `p*3`, or `(…)x3`.
 - Applying a bare move (`R(U)`) is allowed but warned against: it reads
   backwards (`R(U(R'(U')))` is `U' R' U R`).
-- `p(urf)` (a permutation applied to a cubie) is a type error: permutations
-  move places. Use `home(urf)`, or `location(urf)` for the current cube.
+- `==` never looks inside a place; `is` always does.
 
 ### Functions
 
-| Function      | Returns                                                                             |
-| ------------- | ----------------------------------------------------------------------------------- |
-| `order(p)`    | the order of p                                                                      |
-| `inverse(p)`  | `p^-1`                                                                              |
-| `legal(p)`    | whether some sequence of moves makes p (flip parity, twist sum, permutation parity) |
-| `home(c)`     | the location cubie c belongs in: `home(urf) == @urf`                                |
-| `location(c)` | where cubie c is now (in the current cube)                                          |
-| `cubie(@x)`   | which cubie is in place x now                                                       |
+| Function      | Returns                                                                                                     |
+| ------------- | ----------------------------------------------------------------------------------------------------------- |
+| `order(p)`    | the order of p                                                                                              |
+| `inverse(p)`  | `p^-1`                                                                                                      |
+| `legal(p)`    | whether some sequence of moves makes p (flip parity, twist sum, permutation parity)                         |
+| `solved(x …)` | for places, each holds its own piece the right way round (`x is /x/`); for a cube, solved however it's held |
+| `placed(x …)` | each place holds its own piece, however twisted (`x is /x/r`)                                               |
+| `location(p)` | where the piece matching a complete pattern (or a cubie) is, facing so that it matches                      |
+| `cubie(x)`    | the physical piece in place x now (a Cubie value, to follow through turns)                                  |
+| `slot(x)`     | the place's home name, ignoring facing: `slot(fu) == uf`, `slot(fur) == urf`                                |
+
+`location(/df/) is /df/` is always true: it names the place with the facing
+that matches.
 
 ### Types
 
-Cubie, Location, Permutation (a cube state is one), Sequence (a permutation
-that remembers its moves, so it can be played; any sequence can be used as a
-permutation, not the reverse), Int, Bool.
+Location, Pattern, Cubie, Permutation (a cube state is one), Sequence (a
+permutation that remembers its moves, so it can be played; any sequence can
+be used as a permutation, not the reverse), Int, Bool.
 
-### Patterns
+- A **Pattern** is read relative to the centers: after `y`, `/fr/` is the
+  piece that now belongs at the front right.
+- A **Cubie** is a physical piece, from `cubie(x)`, that keeps its identity
+  through whole cube turns: `let piece = cubie(df)`, then later
+  `location(piece)`. Printed as the complete pattern that matches it now.
 
-- `@uf == u_`: the piece at uf, read from the sticker facing u, has the top
-  color there; `_` is a wildcard. `@fr == fr` (home and right way round),
-  `@fr == rf` (home, flipped), `@urf == u__`.
-- `!u`: anything but u. `{f r}`: either.
-- Lists of places: `[@uf @ur @ub @ul] == [u_ !u_ u_ !u_]`.
-- **Face pictures**, read in a fixed order (for U: back row `@ulb @ub @ubr`,
-  then `@ul @u @ur`, then front `@ufl @uf @urf`):
+### Solved
 
-  ```
-  face U {
-    _  !u  _
-    u   u  u        # the line, left to right
-    _  !u  _
-  }
-  ```
-
-  One line: `face U { _ !u _ / u u u / _ !u _ }`. Negative cells make cases
-  exclusive, so case order doesn't matter.
+- A cube is solved when every place holds its own piece the right way
+  round, **however the cube is held**: any of the 24 whole cube turns of the
+  identity counts. A solution doesn't need to turn the cube back at the end.
+- Centers have no visible orientation, so the model has none.
+- Slice moves displace the centers relative to the other pieces; that's a
+  real difference, not a way of holding the cube, so a slice scramble still
+  needs its centers put back ("Place Centers").
 
 ### Structure and control
 
@@ -168,79 +235,82 @@ permutation, not the reverse), Int, Bool.
 ### Generalization
 
 Keep a puzzle-independent core (permutations, patterns, control) and put
-everything puzzle-specific in a puzzle definition: face letters, piece and
-place names, moves, whole-puzzle turns, face-picture reading order, color
-scheme, `legal`. `solution basic for cube3`. The parser must not hard-code
-`udfblr` or the move list.
+everything puzzle-specific in a puzzle definition: face letters, place
+names, moves, whole-puzzle turns, face-picture reading order, color scheme,
+`legal`. `solution basic for cube3`. The parser must not hard-code `udfblr`
+or the move list.
 
 ## Open questions
 
 1. **Name** of the language.
-2. **Cycle elements:** a permutation moves _places_, but cycles have always
-   been written with bare names. Either
-   - strict: `@(ulb ufl ubr)` (or `(@ulb @ufl @ubr)`), or
-   - one syntactic rule, like an assignment's left side: inside a cycle's
-     parentheses, names are places — `(ulb ufl ubr)`, the standard form.
-
-   The page's display should match whichever is chosen.
-
-3. **Composition in two directions.** `p q` is left to right, `p(q)` inside
+2. **Composition in two directions.** `p q` is left to right, `p(q)` inside
    out. Both are useful, but mixed carelessly they read in opposite
    directions (`R(U)F(U)` is `U R U F`, not `U F U R`). Options: keep both
-   (current), restrict application to names (`R(U)` an error), or add a
-   forward keyword (`p then q`, or `p ; q`).
-4. **Commutators and conjugates.** Cubers write `[A, B] = A B A' B'` and
+   (current), restrict application to names (`R(U)` an error), drop `p(q)`
+   for permutations and keep function syntax for functions only (a
+   reviewer's recommendation), or add a forward keyword (`p then q`).
+3. **Commutators and conjugates.** Cubers write `[A, B] = A B A' B'` and
    `[A: B] = A B A'`; GAP's `Comm(a, b)` and `a^b` are the other way round.
-   Use function names (`commutator`, `conjugate`)? Or just write them out?
-5. **`'` on names:** allow `prep'` as short for `prep^-1` (needed by the
+   Use cubers' brackets (which now also mean face pictures, though a comma
+   or colon inside would tell them apart), function
+   names (`commutator`, `conjugate`), or just write them out?
+4. **`'` on names:** allow `prep'` as short for `prep^-1` (needed by the
    `find` proposal below)?
-6. **Searches: `using U match` vs. a named search.** Proposal:
+5. **Searches: `using U match` vs. a named search.** Proposal:
    ```
-   find uf by U as t {
-     at @uf -> t F2 t' F2
-     at @fu -> t F t' U' R U
+   find /uf/ by U as t {
+     at uf -> t F2 t' F2
+     at fu -> t F t' U' R U
    }
    ```
+   - `find` looks for a complete pattern (a piece); `at` names where it is.
    - The search is named (`t`), so its undo is visible (`t'`), unlike P.
    - Explicit (`t` written where it's done) or implicit (`bring … as t`
      does `t` first)? Leaning explicit.
-   - `by {U, y}`: search several moves, shortest first, to a depth limit;
+   - `by U, y`: search several moves, shortest first, to a depth limit;
      the order must be fixed so solutions are repeatable.
-   - Several targets in one search (Singmaster tries `@uf` and `@fu`
+   - Several targets in one search (Singmaster tries `uf` and `fu`
      together at each turn; separate searches could give different moves).
    - When nothing is found: an explicit `else`, not silently skipping.
    - If adopted, `using U match` becomes a special case, or goes away.
-7. **`each`** as the keyword for "4 times, turning after each"?
+6. **`each`** as the keyword for "4 times, turning after each"?
    (Alternatives: `for each y`, `4 times then y`.)
-8. **Face pictures: minimal or complete?** For matching, `_` means "don't
+7. **Face pictures: minimal or complete?** For matching, `_` means "don't
    care". The page's case pictures show a whole plausible cube; the page
-   could fill the `_` cells in. Side tabs (`face U with sides { … }`) for the
+   could fill the `_` cells in. Side tabs (a bigger picture including the side stickers) for the
    side colors of the top edges?
-9. **Captions and pictures in the file:** should each case carry its "what
+8. **Captions and pictures in the file:** should each case carry its "what
    to look for" text and picture, so the page's method section is generated
    from the same file as the solver?
-10. **Statements vs. expressions:** keep `do` the only thing with an effect,
-    and everything else pure?
-11. **Whole cube turns: physical or virtual?** The same rules can emit `y`
+9. **Statements vs. expressions:** keep `do` the only thing with an effect,
+   and everything else pure?
+10. **Whole cube turns: physical or virtual?** The same rules can emit `y`
     (as you'd do it by hand) or rename the moves instead (fewer moves, as
     speedcubers do): `solution basic(turns: virtual)`.
-12. **Twist-agnostic tests:** `@ubr ~= ulb` (same piece, any twist) and
-    `positions(p)` (a permutation with twists removed) — the syntax.
+11. **Twist-agnostic cycles:** `/…/r` covers single places; Place D Corners
+    needs "these corners cycle, ignoring twists". `positions(cube) has
+(ufl ulb ubr)`, or a flag on the cycle?
+12. **Pattern details:** a way to write "either f or r" in a cell (a
+    character class like `[fr]` would clash with face pictures' brackets);
+    whether `is not` reads better than `not (… is …)`; which face a picture
+    without `face U` would mean.
 13. **Searching two generators:** `using y, U match` (each y, then each U),
     needed by Top Edges.
 14. **Output:** the JSON the compiler produces isn't designed yet.
 15. **Rotations and locations (a tension to resolve):** permutations are
     read relative to the centers, so a whole cube turn doesn't rearrange any
-    cubie (`x == ()`), yet it changes which place `@urf` names
-    (`y(@urf) == @ufl` as the cube is held). Decide whether `x y z` are
+    piece (`x == ()`), yet it changes which place `urf` names
+    (`y(urf) == ufl` as the cube is held). Decide whether `x y z` are
     permutations of locations, or a separate "frame" that's not a
     permutation at all.
-16. **Other puzzles:** the reference frame without fixed centers (2×2,
-    4×4); indexes for pieces that share faces (`uf.1`, `uf.2`); pieces that
-    look alike (patterns on colors work; tests on which piece is where
-    don't); layer moves (`2R`, `3Rw`); the pyraminx's lower case tip moves
-    clash with lower case cubies; face pictures for triangles; a
-    sticker-numbered engine (as GAP does) under the names.
+16. **Other puzzles:** "solved however held" is already the right
+    definition for the 2×2 and 4×4 (no fixed centers), but they still need a
+    reference for naming places; indexes for places that share faces
+    (`uf.1`, `uf.2`); pieces that look alike (patterns on colors work;
+    tests on which physical piece is where don't); layer moves (`2R`,
+    `3Rw`); the pyraminx's lower case tip moves clash with lower case place
+    names; face pictures for triangles; a sticker-numbered engine (as GAP
+    does) under the names.
 
 ## Problems with the current design
 
@@ -248,39 +318,51 @@ scheme, `legal`. `solution basic for cube3`. The parser must not hard-code
   language if `using … match` keeps an unnamed `turns`): `rule("F2 P F2")`
   means nothing without the generator two lines up. The `find … as t`
   proposal fixes it; the tables were left as they are for now.
-- **Two composition orders** (open question 3).
+- **Two composition orders** (open question 2).
 - **Case order** matters for plain boolean tests (the line pattern also
   matches the cross); negative cells in pictures fix it, but tests written
   with `and` still depend on order.
-- **Cubie names change** with whole cube turns and slices. Intended, but
-  surprising; code that wants one physical piece must bind it first.
-- **Cubie and Location share their spelling** (`urf` vs `@urf`); the type
-  checker must keep them apart, and `home` is needed to cross between them.
+- **Names change** with whole cube turns and slices. Intended, but
+  surprising; to follow one physical piece, take `cubie(x)` first.
+- **Patterns read in the place's letter order,** so some tests read
+  backwards at first: `rfu is /u__/` means "yellow faces right" (reading
+  the urf corner from its r sticker).
 - **The 2003 quirks** the TypeScript solvers keep for move-for-move
   compatibility (half turns always clockwise, `U2 U` written out, quarter
   turns recorded in the 2003 directions) don't belong in the language.
 
 ## Discarded
 
-| Idea                                                                | Why                                                                                         |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations) | Replaced everywhere by standard notation                                                    |
-| Upper case piece names (`URF`)                                      | Reads as moves U R F; Singmaster used lower case                                            |
-| Corner names in either winding (`ufr` as well as `urf`)             | Six spellings per corner; clockwise only gives exactly three, one per sticker               |
-| Cubies named by color (`$ybo`), `#` as their mark                   | `#` is for comments; names relative to the centers make rules work on every side            |
-| Permanent cubie identity (a letter always means one color)          | The meaning of `u` would split after `x`; rules must follow the cube as held                |
-| `where(c)`                                                          | Sounds like a loop; now `location(c)`                                                       |
-| `solvable(p)`                                                       | Sounds like it returns moves; now `legal(p)` (a yes/no check)                               |
-| `sticker(@x)`                                                       | Replaced by patterns: `@uf == u_`                                                           |
-| `around y`                                                          | Renamed `each y` (open)                                                                     |
-| `search U { … }`                                                    | Now `using U match` (and maybe `find … by U as t`)                                          |
-| `*` for composition                                                 | Suggests order doesn't matter; side by side is used                                         |
-| Sequences in brackets with commas `[R, U, F]`                       | Reads as the commutator `[R, U]`, and arrays with commas imply a different order convention |
-| `p3`, `(…)x3`, `p*3`                                                | `p^3` only                                                                                  |
-| GAP's `i^p` for "where i goes"                                      | Function notation `p(@x)` chosen                                                            |
-| `<Identity>`                                                        | `()`                                                                                        |
-| Moves without spaces (`RUR'U'`)                                     | Spaces everywhere, one rule                                                                 |
-| A `Notation` string type in the code                                | Sequences are `Move[]`; text only at the edges; `alg("…")` checked at compile time          |
+| Idea                                                                | Why                                                                                                            |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations) | Replaced everywhere by standard notation                                                                       |
+| Upper case piece names (`URF`)                                      | Reads as moves U R F; Singmaster used lower case                                                               |
+| Corner names in either winding (`ufr` as well as `urf`)             | Six spellings per corner; clockwise only gives exactly three, one per sticker                                  |
+| Bare names as cubies, `@urf` for locations                          | Permutations move places, so places get the plain names; a cubie is a complete pattern, `/urf/`                |
+| `home(c)` (or `target(c)`, `c.home`)                                | Not needed: a complete pattern's letters are its home                                                          |
+| `&c` / `*loc` (address and dereference)                             | `*&df == df` would be true only when df is home, unlike a pointer; `cubie(x)` and `location(p)` say it plainly |
+| `loc.cubie`, `c.home` (properties)                                  | Plain functions instead; no new syntax                                                                         |
+| `=~` for matching                                                   | Looks like "not equal"; `is` reads as English                                                                  |
+| `==` comparing a place with a piece                                 | `==` would mean two things; `is` looks inside a place, `==` never does                                         |
+| Bare patterns (`u_`, `u__`)                                         | Hard to tell from names; `/…/` marks them                                                                      |
+| `~=` (same piece, any twist)                                        | Now the `r` flag: `ubr is /ulb/r`                                                                              |
+| Face pictures in braces with spaced cells (`face U { _ u _ / … }`)  | Brackets with `/` between rows read as a two-dimensional pattern: `face U [_u_/uuu/_u_]`                       |
+| Lists of places in brackets (`[uf ur ub ul] is [...]`)              | Brackets are for face pictures; functions take several places: `solved(uf ur ub ul)`                           |
+| "Solved" meaning the identity (`c m == ()`)                         | Any way of holding a solved cube counts                                                                        |
+| Cubies named by color (`$ybo`), `#` as their mark                   | `#` is for comments; names relative to the centers make rules work on every side                               |
+| Permanent names (a letter always means one color)                   | The meaning of `u` would split after `x`; rules must follow the cube as held                                   |
+| `where(c)`                                                          | Sounds like a loop; now `location(p)`                                                                          |
+| `solvable(p)`                                                       | Sounds like it returns moves; now `legal(p)` (a yes/no check)                                                  |
+| `sticker(x)`                                                        | Replaced by patterns: `uf is /u_/`                                                                             |
+| `around y`                                                          | Renamed `each y` (open)                                                                                        |
+| `search U { … }`                                                    | Now `using U match` (and maybe `find … by U as t`)                                                             |
+| `*` for composition                                                 | Suggests order doesn't matter; side by side is used                                                            |
+| Sequences in brackets with commas `[R, U, F]`                       | Reads as the commutator `[R, U]`, and arrays with commas imply a different order convention                    |
+| `p3`, `(…)x3`, `p*3`                                                | `p^3` only                                                                                                     |
+| GAP's `i^p` for "where i goes"                                      | Function notation `p(uf)` chosen                                                                               |
+| `<Identity>`                                                        | `()`                                                                                                           |
+| Moves without spaces (`RUR'U'`)                                     | Spaces everywhere, one rule                                                                                    |
+| A `Notation` string type in the code                                | Sequences are `Move[]`; text only at the edges; `alg("…")` checked at compile time                             |
 
 ## How the current solvers would be written
 
@@ -302,15 +384,15 @@ solution basic for cube3 {
   let twistCornerBack  = (D' R' D R)^2
 
   # Moving a piece to the top without disturbing the bottom.
-  fn edgeUp(p) = match slot(p) {
-    case @df -> F2          case @fr -> R U R'
-    case @dr -> R2          case @br -> R' U R
-    case @db -> B2          case @bl -> L U L'
-    case @dl -> L2          case @fl -> L' U L
+  fn edgeUp(x) = match slot(x) {
+    case df -> F2           case fr -> R U R'
+    case dr -> R2           case br -> R' U R
+    case db -> B2           case bl -> L U L'
+    case dl -> L2           case fl -> L' U L
   }
-  fn cornerUp(p) = match slot(p) {
-    case @dfr -> R U R'     case @dbl -> L U L'
-    case @drb -> R' U' R    case @dlf -> L' U' L
+  fn cornerUp(x) = match slot(x) {
+    case dfr -> R U R'      case dbl -> L U L'
+    case drb -> R' U' R     case dlf -> L' U' L
   }
 
   stage "First Face" {
@@ -319,10 +401,10 @@ solution basic for cube3 {
     stage "Bottom Edges" {
       each y {
         if not solved(df) {
-          if location(df) not in layer(U) { do edgeUp(location(df)) }
+          if location(/df/) not in layer(U) { do edgeUp(location(/df/)) }
           using U match {
-            case location(df) == @uf -> do F2                # white up
-            case location(df) == @fu -> do U' R' F R         # white facing front
+            case uf is /df/ -> do F2                  # its bottom color up
+            case fu is /df/ -> do U' R' F R           # its bottom color facing front
           }
         }
       }
@@ -331,11 +413,11 @@ solution basic for cube3 {
     stage "Bottom Corners" {
       each y {
         if not solved(dfr) {
-          if location(dfr) not in layer(U) { do cornerUp(location(dfr)) }
+          if location(/dfr/) not in layer(U) { do cornerUp(location(/dfr/)) }
           using U match {
-            case location(dfr) == @rfu -> do R U R'              # white facing right
-            case location(dfr) == @fur -> do F' U' F             # white facing front
-            case location(dfr) == @urf -> do R U2 R' U' R U R'   # white up
+            case rfu is /dfr/ -> do R U R'             # bottom color facing right
+            case fur is /dfr/ -> do F' U' F            # bottom color facing front
+            case urf is /dfr/ -> do R U2 R' U' R U R'  # bottom color up
           }
         }
       }
@@ -345,49 +427,49 @@ solution basic for cube3 {
   stage "Middle" {
     each y {
       # Stuck in the wrong middle slot: turn the cube to it and kick it out.
-      if location(fr) in layer(E) and not solved(fr) {
-        match slot(location(fr)) {
-          case @fr -> do insertRight
-          case @br -> do y insertRight y'
-          case @bl -> do y2 insertRight y2
-          case @fl -> do y' insertRight y
+      if location(/fr/) in layer(E) and not solved(fr) {
+        match slot(location(/fr/)) {
+          case fr -> do insertRight
+          case br -> do y insertRight y'
+          case bl -> do y2 insertRight y2
+          case fl -> do y' insertRight y
         }
       }
       if not solved(fr) {
         using U match {
-          case location(fr) == @fu -> do insertRight
-          case location(fr) == @ur -> do y insertLeft y'
+          case fu is /fr/ -> do insertRight           # front color in front
+          case ur is /fr/ -> do y insertLeft y'       # right color on the right
         }
       }
     }
   }
 
   stage "Top Cross" {
-    until face U { _ u _ / u u u / _ u _ } max 4 {
+    until face U [_u_ / uuu / _u_] max 4 {
       using U match {
-        case face U { _ !u _ /  u u  u / _ !u _ } -> do topCross   # line
-        case face U { _  u _ /  u u !u / _ !u _ } -> do topCross   # L, back left
-        case face U { _ !u _ / !u u !u / _ !u _ } -> do topCross   # dot
+        case face U [_!u_ / uuu  / _!u_] -> do topCross   # line
+        case face U [_u_  / uu!u / _!u_] -> do topCross   # L, back left
+        case face U [_!u_ / !uu!u / _!u_] -> do topCross  # dot
       }
     }
   }
 
   stage "Top Edges" {
-    until solved(edges(U)) max 3 {
+    until solved(uf ur ub ul) max 3 {
       using y, U match {
-        case @uf == uf and @ur == ur and @ub == ub and @ul == ul -> ()
-        case @uf == ul and @ul == uf and @ub == ub and @ur == ur -> do swapEdges
-        case @uf == ub and @ub == uf and @ul == ul and @ur == ur -> do swapEdges
+        case solved(uf ur ub ul)                                    -> ()
+        case uf is /ul/ and ul is /uf/ and solved(ub ur)            -> do swapEdges
+        case uf is /ub/ and ub is /uf/ and solved(ul ur)            -> do swapEdges
       }
     }
   }
 
   stage "Top Corners" {
-    until all c in corners(U): @c ~= c max 3 {
+    until placed(urf ufl ulb ubr) max 3 {
       using y match {
-        case @ubr ~= ulb and @ulb ~= ufl and @ufl ~= ubr -> do cycleCorners
-        case @ulb ~= ubr and @ubr ~= urf and @urf ~= ulb -> do cycleCornersBack
-        otherwise                                         -> do cycleCorners
+        case ubr is /ulb/r and ulb is /ufl/r and ufl is /ubr/r -> do cycleCorners
+        case ulb is /ubr/r and ubr is /urf/r and urf is /ulb/r -> do cycleCornersBack
+        otherwise                                              -> do cycleCorners
       }
     }
   }
@@ -395,9 +477,9 @@ solution basic for cube3 {
   stage "Twist Corners" {
     each U {                                   # turn the top, not the cube
       match {
-        case @rfu == u__ -> do twistCorner     # yellow facing right
-        case @fur == u__ -> do twistCornerBack # yellow facing front
-        case @urf == u__ -> ()
+        case rfu is /u__/ -> do twistCorner     # top color facing right
+        case fur is /u__/ -> do twistCornerBack # top color facing front
+        case urf is /u__/ -> ()
       }
     }
   }
@@ -405,38 +487,38 @@ solution basic for cube3 {
 ```
 
 The twist stage is simpler than the TypeScript: a pattern on colors
-(`@rfu == u__`) instead of finding which corner is at the front right. The
+(`rfu is /u__/`) instead of finding which corner is at the front right. The
 first face's case places could be derived from the sequences
-(`inverse(F2)(@df)` is `@uf`) and checked by the compiler.
+(`inverse(F2)(df)` is `uf`) and checked by the compiler.
 
 ### Singmaster (sketch)
 
 Singmaster solves the top layer first (white on top), turns the cube over
 (`z2`), and finishes the other layers. With the named search of open
-question 6:
+question 5:
 
 ```
 solution singmaster for cube3 {
 
   stage "Solve U Edges" {
     each y {
-      find uf by D as t  { at @df -> t F2
-                           at @fd -> t F' U' R U }
-      find uf by E' as t { at @lf -> t F t'
-                           at @rf -> t F' t' }
-      find uf by U as t  { at @uf -> t F2 t' F2
-                           at @fu -> t F t' U' R U }
+      find /uf/ by D as t  { at df -> t F2
+                             at fd -> t F' U' R U }
+      find /uf/ by E' as t { at lf -> t F t'
+                             at rf -> t F' t' }
+      find /uf/ by U as t  { at uf -> t F2 t' F2
+                             at fu -> t F t' U' R U }
     }
   }
 
   stage "Solve U Corners" {
     each y {
-      find urf by D as t { at @rdf -> t D F D' F'
-                           at @frd -> t D' R' D R
-                           at @dfr -> t F D' F' R' D2 R }
-      find urf by U as t { at @urf -> t F D F' t' F D' F'
-                           at @rfu -> t R' D2 R t' F D2 F'
-                           at @fur -> t F D2 F' t' R' D2 R }
+      find /urf/ by D as t { at rdf -> t D F D' F'
+                             at frd -> t D' R' D R
+                             at dfr -> t F D' F' R' D2 R }
+      find /urf/ by U as t { at urf -> t F D F' t' F D' F'
+                             at rfu -> t R' D2 R t' F D2 F'
+                             at fur -> t F D2 F' t' R' D2 R }
     }
   }
 
@@ -445,20 +527,20 @@ solution singmaster for cube3 {
   stage "Solve Middle Edges" {
     each y {
       if not solved(rf) {                       # stuck in the middle: lift it out
-        find rf by E' as t { at @rf -> t B' U' R2 U2 R2 U2 R2 U2 U B t'
-                             at @fr -> t L U' F2 U2 F2 U2 F2 U2 U L' t' }
+        find /rf/ by E' as t { at rf -> t B' U' R2 U2 R2 U2 R2 U2 U B t'
+                               at fr -> t L U' F2 U2 F2 U2 F2 U2 U L' t' }
       }
-      find rf by U as t    { at @ub -> t B' U' R2 U2 R2 U2 R2 U2 U B
-                             at @lu -> t L U' F2 U2 F2 U2 F2 U2 U L' }
+      find /rf/ by U as t    { at ub -> t B' U' R2 U2 R2 U2 R2 U2 U B
+                               at lu -> t L U' F2 U2 F2 U2 F2 U2 U L' }
     }
   }
 
   stage "Orient D Edges" {                      # the (new) top: which edges show u?
     using y match {
-      case face U { _ u _ / u u u / _ u _ }     -> ()
-      case face U { _ !u _ / u u u / _ !u _ }   -> do B L U L' U' B'
-      case face U { _ !u _ / !u u u / _ u _ }   -> do B U L U' L' B'   # front and right
-      case face U { _ !u _ / !u u !u / _ !u _ } -> do B L U L' U' B' y2 B U L U' L' B'
+      case face U [_u_  / uuu   / _u_ ] -> ()
+      case face U [_!u_ / uuu   / _!u_] -> do B L U L' U' B'
+      case face U [_!u_ / !uuu  / _u_ ] -> do B U L U' L' B'   # front and right
+      case face U [_!u_ / !uu!u / _!u_] -> do B L U L' U' B' y2 B U L U' L' B'
     }
   }
 
@@ -467,7 +549,7 @@ solution singmaster for cube3 {
       case cube has (uf ur ub)      -> do R2 D' U2 R' L F2 R L' D R2
       case cube has (uf ub ur)      -> do R2 D' R' L F2 R L' U2 D R2
       case cube has (uf ur) (ul ub) -> do R2 D2 B2 D L2 F2 L2 F2 L2 F2 D' B2 D2 R2
-      case solved(edges(U))         -> ()
+      case solved(uf ur ub ul)    -> ()
     }
   }
 
@@ -483,14 +565,15 @@ solution singmaster for cube3 {
   stage "Orient D Corners" {
     each U {
       match {
-        case @rfu == u__ -> do (D F D' F')^2    # counterclockwise
-        case @fur == u__ -> do (F D F' D')^2    # clockwise
-        case @urf == u__ -> ()
+        case rfu is /u__/ -> do (D F D' F')^2    # counterclockwise
+        case fur is /u__/ -> do (F D F' D')^2    # clockwise
+        case urf is /u__/ -> ()
       }
     }
   }
 
-  do z2
+  # The 2003 program turns the cube back (z2); "solved however held" makes
+  # that optional.
 }
 ```
 
@@ -504,6 +587,8 @@ Things the Singmaster sketch shows the language needs to pin down:
 - Singmaster's searches try each target at every turn; `find` with several
   targets preserves that (and so the solver's exact moves, which the golden
   test checks).
+- Leaving out the final `z2` changes the recorded moves, so the golden test
+  would need the TypeScript solver changed the same way (or the `z2` kept).
 
 ## Implementation plan (when the design settles)
 
@@ -516,4 +601,4 @@ Things the Singmaster sketch shows the language needs to pin down:
    `singmaster.ts`; the golden test (`solvers-golden.json`) must pass
    unchanged, move for move.
 5. Generate the page's method section (captions, pictures) from the file,
-   if open question 9 says so.
+   if open question 8 says so.
