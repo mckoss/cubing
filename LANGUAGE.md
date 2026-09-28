@@ -256,10 +256,16 @@ stage "Middle" goal solved(layer(D) layer(E)) { … }
   the solve stops with an error naming the stage.
 - **Skipped when already true:** a stage whose goal holds at the start
   makes no moves (this replaces `skip if`).
-- **Goals accumulate:** at the end of each stage, the goals of the stages
-  before it at the same level must still hold, so a stage can disturb
-  earlier work along the way (Twist Corners scrambles the bottom) but must
-  restore it by its end.
+- **Goals persist for the rest of the solution:** once a stage's goal is
+  reached, it must hold at the end of **every** later stage, nested or not,
+  until the solve is done. The runtime checks all of them at each stage's
+  end, and a failure names both the stage that broke the goal and the stage
+  that set it. A stage can still disturb earlier work along the way
+  (Twist Corners scrambles the bottom) as long as it's restored by the
+  stage's end. So the goals build up, and the last stage's goal (the cube
+  solved) is reached with every earlier one still true.
+- A method that deliberately undoes earlier work would have to say so
+  (e.g. a `releases` clause on the stage); neither of ours does.
 - **Goals keep their frame:** a goal is checked in the orientation the cube
   had when its stage ran; the runtime accounts for later whole cube turns
   (Singmaster's `z2`), so "the top layer is solved" still means that layer
