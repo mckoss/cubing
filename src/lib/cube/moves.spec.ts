@@ -3,7 +3,6 @@ import { Permutation } from './permutation';
 import {
 	appendMove,
 	formatMoves,
-	from2003Notation,
 	invertMoves,
 	parseMoves,
 	permutationOf,
@@ -85,34 +84,26 @@ describe('moves', () => {
 });
 
 describe('2003 compatibility', () => {
-	it('translates the 2003 notation', () => {
-		expect(formatMoves(from2003Notation('fFxXyYzZiIjJkK'))).toBe(
-			"F F' M' M E' E S' S x x' y y' z' z"
-		);
-	});
-
+	// The effects the 2003 simulator computed, recorded from it (with its
+	// moves written in standard notation).
 	it('matches the 2003 simulator for every catalog entry', () => {
 		const expected = new Map(reference.catalog.map(([moves, , cycles]) => [moves, cycles]));
 		for (const entry of CATALOG) {
-			expect(permutationOf(entry.moves).toString(), entry.original).toBe(
-				expected.get(entry.original)
+			expect(permutationOf(entry.moves).toString(), entry.notation).toBe(
+				expected.get(entry.notation)
 			);
 		}
 	});
 
 	it('matches the 2003 simulator for single moves (ignoring centers)', () => {
 		for (const [moves, , cycles] of reference.extra) {
-			expect(centerlessCycles(permutationOf(from2003Notation(moves)).toString()), moves).toBe(
-				cycles
-			);
+			expect(centerlessCycles(permutationOf(moves).toString()), moves).toBe(cycles);
 		}
 	});
 
 	it('reduces like the 2003 simulator', () => {
 		for (const [moves, reduced] of reference.reduce) {
-			expect(formatMoves(reduceMoves(from2003Notation(moves)))).toBe(
-				formatMoves(from2003Notation(reduced))
-			);
+			expect(formatMoves(reduceMoves(parseMoves(moves)))).toBe(formatMoves(parseMoves(reduced)));
 		}
 	});
 });

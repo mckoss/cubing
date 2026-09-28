@@ -467,12 +467,11 @@
 				<tr><th>Label</th><th>Moves</th><th>Effect</th><th></th></tr>
 			</thead>
 			<tbody>
-				{#each catalog as entry (entry.original)}
+				{#each catalog as entry (entry.notation)}
 					<tr>
 						<td>{entry.label}</td>
 						<td>
 							<span class="mono">{entry.notation}</span>
-							<span class="original">2003: {entry.original}</span>
 						</td>
 						<td class="mono effect">{entry.effect}</td>
 						<td>
@@ -981,13 +980,6 @@
 	.mono,
 	code {
 		font-family: var(--mono);
-	}
-
-	.original {
-		display: block;
-		color: var(--muted);
-		font-family: var(--mono);
-		font-size: 0.8rem;
 	}
 
 	.effect {
