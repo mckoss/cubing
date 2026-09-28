@@ -1,11 +1,12 @@
-# A Language for Cube Solutions — Design Notes
+# Rubikon — a Language for Cube Solutions: Design Notes
 
 Status: **design in progress, nothing implemented.** This collects the
 design discussion so far: what's settled, what's open, what was tried and
 dropped, and how the two solvers on the site would be written. Syntax in
 the examples is a draft.
 
-The name is open too (working names: RCSL, Cubit, Twisty, SOLV, CuDL).
+The language is called **Rubikon** (Rubik + Rubicon); files use the
+extension `.rbk`.
 
 ## Goal
 
@@ -17,7 +18,7 @@ of the PEG.js used in [Bolt](https://github.com/mckoss/bolt)) to JSON, and
 the simulator runs the JSON.
 
 ```
-basic.cube  --(Peggy parser + compiler)-->  basic.json  --(solver runtime)-->  moves
+basic.rbk  --(Peggy parser + compiler)-->  basic.json  --(solver runtime)-->  moves
 ```
 
 Every solution must pass one test: after the scramble and the solution's
@@ -294,7 +295,7 @@ or the move list.
 
 ## Open questions
 
-1. **Name** of the language.
+1. _(Resolved: the language is Rubikon, files are `.rbk`.)_
 2. **Composition in two directions.** `p q` is left to right, `p(q)` inside
    out. Both are useful, but mixed carelessly they read in opposite
    directions (`R(U)F(U)` is `U R U F`, not `U F U R`). Options: keep both
@@ -431,7 +432,7 @@ or the move list.
 ### Basic Modern Solution (complete draft)
 
 ```
-# basic.cube: the Basic Modern Solution, as in Mike's notes.
+# basic.rbk: the Basic Modern Solution, as in Mike's notes.
 # All names are relative to the cube as it's held.
 
 solution basic for cube3 {
@@ -658,7 +659,7 @@ Things the Singmaster sketch shows the language needs to pin down:
 2. A compiler from the AST to JSON: names resolved, sequences parsed to
    moves, patterns compiled to tests.
 3. A runtime in the simulator that executes the JSON.
-4. `basic.cube` and `singmaster.cube`, replacing `beginner.ts` and
+4. `basic.rbk` and `singmaster.rbk`, replacing `beginner.ts` and
    `singmaster.ts`; the golden test (`solvers-golden.json`) must pass
    unchanged, move for move.
 5. Generate the page's method section (captions, pictures) from the file,
