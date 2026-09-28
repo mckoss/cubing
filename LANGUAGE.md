@@ -180,16 +180,21 @@ in the letter order of the place it's tested against:
 
 ### Functions
 
-| Function      | Returns                                                                                                     |
-| ------------- | ----------------------------------------------------------------------------------------------------------- |
-| `order(p)`    | the order of p                                                                                              |
-| `inverse(p)`  | `p'`                                                                                                        |
-| `legal(p)`    | whether some sequence of moves makes p (flip parity, twist sum, permutation parity)                         |
-| `solved(x …)` | for places, each holds its own piece the right way round (`x is /x/`); for a cube, solved however it's held |
-| `placed(x …)` | each place holds its own piece, however twisted (`x is /x/r`)                                               |
-| `location(p)` | where the piece matching a complete pattern (or a cubie) is, facing so that it matches                      |
-| `cubie(x)`    | the physical piece in place x now (a Cubie value, to follow through turns)                                  |
-| `slot(x)`     | the place's home name, ignoring facing: `slot(fu) == uf`, `slot(fur) == urf`                                |
+| Function           | Returns                                                                                                     |
+| ------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `order(p)`         | the order of p                                                                                              |
+| `inverse(p)`       | `p'`                                                                                                        |
+| `legal(p)`         | whether some sequence of moves makes p (flip parity, twist sum, permutation parity)                         |
+| `commutator(a, b)` | `a b a' b'` (cubers' order): `commutator(R, U)` is `R U R' U'`                                              |
+| `conjugate(a, b)`  | `a b a'`: `conjugate(F, commutator(R, U))` is `F R U R' U' F'`                                              |
+| `solved(x …)`      | for places, each holds its own piece the right way round (`x is /x/`); for a cube, solved however it's held |
+| `placed(x …)`      | each place holds its own piece, however twisted (`x is /x/r`)                                               |
+| `location(p)`      | where the piece matching a complete pattern (or a cubie) is, facing so that it matches                      |
+| `cubie(x)`         | the physical piece in place x now (a Cubie value, to follow through turns)                                  |
+| `slot(x)`          | the place's home name, ignoring facing: `slot(fu) == uf`, `slot(fur) == urf`                                |
+
+`commutator` and `conjugate` follow cubers' convention; GAP's `Comm(a, b)`
+is `a' b' a b` and its `a^b` is `b' a b`, the other way round.
 
 `location(/df/) is /df/` is always true: it names the place with the facing
 that matches.
@@ -291,11 +296,8 @@ or the move list.
    (current), restrict application to names (`R(U)` an error), drop `p(q)`
    for permutations and keep function syntax for functions only (a
    reviewer's recommendation), or add a forward keyword (`p then q`).
-3. **Commutators and conjugates.** Cubers write `[A, B] = A B A' B'` and
-   `[A: B] = A B A'`; GAP's `Comm(a, b)` and `a^b` are the other way round.
-   Use cubers' brackets (which now also mean face pictures, though a comma
-   or colon inside would tell them apart), function
-   names (`commutator`, `conjugate`), or just write them out?
+3. _(Resolved: commutators and conjugates are functions, `commutator(a, b)`
+   and `conjugate(a, b)`, in cubers' order.)_
 4. _(Resolved: `'` inverts names and groups, e.g. `t'`, `(R U)'`; there is
    no `^`.)_
 5. **Searches: `using U match` vs. a named search.** Proposal:
@@ -375,37 +377,38 @@ or the move list.
 
 ## Discarded
 
-| Idea                                                                | Why                                                                                                            |
-| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations) | Replaced everywhere by standard notation                                                                       |
-| Upper case piece names (`URF`)                                      | Reads as moves U R F; Singmaster used lower case                                                               |
-| Corner names in either winding (`ufr` as well as `urf`)             | Six spellings per corner; clockwise only gives exactly three, one per sticker                                  |
-| Bare names as cubies, `@urf` for locations                          | Permutations move places, so places get the plain names; a cubie is a complete pattern, `/urf/`                |
-| `home(c)` (or `target(c)`, `c.home`)                                | Not needed: a complete pattern's letters are its home                                                          |
-| `&c` / `*loc` (address and dereference)                             | `*&df == df` would be true only when df is home, unlike a pointer; `cubie(x)` and `location(p)` say it plainly |
-| `loc.cubie`, `c.home` (properties)                                  | Plain functions instead; no new syntax                                                                         |
-| `=~` for matching                                                   | Looks like "not equal"; `is` reads as English                                                                  |
-| `==` comparing a place with a piece                                 | `==` would mean two things; `is` looks inside a place, `==` never does                                         |
-| Bare patterns (`u_`, `u__`)                                         | Hard to tell from names; `/…/` marks them                                                                      |
-| `~=` (same piece, any twist)                                        | Now the `r` flag: `ubr is /ulb/r`                                                                              |
-| Face pictures in braces with spaced cells (`face U { _ u _ / … }`)  | Brackets with `/` between rows read as a two-dimensional pattern: `face U [_u_/uuu/_u_]`                       |
-| Lists of places in brackets (`[uf ur ub ul] is [...]`)              | Brackets are for face pictures; functions take several places: `solved(uf ur ub ul)`                           |
-| "Solved" meaning the identity (`c m == ()`)                         | Any way of holding a solved cube counts                                                                        |
-| Cubies named by color (`$ybo`), `#` as their mark                   | `#` is for comments; names relative to the centers make rules work on every side                               |
-| Permanent names (a letter always means one color)                   | The meaning of `u` would split after `x`; rules must follow the cube as held                                   |
-| `where(c)`                                                          | Sounds like a loop; now `location(p)`                                                                          |
-| `solvable(p)`                                                       | Sounds like it returns moves; now `legal(p)` (a yes/no check)                                                  |
-| `sticker(x)`                                                        | Replaced by patterns: `uf is /u_/`                                                                             |
-| `skip if <cond>`                                                    | A stage's goal: a stage whose goal already holds is skipped                                                    |
-| `around y`                                                          | Renamed `each y` (open)                                                                                        |
-| `search U { … }`                                                    | Now `using U match` (and maybe `find … by U as t`)                                                             |
-| `*` for composition                                                 | Suggests order doesn't matter; side by side is used                                                            |
-| Sequences in brackets with commas `[R, U, F]`                       | Reads as the commutator `[R, U]`, and arrays with commas imply a different order convention                    |
-| Powers: `p^3`, `p^-1` (and `p3`, `(…)x3`, `p*3`)                    | Another notation for little gain: write repeats out (`p p p`) and invert with `'`                              |
-| GAP's `i^p` for "where i goes"                                      | Function notation `p(uf)` chosen                                                                               |
-| `<Identity>`                                                        | `()`                                                                                                           |
-| Moves without spaces (`RUR'U'`)                                     | Spaces everywhere, one rule                                                                                    |
-| A `Notation` string type in the code                                | Sequences are `Move[]`; text only at the edges; `alg("…")` checked at compile time                             |
+| Idea                                                                | Why                                                                                                                  |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations) | Replaced everywhere by standard notation                                                                             |
+| Upper case piece names (`URF`)                                      | Reads as moves U R F; Singmaster used lower case                                                                     |
+| Corner names in either winding (`ufr` as well as `urf`)             | Six spellings per corner; clockwise only gives exactly three, one per sticker                                        |
+| Bare names as cubies, `@urf` for locations                          | Permutations move places, so places get the plain names; a cubie is a complete pattern, `/urf/`                      |
+| `home(c)` (or `target(c)`, `c.home`)                                | Not needed: a complete pattern's letters are its home                                                                |
+| `&c` / `*loc` (address and dereference)                             | `*&df == df` would be true only when df is home, unlike a pointer; `cubie(x)` and `location(p)` say it plainly       |
+| `loc.cubie`, `c.home` (properties)                                  | Plain functions instead; no new syntax                                                                               |
+| `=~` for matching                                                   | Looks like "not equal"; `is` reads as English                                                                        |
+| `==` comparing a place with a piece                                 | `==` would mean two things; `is` looks inside a place, `==` never does                                               |
+| Bare patterns (`u_`, `u__`)                                         | Hard to tell from names; `/…/` marks them                                                                            |
+| `~=` (same piece, any twist)                                        | Now the `r` flag: `ubr is /ulb/r`                                                                                    |
+| Face pictures in braces with spaced cells (`face U { _ u _ / … }`)  | Brackets with `/` between rows read as a two-dimensional pattern: `face U [_u_/uuu/_u_]`                             |
+| Lists of places in brackets (`[uf ur ub ul] is [...]`)              | Brackets are for face pictures; functions take several places: `solved(uf ur ub ul)`                                 |
+| "Solved" meaning the identity (`c m == ()`)                         | Any way of holding a solved cube counts                                                                              |
+| Cubies named by color (`$ybo`), `#` as their mark                   | `#` is for comments; names relative to the centers make rules work on every side                                     |
+| Permanent names (a letter always means one color)                   | The meaning of `u` would split after `x`; rules must follow the cube as held                                         |
+| `where(c)`                                                          | Sounds like a loop; now `location(p)`                                                                                |
+| `solvable(p)`                                                       | Sounds like it returns moves; now `legal(p)` (a yes/no check)                                                        |
+| `sticker(x)`                                                        | Replaced by patterns: `uf is /u_/`                                                                                   |
+| `skip if <cond>`                                                    | A stage's goal: a stage whose goal already holds is skipped                                                          |
+| `around y`                                                          | Renamed `each y` (open)                                                                                              |
+| `search U { … }`                                                    | Now `using U match` (and maybe `find … by U as t`)                                                                   |
+| `*` for composition                                                 | Suggests order doesn't matter; side by side is used                                                                  |
+| Sequences in brackets with commas `[R, U, F]`                       | Reads as the commutator `[R, U]`, and arrays with commas imply a different order convention                          |
+| Commutator brackets `[A, B]`, `[A: B]`; GAP's `Comm(a, b)`, `a^b`   | Brackets are face pictures, and GAP's definitions run the other way from cubers'; named functions say which is meant |
+| Powers: `p^3`, `p^-1` (and `p3`, `(…)x3`, `p*3`)                    | Another notation for little gain: write repeats out (`p p p`) and invert with `'`                                    |
+| GAP's `i^p` for "where i goes"                                      | Function notation `p(uf)` chosen                                                                                     |
+| `<Identity>`                                                        | `()`                                                                                                                 |
+| Moves without spaces (`RUR'U'`)                                     | Spaces everywhere, one rule                                                                                          |
+| A `Notation` string type in the code                                | Sequences are `Move[]`; text only at the edges; `alg("…")` checked at compile time                                   |
 
 ## How the current solvers would be written
 
@@ -419,7 +422,7 @@ solution basic for cube3 {
 
   let insertRight      = U R U' R' U' F' U F
   let insertLeft       = U' L' U L U F U' F'
-  let topCross         = F R U R' U' F'
+  let topCross         = conjugate(F, commutator(R, U))   # F R U R' U' F'
   let swapEdges        = R U R' U R U2 R' U
   let cycleCorners     = U R U' L' U R' U' L
   let cycleCornersBack = U' L' U R U' L U R'
