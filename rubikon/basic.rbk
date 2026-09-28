@@ -1,0 +1,123 @@
+# basic.rbk — the Basic Modern Solution, as in Mike's notes, in Rubikon.
+#
+# A draft for review: nothing runs this yet (see LANGUAGE.md).
+#
+# All names are relative to the cube as it's held.  Whole cube turns
+# (x y z) only change the frame: they make no moves of their own, and the
+# moves after them come out renamed.  (`show y` would make a visible turn;
+# this method doesn't need one.)
+
+solution basic for cube3 {
+
+  # The sequences from the notes.
+  let insertRight      = U R U' R' U' F' U F
+  let insertLeft       = U' L' U L U F U' F'
+  let topCross         = conjugate(F, commutator(R, U))   # F R U R' U' F'
+  let swapEdges        = R U R' U R U2 R' U
+  let cycleCorners     = U R U' L' U R' U' L
+  let cycleCornersBack = U' L' U R U' L U R'
+  let twistCorner      = (R' D' R D)2
+  let twistCornerBack  = (D' R' D R)2
+
+  # Moving a piece up to the top without disturbing the bottom.
+  fn edgeUp(x) = match slot(x) {
+    case df -> F2           case fr -> R U R'
+    case dr -> R2           case br -> R' U R
+    case db -> B2           case bl -> L U L'
+    case dl -> L2           case fl -> L' U L
+  }
+  fn cornerUp(x) = match slot(x) {
+    case dfr -> R U R'      case dbl -> L U L'
+    case drb -> R' U' R     case dlf -> L' U' L
+  }
+
+  stage "First Face" goal solved(layer(D)) {
+
+    stage "Bottom Edges" goal solved(df dr db dl) {
+      each y {                                      # each bottom edge in turn
+        if not solved(df) {
+          if location(/df/) not in layer(U) { do edgeUp(location(/df/)) }
+          search U* as t {
+            case uf is /df/ -> do t F2                 # its bottom color up
+            case fu is /df/ -> do t U' R' F R          # its bottom color in front
+          }
+        }
+      }
+    }
+
+    stage "Bottom Corners" goal solved(layer(D)) {
+      each y {
+        if not solved(dfr) {
+          if location(/dfr/) not in layer(U) { do cornerUp(location(/dfr/)) }
+          search U* as t {
+            case rfu is /dfr/ -> do t R U R'               # bottom color facing right
+            case fur is /dfr/ -> do t F' U' F              # bottom color facing front
+            case urf is /dfr/ -> do t R U2 R' U' R U R'    # bottom color up
+          }
+        }
+      }
+    }
+  }
+
+  stage "Middle" goal solved(layer(D) layer(E)) {
+    each y {                                        # each middle slot in turn
+      # Stuck in the wrong middle slot: insert any edge there to lift it out.
+      if location(/fr/) in layer(E) and not solved(fr) {
+        match slot(location(/fr/)) {
+          case fr -> do insertRight
+          case br -> do y insertRight y'
+          case bl -> do y2 insertRight y2
+          case fl -> do y' insertRight y
+        }
+      }
+      if not solved(fr) {
+        search U* as t {
+          case fu is /fr/ -> do t insertRight          # front color in front
+          case ur is /fr/ -> do t y insertLeft y'      # right color on the right
+        }
+      }
+    }
+  }
+
+  stage "Top Cross" goal face U [_u_ / uuu / _u_] {
+    until goal max 4 {
+      search U* as t {
+        case face U [_!u_ / uuu   / _!u_] -> do t topCross   # line
+        case face U [_u_  / uu!u  / _!u_] -> do t topCross   # L, at the back left
+        case face U [_!u_ / !uu!u / _!u_] -> do t topCross   # dot
+      }
+    }
+  }
+
+  stage "Top Edges" goal solved(uf ur ub ul) {
+    until goal max 3 {
+      search y* U* as t {
+        case solved(uf ur ub ul)                          -> do t
+        case uf is /ul/ and ul is /uf/ and solved(ub ur)  -> do t swapEdges   # front and left swapped
+        case uf is /ub/ and ub is /uf/ and solved(ul ur)  -> do t swapEdges   # across: swap, try again
+      }
+    }
+  }
+
+  stage "Top Corners" goal placed(urf ufl ulb ubr) {
+    until goal max 3 {
+      search y* as t {
+        case urf is /urf/r and ubr is /ulb/r and ulb is /ufl/r and ufl is /ubr/r
+            -> do t cycleCorners                            # front right in place
+        case ufl is /ufl/r and ulb is /ubr/r and ubr is /urf/r and urf is /ulb/r
+            -> do t cycleCornersBack                        # front left in place
+        otherwise -> do cycleCorners                        # none in place: cycle any three
+      }
+    }
+  }
+
+  stage "Twist Corners" goal solved(cube) {
+    each U {                                        # turn the top, not the cube
+      match {
+        case rfu is /u__/ -> do twistCorner         # top color facing right
+        case fur is /u__/ -> do twistCornerBack     # top color facing front
+        case urf is /u__/ -> ()                     # already right
+      }
+    }
+  }
+}
