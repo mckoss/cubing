@@ -3,39 +3,40 @@
 // Ported from the 2003 Rubik's Cube Simulator (mckoss.com/jscript/Rubik).
 //
 // Each piece of the cube is named by the faces it touches, read clockwise:
-// "UFL" is the corner touching the Up, Front, and Left faces, and "FLU" and
-// "LUF" name the same corner, starting from a different sticker.  "UF" is an
-// edge, and "U" is the center of the Up face.  A permutation maps a sticker
+// "ufl" is the corner touching the up, front, and left faces, and "flu" and
+// "luf" name the same corner, starting from a different sticker.  "uf" is an
+// edge, and "u" is the center of the up face.  A permutation maps a sticker
 // to the place it moves to.  Only one rotation of each piece needs to be
 // stored; the others are found by rotating the name.
 //
 // The constructor takes a list of cycles.  E.g.:
 // (a b c)(d e) -> new Permutation([["a", "b", "c"], ["d", "e"]]);
 
+import { rotateName, type Location } from './types';
+
 export { Permutation };
 
+// A path of places for Permutation.hasMap; '' starts a new path.
+export type Path = (Location | '')[];
+
 // Suffixes for cycles that return a piece rotated (twisted or flipped).
-const ROTATION_SUFFIX = ['', '+', '-'];
+const ROTATION_SUFFIX = ['', '+', '-'] as const;
 
-function rotate(st: string): string {
-	return st.substring(1) + st.charAt(0);
-}
-
-// How many times st1 must be rotated to equal st2 (or undefined if never).
-function rotationsBetween(st1: string, st2: string): number | undefined {
-	for (let rot = 0; rot < st1.length; rot++) {
-		if (st1 === st2) {
+// How many times a must be rotated to equal b (or undefined if never).
+function rotationsBetween(a: Location, b: Location): number | undefined {
+	for (let rot = 0; rot < a.length; rot++) {
+		if (a === b) {
 			return rot;
 		}
-		st1 = rotate(st1);
+		a = rotateName(a);
 	}
 	return undefined;
 }
 
 class Permutation {
-	private map = new Map<string, string>();
+	private map = new Map<Location, Location>();
 
-	constructor(cycles: string[][] = []) {
+	constructor(cycles: Location[][] = []) {
 		for (const cycle of cycles) {
 			this.addCycle(cycle);
 		}
@@ -45,28 +46,27 @@ class Permutation {
 		return new Permutation();
 	}
 
-	addMap(from: string, to: string) {
+	addMap(from: Location, to: Location): void {
 		if (from !== to) {
 			this.map.set(from, to);
 		}
 	}
 
-	private addCycle(cycle: string[]) {
-		for (let i = 1; i < cycle.length; i++) {
-			this.addMap(cycle[i - 1], cycle[i]);
+	private addCycle(cycle: Location[]): void {
+		for (let i = 0; i < cycle.length; i++) {
+			this.addMap(cycle[i], cycle[(i + 1) % cycle.length]);
 		}
-		this.addMap(cycle[cycle.length - 1], cycle[0]);
 	}
 
 	// Where the sticker (or piece) named `from` is moved to.
-	apply(from: string): string {
+	apply(from: Location): Location {
 		for (let rot = 0; rot < from.length; rot++) {
 			const to = this.map.get(from);
 			if (to !== undefined) {
 				const back = from.length - rot;
-				return to.substring(back) + to.substring(0, back);
+				return (to.substring(back) + to.substring(0, back)) as Location;
 			}
-			from = rotate(from);
+			from = rotateName(from);
 		}
 		return from;
 	}
@@ -75,12 +75,12 @@ class Permutation {
 	compose(p2: Permutation): Permutation {
 		const result = new Permutation();
 
-		for (const st of this.map.keys()) {
-			result.addMap(st, p2.apply(this.apply(st)));
+		for (const loc of this.map.keys()) {
+			result.addMap(loc, p2.apply(this.apply(loc)));
 		}
-		for (const st of p2.map.keys()) {
-			if (this.apply(st) === st) {
-				result.addMap(st, p2.apply(st));
+		for (const loc of p2.map.keys()) {
+			if (this.apply(loc) === loc) {
+				result.addMap(loc, p2.apply(loc));
 			}
 		}
 		return result;
@@ -96,17 +96,17 @@ class Permutation {
 
 	inverse(): Permutation {
 		const result = new Permutation();
-		for (const st of this.map.keys()) {
-			result.addMap(this.apply(st), st);
+		for (const loc of this.map.keys()) {
+			result.addMap(this.apply(loc), loc);
 		}
 		return result;
 	}
 
 	// Does this permutation move pieces along the given path?  E.g.
-	// ["UF", "UR", "UB"] means the piece at UF goes to UR, and the one at UR
-	// goes to UB.  An empty string starts a new path.
-	hasMap(path: string[]): boolean {
-		let loc = '';
+	// ["uf", "ur", "ub"] means the piece at uf goes to ur, and the one at ur
+	// goes to ub.  An empty string starts a new path.
+	hasMap(path: Path): boolean {
+		let loc: Location | '' = '';
 		for (const next of path) {
 			if (next === '') {
 				loc = '';
@@ -123,21 +123,22 @@ class Permutation {
 	}
 
 	isIdentity(): boolean {
-		return this.toString() === '<Identity>';
+		return this.toString() === '()';
 	}
 
 	equals(p2: Permutation): boolean {
 		return this.compose(p2.inverse()).isIdentity();
 	}
 
-	// Cycle notation, e.g. "(UF UR UB) (URF)+".  A "+" or "-" means the
-	// pieces in the cycle come back rotated (clockwise or counterclockwise).
+	// Cycle notation, e.g. "(uf ur ub) (urf)+", or "()" for the identity.  A
+	// "+" or "-" means the pieces in the cycle come back rotated (clockwise
+	// or counterclockwise).
 	toString(): string {
-		const marked = new Set<string>();
-		const mark = (st: string) => {
-			for (let rot = 0; rot < st.length; rot++) {
-				marked.add(st);
-				st = rotate(st);
+		const marked = new Set<Location>();
+		const mark = (loc: Location): void => {
+			for (let rot = 0; rot < loc.length; rot++) {
+				marked.add(loc);
+				loc = rotateName(loc);
 			}
 		};
 
@@ -157,6 +158,6 @@ class Permutation {
 			cycle += ')' + ROTATION_SUFFIX[rotationsBetween(init, elem) ?? 0];
 			cycles.push(cycle);
 		}
-		return cycles.length === 0 ? '<Identity>' : cycles.join(' ');
+		return cycles.length === 0 ? '()' : cycles.join(' ');
 	}
 }

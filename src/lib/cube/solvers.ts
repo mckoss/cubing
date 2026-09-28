@@ -30,7 +30,7 @@ const SLICE_MOVES: Move[][] = (() => {
 // track.  Turn the slices to put the centers back in place, so the solvers
 // (which leave the centers alone) can finish the job.  (Added in 2026.)
 function placeCenters(perm: Permutation, moveList: MoveList): Permutation {
-	const centered = (p: Permutation): boolean => p.apply('U') === 'U' && p.apply('F') === 'F';
+	const centered = (p: Permutation): boolean => p.apply('u') === 'u' && p.apply('f') === 'f';
 	if (centered(perm)) {
 		return perm;
 	}
