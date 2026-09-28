@@ -3,14 +3,15 @@
 // by two spaces, as they were grouped in the notes.
 
 import { parseMoves, type Move } from './moves';
+import type { Notation } from './types';
 
 export interface CatalogEntry {
 	label: string;
 	moves: Move[];
-	notation: string;
+	notation: Notation;
 }
 
-const SEQUENCES: [notation: string, label: string][] = [
+const SEQUENCES: [notation: Notation, label: string][] = [
 	['F2', '1a'],
 	["F' U' R U", '1b'],
 	["D' R' D R", '2a'],

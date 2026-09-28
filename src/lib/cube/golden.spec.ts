@@ -6,7 +6,8 @@
 
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { formatMoves, permutationOf, type Move } from './moves';
+import { FACES, MOVE_NAMES, formatMove, formatMoves, permutationOf } from './moves';
+import type { MoveName, Notation, Turns } from './types';
 import { MoveList, type HistoryBlock } from './move-list';
 import { SOLVERS } from './solvers';
 
@@ -14,7 +15,7 @@ const FILE = new URL('./fixtures/solvers-golden.json', import.meta.url);
 
 interface Golden {
 	solver: string;
-	scramble: string;
+	scramble: Notation;
 	history: unknown[];
 }
 
@@ -23,15 +24,22 @@ function random(seed: number): () => number {
 }
 
 // Random scrambles, some with slice moves and whole cube turns.
-function scrambles(): string[] {
+function scrambles(): Notation[] {
 	const rand = random(2026);
-	const result: string[] = [];
+	const result: Notation[] = [];
+	const pick = <T>(list: readonly T[]): T => {
+		const item = list[Math.floor(rand() * list.length)];
+		if (item === undefined) {
+			throw new Error('Empty list');
+		}
+		return item;
+	};
+	const turns: readonly Turns[] = [1, 2, 3];
 	for (let i = 0; i < 60; i++) {
-		const names = i < 40 ? 'UDLRFB' : 'UDLRFBMESxyz';
-		const moves = Array.from({ length: 25 }, () => {
-			const name = names[Math.floor(rand() * names.length)];
-			return name + ['', '2', "'"][Math.floor(rand() * 3)];
-		});
+		const names: readonly MoveName[] = i < 40 ? FACES : MOVE_NAMES;
+		const moves = Array.from({ length: 25 }, () =>
+			formatMove({ name: pick(names), turns: pick(turns) })
+		);
 		result.push(moves.join(' '));
 	}
 	return result;
@@ -43,7 +51,7 @@ function describeHistory(blocks: HistoryBlock[]): unknown[] {
 		faceTurns: b.faceTurns,
 		quarterTurns: b.quarterTurns,
 		items: b.items.map((item) =>
-			Array.isArray(item) ? formatMoves(item as Move[]) : describeHistory([item])[0]
+			Array.isArray(item) ? formatMoves(item) : describeHistory([item])[0]
 		)
 	}));
 }
@@ -68,8 +76,8 @@ describe('solver output', () => {
 		}
 		const golden = JSON.parse(readFileSync(FILE, 'utf8')) as Golden[];
 		expect(now.length).toBe(golden.length);
-		for (let i = 0; i < golden.length; i++) {
-			expect(now[i], `${golden[i].solver}: ${golden[i].scramble}`).toEqual(golden[i]);
-		}
+		golden.forEach((expected, i) => {
+			expect(now[i], `${expected.solver}: ${expected.scramble}`).toEqual(expected);
+		});
 	});
 });
