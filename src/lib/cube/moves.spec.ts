@@ -7,10 +7,21 @@ import {
 	parseMoves,
 	permutationOf,
 	reduceMoves,
-	simplifyMoves
+	simplifyMoves,
+	type Move
 } from './moves';
 import { CATALOG } from './catalog';
-import reference from './fixtures/reference-2003.json';
+import type { Notation } from './types';
+import referenceJson from './fixtures/reference-2003.json';
+
+// Moves, label, and cycles; or moves and their reduction.
+interface Reference {
+	catalog: [Notation, string, string][];
+	extra: [Notation, string, string][];
+	reduce: [Notation, Notation][];
+}
+
+const reference = referenceJson as Reference;
 
 // The 2003 code didn't move the centers; drop their cycles before comparing.
 function centerlessCycles(cycles: string): string {
@@ -68,8 +79,7 @@ describe('moves', () => {
 	});
 
 	it('combines moves of the same face', () => {
-		const f = parseMoves('F')[0];
-		expect(formatMoves([f, f, f].reduce(appendMove, []))).toBe("F'");
+		expect(formatMoves(parseMoves('F F F').reduce<Move[]>(appendMove, []))).toBe("F'");
 		expect(formatMoves(simplifyMoves(parseMoves("R U U' R' F F")))).toBe('F2');
 	});
 

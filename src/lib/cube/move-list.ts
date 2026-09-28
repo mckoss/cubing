@@ -6,12 +6,12 @@
 // ("Scramble", "Solve U Edges", ...), and a move that undoes the one before
 // it cancels out, but never across the start of a block.
 
-import { inverseTurns, isRotation, simplifyMoves, type Move } from './moves';
+import { inverseTurns, isRotation, simplifyMoves, type Move, type MoveName } from './moves';
 
 // Moves whose 2003 letter turned the other way from standard notation (the
 // slices, and z): a half turn is two of their counterclockwise quarter
 // turns, as the 2003 simulator recorded it.
-const REVERSED_2003 = new Set(['M', 'E', 'S', 'z']);
+const REVERSED_2003: ReadonlySet<MoveName> = new Set<MoveName>(['M', 'E', 'S', 'z']);
 
 // Split moves into quarter turns.
 function quarterTurns(moves: Move[]): Move[] {
@@ -204,8 +204,12 @@ export class MoveList {
 			const end = block.end ?? this.moves.length;
 			const items: (Move[] | HistoryBlock)[] = [];
 			let pos = block.start;
-			while (next < blocks.length && blocks[next].start < end) {
-				const child = blocks[next++];
+			for (
+				let child = blocks[next];
+				child !== undefined && child.start < end;
+				child = blocks[next]
+			) {
+				next++;
 				if (child.start > pos) {
 					items.push(this.movesBetween(pos, child.start));
 				}
@@ -220,8 +224,9 @@ export class MoveList {
 		};
 
 		const result: HistoryBlock[] = [];
-		while (next < blocks.length) {
-			result.push(build(blocks[next++]));
+		for (let block = blocks[next]; block !== undefined; block = blocks[next]) {
+			next++;
+			result.push(build(block));
 		}
 		return result;
 	}

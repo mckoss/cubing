@@ -5,7 +5,18 @@
 // that looks solved is the identity.
 
 import { Permutation } from './permutation';
-import type { Face, Location, Move, MoveName, Rotation, Slice, Turns } from './types';
+import type {
+	Cube,
+	Face,
+	Location,
+	Move,
+	MoveName,
+	MoveToken,
+	Notation,
+	Rotation,
+	Slice,
+	Turns
+} from './types';
 
 export type { Face, Slice, Rotation, MoveName, Turns, Move } from './types';
 
@@ -15,7 +26,11 @@ export const ROTATIONS: readonly Rotation[] = ['x', 'y', 'z'];
 export const MOVE_NAMES: readonly MoveName[] = [...FACES, ...SLICES, ...ROTATIONS];
 
 export function isRotation(name: MoveName): name is Rotation {
-	return (ROTATIONS as readonly string[]).includes(name);
+	return ROTATIONS.some((r) => r === name);
+}
+
+function isMoveName(name: string): name is MoveName {
+	return MOVE_NAMES.some((m) => m === name);
 }
 
 // Clockwise quarter turns (as seen looking at the face).
@@ -63,15 +78,18 @@ const SLICE_PRIME_CYCLES: Record<Slice, Location[][]> = {
 	]
 };
 
+// A move name and a number of turns, as a key for POWERS, e.g. "R3".
+type PowerKey = `${MoveName}${Turns}`;
+
 const BASE = new Map<MoveName, Permutation>();
-const POWERS = new Map<string, Permutation>();
+const POWERS = new Map<PowerKey, Permutation>();
 for (const face of FACES) {
 	BASE.set(face, new Permutation(FACE_CYCLES[face]));
 }
 for (const slice of SLICES) {
 	const reversed = new Permutation(SLICE_PRIME_CYCLES[slice]);
 	BASE.set(slice, reversed.inverse());
-	POWERS.set(slice + 3, reversed);
+	POWERS.set(`${slice}3`, reversed);
 }
 // Whole cube rotations, built as in 2003: x turns like R, y like U, and z
 // like F (2003's "k" turned like B, so it is z').
@@ -83,11 +101,14 @@ POWERS.set('z3', zPrime);
 
 // The permutation for a move, e.g. perm('R', 3) for R'.
 export function perm(name: MoveName, turns: Turns = 1): Permutation {
-	const key = name + turns;
+	const key: PowerKey = `${name}${turns}`;
 	let p = POWERS.get(key);
 	if (p === undefined) {
 		// Counterclockwise turns are inverses, as in 2003.
-		const base = BASE.get(name)!;
+		const base = BASE.get(name);
+		if (base === undefined) {
+			throw new Error(`No permutation for move: ${name}`);
+		}
 		p = turns === 3 ? base.inverse() : base.power(turns);
 		POWERS.set(key, p);
 	}
@@ -97,7 +118,7 @@ export function perm(name: MoveName, turns: Turns = 1): Permutation {
 // Apply moves to a permutation.  A whole cube rotation doesn't change the
 // arrangement of the pieces; it relabels them, so that the permutation is
 // always relative to the way the cube is now held.
-export function applyMoves(p: Permutation, moves: Move[]): Permutation {
+export function applyMoves(p: Cube, moves: Move[]): Cube {
 	for (const { name, turns } of moves) {
 		if (isRotation(name)) {
 			p = perm(name, inverseTurns(turns)).compose(p).compose(perm(name, turns));
@@ -108,12 +129,14 @@ export function applyMoves(p: Permutation, moves: Move[]): Permutation {
 	return p;
 }
 
-export function permutationOf(moves: Move[] | string): Permutation {
+export function permutationOf(moves: Move[] | Notation): Permutation {
 	return applyMoves(new Permutation(), typeof moves === 'string' ? parseMoves(moves) : moves);
 }
 
+const INVERSE_TURNS: Readonly<Record<Turns, Turns>> = { 1: 3, 2: 2, 3: 1 };
+
 export function inverseTurns(turns: Turns): Turns {
-	return (4 - turns) as Turns;
+	return INVERSE_TURNS[turns];
 }
 
 export function invertMoves(moves: Move[]): Move[] {
@@ -126,7 +149,7 @@ export function invertMoves(moves: Move[]): Move[] {
 const MOVE_PATTERN = /([UDLRFBMESxyz])(2'?|'|’)?/g;
 
 // Parse standard notation, e.g. "R U R' U2".
-export function parseMoves(st: string): Move[] {
+export function parseMoves(st: Notation): Move[] {
 	const moves: Move[] = [];
 	const unknown = st.replace(MOVE_PATTERN, '').replace(/[\s()]/g, '');
 	if (unknown !== '') {
@@ -134,16 +157,21 @@ export function parseMoves(st: string): Move[] {
 	}
 	for (const [, name, suffix] of st.matchAll(MOVE_PATTERN)) {
 		const turns: Turns = suffix === undefined ? 1 : suffix.startsWith('2') ? 2 : 3;
-		moves.push({ name: name as MoveName, turns });
+		if (name === undefined || !isMoveName(name)) {
+			throw new Error(`Unknown move: ${name}`);
+		}
+		moves.push({ name, turns });
 	}
 	return moves;
 }
 
-export function formatMove({ name, turns }: Move): string {
-	return name + ['', '', '2', "'"][turns];
+const TURNS_SUFFIX: Readonly<Record<Turns, '' | '2' | "'">> = { 1: '', 2: '2', 3: "'" };
+
+export function formatMove({ name, turns }: Move): MoveToken {
+	return `${name}${TURNS_SUFFIX[turns]}`;
 }
 
-export function formatMoves(moves: Move[]): string {
+export function formatMoves(moves: Move[]): Notation {
 	return moves.map(formatMove).join(' ');
 }
 
@@ -156,11 +184,11 @@ export function appendMove(moves: Move[], move: Move): Move[] {
 	}
 	const turns = (last.turns + move.turns) % 4;
 	const rest = moves.slice(0, -1);
-	return turns === 0 ? rest : [...rest, { name: move.name, turns: turns as Turns }];
+	return turns === 1 || turns === 2 || turns === 3 ? [...rest, { name: move.name, turns }] : rest;
 }
 
 export function simplifyMoves(moves: Move[]): Move[] {
-	return moves.reduce(appendMove, [] as Move[]);
+	return moves.reduce<Move[]>(appendMove, []);
 }
 
 // Remove any sequence of moves that returns the cube to an arrangement it
