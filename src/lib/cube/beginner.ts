@@ -4,10 +4,10 @@
 // It uses the same kind of rules as the 2003 Singmaster solver: turn the
 // cube (or a face) with a "generator" move until a piece reaches a known
 // place, then apply the sequence for that place.  The sequences are written
-// here in standard notation, as in Mike's notes; "P" undoes the generator.
+// here in standard notation, as in Mike's notes.
 
 import { Permutation } from './permutation';
-import { applyMoves, invertMoves, parseMoves, permutationOf, type Move } from './moves';
+import { alg, applyMoves, invertMoves, permutationOf, type Move } from './moves';
 import type { MoveList } from './move-list';
 import {
 	rotatePattern,
@@ -17,33 +17,25 @@ import {
 	type Rule,
 	type TopEdgePattern
 } from './singmaster';
-import {
-	rotateName,
-	type Cube,
-	type Cubie,
-	type Location,
-	type MoveToken,
-	type Notation
-} from './types';
+import { rotateName, type Cube, type Cubie, type Location } from './types';
 
 // The sequences from Mike's notes.
 export const SEQUENCES = {
-	insertRight: "U R U' R' U' F' U F",
-	insertLeft: "U' L' U L U F U' F'",
-	topCross: "F R U R' U' F'",
-	swapEdges: "R U R' U R U2 R' U",
-	cycleCorners: "U R U' L' U R' U' L",
-	cycleCornersBack: "U' L' U R U' L U R'",
-	twistCorner: "R' D' R D R' D' R D",
-	twistCornerBack: "D' R' D R D' R' D R"
-} as const satisfies Record<string, Notation>;
+	insertRight: alg("U R U' R' U' F' U F"),
+	insertLeft: alg("U' L' U L U F U' F'"),
+	topCross: alg("F R U R' U' F'"),
+	swapEdges: alg("R U R' U R U2 R' U"),
+	cycleCorners: alg("U R U' L' U R' U' L"),
+	cycleCornersBack: alg("U' L' U R U' L U R'"),
+	twistCorner: alg("R' D' R D R' D' R D"),
+	twistCornerBack: alg("D' R' D R D' R' D R")
+} as const satisfies Record<string, Move[]>;
 
 const S = SEQUENCES;
 
-const WHOLE_CUBE_TURN: MoveToken = 'y';
-const WHOLE_CUBE_TURN_BACK: MoveToken = "y'";
-const TURN = parseMoves(WHOLE_CUBE_TURN);
-const U = parseMoves('U');
+const TURN = alg('y');
+const TURN_BACK = alg("y'");
+const U = alg('U');
 
 // A place for an edge or corner, ignoring which way the piece in it faces:
 // named by the piece whose home it is (e.g. "db" for bd).
@@ -91,41 +83,41 @@ function slot(place: Location): Slot {
 }
 
 // Where a piece must be for moves to put it in its place.
-function placeFor(moves: Notation, piece: Cubie): Location {
-	return permutationOf(invertMoves(parseMoves(moves))).apply(piece);
+function placeFor(moves: Move[], piece: Cubie): Location {
+	return permutationOf(invertMoves(moves)).apply(piece);
 }
 
 // Putting a piece down from above its place, for each way it can face.
-function downRules(piece: Cubie, sequences: Notation[]): Rule[] {
-	return [['U', sequences.map((moves): [Place, Notation] => [placeFor(moves, piece), moves])]];
+function downRules(piece: Cubie, sequences: Move[][]): Rule[] {
+	return [[U, sequences.map((moves): [Place, Move[]] => [placeFor(moves, piece), moves])]];
 }
 
 // The bottom front edge, from the top front.
-const EDGE_DOWN = downRules('df', ['F2', "U' R' F R"]);
+const EDGE_DOWN = downRules('df', [alg('F2'), alg("U' R' F R")]);
 
 // The bottom front right corner, from the top front right.
-const CORNER_DOWN = downRules('dfr', ["R U R'", "F' U' F", "R U2 R' U' R U R'"]);
+const CORNER_DOWN = downRules('dfr', [alg("R U R'"), alg("F' U' F"), alg("R U2 R' U' R U R'")]);
 
 // Moving a piece to the top from a place on the bottom or in the middle,
 // without disturbing the other pieces on the bottom.
-type KickOut = Partial<Record<Slot, Notation>>;
+type KickOut = Partial<Record<Slot, Move[]>>;
 
 const EDGE_OUT: KickOut = {
-	df: 'F2',
-	dr: 'R2',
-	db: 'B2',
-	dl: 'L2',
-	fr: "R U R'",
-	br: "R' U R",
-	bl: "L U L'",
-	fl: "L' U L"
+	df: alg('F2'),
+	dr: alg('R2'),
+	db: alg('B2'),
+	dl: alg('L2'),
+	fr: alg("R U R'"),
+	br: alg("R' U R"),
+	bl: alg("L U L'"),
+	fl: alg("L' U L")
 };
 
 const CORNER_OUT: KickOut = {
-	dfr: "R U R'",
-	drb: "R' U' R",
-	dbl: "L U L'",
-	dlf: "L' U' L"
+	dfr: alg("R U R'"),
+	drb: alg("R' U' R"),
+	dbl: alg("L U L'"),
+	dlf: alg("L' U' L")
 };
 
 const TOP_CORNERS: Cubie[] = ['ulb', 'ubr', 'urf', 'ufl'];
@@ -190,7 +182,7 @@ export class Beginner {
 			if (moves === undefined) {
 				throw new Error(`No way to move ${piece} out of ${at}`);
 			}
-			this.move(parseMoves(moves));
+			this.move(moves);
 		}
 		this.move(solveVia(this.perm, piece, down) ?? []);
 	}
@@ -201,19 +193,18 @@ export class Beginner {
 	private solveMiddle(): void {
 		// An edge stuck in the wrong slot of the middle layer: turn that slot to
 		// the front right, and insert any edge there to move it to the top.
-		const kickOut = (turns: Notation, back: Notation): Notation =>
-			`${turns} ${S.insertRight} ${back}`;
-		const y = WHOLE_CUBE_TURN;
-		const yBack = WHOLE_CUBE_TURN_BACK;
+		const kickOut = (turns: Move[], back: Move[]): Move[] => [...turns, ...S.insertRight, ...back];
+		const y = TURN;
+		const yBack = TURN_BACK;
 		const stuck: Rule[] = [
 			[
-				'',
+				[],
 				[
 					['rf', S.insertRight],
 					['br', kickOut(y, yBack)],
 					['rb', kickOut(y, yBack)],
-					['bl', kickOut(`${y} ${y}`, `${yBack} ${yBack}`)],
-					['lb', kickOut(`${y} ${y}`, `${yBack} ${yBack}`)],
+					['bl', kickOut([...y, ...y], [...yBack, ...yBack])],
+					['lb', kickOut([...y, ...y], [...yBack, ...yBack])],
 					['fl', kickOut(yBack, y)],
 					['lf', kickOut(yBack, y)]
 				]
@@ -221,10 +212,10 @@ export class Beginner {
 		];
 		const rules: Rule[] = [
 			[
-				'U',
+				U,
 				[
 					['fu', S.insertRight],
-					['ur', `${WHOLE_CUBE_TURN} ${S.insertLeft} ${WHOLE_CUBE_TURN_BACK}`]
+					['ur', [...TURN, ...S.insertLeft, ...TURN_BACK]]
 				]
 			]
 		];
@@ -246,8 +237,8 @@ export class Beginner {
 
 	// Top cross: dot, L, line, cross, each with F (R U R' U') F'.
 	private solveTopCross(): void {
-		const cases: Partial<Record<TopEdgePattern, Notation>> = {
-			UUUU: '',
+		const cases: Partial<Record<TopEdgePattern, Move[]>> = {
+			UUUU: [],
 			XUXU: S.topCross, // line, left to right
 			XXUU: S.topCross, // L, at the back and left
 			XXXX: S.topCross // dot
@@ -263,10 +254,7 @@ export class Beginner {
 			for (let turns = 0; turns < 4; turns++) {
 				const sequence = cases[rotatePattern(up, turns)];
 				if (sequence !== undefined) {
-					this.move([
-						...Array.from({ length: turns }, (): Move[] => U).flat(),
-						...parseMoves(sequence)
-					]);
+					this.move([...Array.from({ length: turns }, (): Move[] => U).flat(), ...sequence]);
 					break;
 				}
 			}
@@ -279,10 +267,10 @@ export class Beginner {
 	private placeTopEdges(): void {
 		const rules: Rule[] = [
 			[
-				'U',
+				U,
 				[
 					// Already in place.
-					[['uf', 'uf', '', 'ur', 'ur', '', 'ub', 'ub', '', 'ul', 'ul'], ''],
+					[['uf', 'uf', '', 'ur', 'ur', '', 'ub', 'ub', '', 'ul', 'ul'], []],
 					[['uf', 'ul', 'uf', '', 'ub', 'ub', '', 'ur', 'ur'], S.swapEdges],
 					// Edges across from each other: swap, then try again.
 					[['uf', 'ub', 'uf', '', 'ul', 'ul', '', 'ur', 'ur'], S.swapEdges]
@@ -321,7 +309,7 @@ export class Beginner {
 	private placeTopCorners(): void {
 		const rules: Rule[] = [
 			[
-				WHOLE_CUBE_TURN,
+				TURN,
 				[
 					[['ubr', 'ulb', 'ufl', 'ubr'], S.cycleCorners],
 					[['ulb', 'ubr', 'urf', 'ulb'], S.cycleCornersBack]
@@ -332,7 +320,7 @@ export class Beginner {
 		const block = this.moveList.openBlock('Top Corners');
 		for (let tries = 0; tries < 3 && !this.topCornersPlaced(); tries++) {
 			const moves = solveVia(this.cornerPlaces(), '', rules);
-			this.move(moves?.length ? moves : parseMoves(S.cycleCorners));
+			this.move(moves?.length ? moves : S.cycleCorners);
 		}
 		block.close();
 	}
@@ -363,11 +351,11 @@ export class Beginner {
 	private twistTopCorners(): void {
 		const rules: Rule[] = [
 			[
-				'',
+				[],
 				[
 					['rfu', S.twistCorner],
 					['fur', S.twistCornerBack],
-					['urf', '']
+					['urf', []]
 				]
 			]
 		];

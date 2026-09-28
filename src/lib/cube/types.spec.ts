@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { LOCATIONS, isLocation, parseLocation, rotateName } from './types';
-import { permutationOf, MOVE_NAMES } from './moves';
+import { parseMoves, permutationOf, MOVE_NAMES } from './moves';
 
 describe('types', () => {
 	it('lists all 54 stickers once', () => {
@@ -23,7 +23,7 @@ describe('types', () => {
 
 	it('names every place any move reaches', () => {
 		for (const name of MOVE_NAMES) {
-			const p = permutationOf(name);
+			const p = permutationOf(parseMoves(name));
 			for (const loc of LOCATIONS) {
 				expect(isLocation(p.apply(loc)), `${name} ${loc}`).toBe(true);
 			}

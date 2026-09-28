@@ -4,8 +4,10 @@
 //
 // Each step of the solution is a set of rules: turn the cube with a
 // "generator" move until the piece being solved reaches one of a few known
-// places, then apply the sequence for that place.  In a sequence, "P"
-// stands for undoing the generator moves.  Moves are in standard notation.
+// places, then apply the sequence for that place.  In a rule's sequence,
+// "P" stands for undoing the generator moves: when the generator turns a
+// layer holding pieces already solved, the piece is parked out of the way,
+// the layer turned back (P), and the piece put in place.
 //
 // A move written as a half turn (e.g. R2) is always a clockwise half turn,
 // and repeated turns (e.g. U2 U) are written out, so that the solver makes
@@ -18,19 +20,32 @@ import {
 	type Cubie,
 	type Location,
 	type MoveToken,
-	type Notation
+	type UndoToken,
+	type CheckedAlg
 } from './types';
-import { applyMoves, invertMoves, parseMoves, type Move } from './moves';
+import { alg, applyMoves, invertMoves, parseMoves, type Move } from './moves';
 import type { MoveList } from './move-list';
 
 // A place is a piece's location (e.g. "fd": the uf edge is at df, flipped),
 // or a path of pieces (see Permutation.hasMap).
 export type Place = Location | Path;
-// The generator is one move ('' for none: only the cube as it is is
-// checked).  Sequences are in standard notation, and may use "P" to undo
-// the generator moves made so far.  An empty sequence means the piece is
-// already where it should be.
-export type Rule = [generator: MoveToken | '', cases: [place: Place, sequence: Notation][]];
+// Undo the generator moves made so far ("P" in a rule).
+export const UNDO = { undo: true } as const;
+export type Undo = typeof UNDO;
+export type RuleStep = Move | Undo;
+
+// A rule's sequence, checked at compile time: moves, and "P" to undo the
+// generator moves, e.g. rule("F2 P F2").
+export function rule<S extends string>(text: CheckedAlg<S, MoveToken | UndoToken>): RuleStep[] {
+	return text
+		.split('P')
+		.flatMap((part, i): RuleStep[] => (i === 0 ? parseMoves(part) : [UNDO, ...parseMoves(part)]));
+}
+
+// The generator is a move ([] for none: only the cube as it is is
+// checked).  An empty sequence means the piece is already where it should
+// be.
+export type Rule = [generator: Move[], cases: [place: Place, sequence: readonly RuleStep[]][]];
 
 // Which of the four top edges (front, right, back, left) have their top
 // color up ("U") or not ("X"), e.g. "XUXU".
@@ -50,13 +65,11 @@ export function rotatePattern(pattern: TopEdgePattern, n: number): TopEdgePatter
 	return (pattern.substring(n) + pattern.substring(0, n)) as TopEdgePattern;
 }
 
-// Expand a sequence, replacing each "P" with the inverse of the generator
+// Expand a sequence, replacing each UNDO with the inverse of the generator
 // moves made.
-function expand(sequence: Notation, generated: Move[]): Move[] {
+function expand(sequence: readonly RuleStep[], generated: Move[]): Move[] {
 	const undo = invertMoves(generated);
-	return sequence
-		.split('P')
-		.flatMap((part, i) => (i === 0 ? parseMoves(part) : [...undo, ...parseMoves(part)]));
+	return sequence.flatMap((step): Move[] => ('undo' in step ? undo : [step]));
 }
 
 // Try the generator up to three times, looking for the piece (or path) at
@@ -65,7 +78,6 @@ function expand(sequence: Notation, generated: Move[]): Move[] {
 // The piece is '' when the rules' places are all paths.
 export function solveVia(perm: Cube, piece: Cubie | '', rules: Rule[]): Move[] | undefined {
 	for (const [generator, cases] of rules) {
-		const turn = parseMoves(generator);
 		let p = perm;
 		let moves: Move[] = [];
 		for (let i = 0; i < 4; i++) {
@@ -76,16 +88,16 @@ export function solveVia(perm: Cube, piece: Cubie | '', rules: Rule[]): Move[] |
 				}
 			}
 			// Quarter turns are kept separate, so that "P" undoes each one.
-			moves = [...moves, ...turn];
-			p = applyMoves(p, turn);
+			moves = [...moves, ...generator];
+			p = applyMoves(p, generator);
 		}
 	}
 	return undefined;
 }
 
-const Y = parseMoves('y');
-const U = parseMoves('U');
-const Z2 = parseMoves('z2');
+const Y = alg('y');
+const U = alg('U');
+const Z2 = alg('z2');
 
 export class Singmaster {
 	private perm: Cube = new Permutation();
@@ -126,24 +138,24 @@ export class Singmaster {
 	private solveUEdges(): void {
 		const rules: Rule[] = [
 			[
-				'D',
+				alg('D'),
 				[
-					['df', 'F2'],
-					['fd', "F' U' R U"]
+					['df', rule('F2')],
+					['fd', rule("F' U' R U")]
 				]
 			],
 			[
-				"E'",
+				alg("E'"),
 				[
-					['lf', 'F P'],
-					['rf', "F' P"]
+					['lf', rule('F P')],
+					['rf', rule("F' P")]
 				]
 			],
 			[
-				'U',
+				alg('U'),
 				[
-					['uf', 'F2 P F2'],
-					['fu', "F P U' R U"]
+					['uf', rule('F2 P F2')],
+					['fu', rule("F P U' R U")]
 				]
 			]
 		];
@@ -158,19 +170,19 @@ export class Singmaster {
 	private solveUCorners(): void {
 		const rules: Rule[] = [
 			[
-				'D',
+				alg('D'),
 				[
-					['rdf', "D F D' F'"],
-					['frd', "D' R' D R"],
-					['dfr', "F D' F' R' D2 R"]
+					['rdf', rule("D F D' F'")],
+					['frd', rule("D' R' D R")],
+					['dfr', rule("F D' F' R' D2 R")]
 				]
 			],
 			[
-				'U',
+				alg('U'),
 				[
-					['urf', "F D F' P F D' F'"],
-					['rfu', "R' D2 R P F D2 F'"],
-					['fur', "F D2 F' P R' D2 R"]
+					['urf', rule("F D F' P F D' F'")],
+					['rfu', rule("R' D2 R P F D2 F'")],
+					['fur', rule("F D2 F' P R' D2 R")]
 				]
 			]
 		];
@@ -185,19 +197,19 @@ export class Singmaster {
 	private solveMiddleEdges(): void {
 		const prepare: Rule[] = [
 			[
-				"E'",
+				alg("E'"),
 				[
-					['rf', "B' U' R2 U2 R2 U2 R2 U2 U B P"],
-					['fr', "L U' F2 U2 F2 U2 F2 U2 U L' P"]
+					['rf', rule("B' U' R2 U2 R2 U2 R2 U2 U B P")],
+					['fr', rule("L U' F2 U2 F2 U2 F2 U2 U L' P")]
 				]
 			]
 		];
 		const rules: Rule[] = [
 			[
-				'U',
+				alg('U'),
 				[
-					['ub', "B' U' R2 U2 R2 U2 R2 U2 U B"],
-					['lu', "L U' F2 U2 F2 U2 F2 U2 U L'"]
+					['ub', rule("B' U' R2 U2 R2 U2 R2 U2 U B")],
+					['lu', rule("L U' F2 U2 F2 U2 F2 U2 U L'")]
 				]
 			]
 		];
@@ -213,11 +225,11 @@ export class Singmaster {
 	}
 
 	private orientDEdges(): void {
-		const sequences: Partial<Record<TopEdgePattern, Notation>> = {
-			UUUU: '',
-			XUXU: "B L U L' U' B'",
-			UUXX: "B U L U' L' B'",
-			XXXX: "B L U L' U' B' y2 B U L U' L' B'"
+		const sequences: Partial<Record<TopEdgePattern, Move[]>> = {
+			UUUU: [],
+			XUXU: alg("B L U L' U' B'"),
+			UUXX: alg("B U L U' L' B'"),
+			XXXX: alg("B L U L' U' B' y2 B U L U' L' B'")
 		};
 		let up = topEdgePattern(this.perm);
 
@@ -226,7 +238,7 @@ export class Singmaster {
 		for (let j = 0; j < 4; j++) {
 			const sequence = sequences[up];
 			if (sequence !== undefined) {
-				moves = [...moves, ...parseMoves(sequence)];
+				moves = [...moves, ...sequence];
 				break;
 			}
 			up = rotatePattern(up, 1);
@@ -239,13 +251,16 @@ export class Singmaster {
 	private placeDEdges(): void {
 		const rules: Rule[] = [
 			[
-				'U',
+				alg('U'),
 				[
-					[['uf', 'ur', 'ub', 'uf'], "R2 D' U2 R' L F2 R L' D R2"],
-					[['uf', 'ub', 'ur', 'uf'], "R2 D' R' L F2 R L' U2 D R2"],
-					[['uf', 'ur', 'uf', '', 'ul', 'ub', 'ul'], "R2 D2 B2 D L2 F2 L2 F2 L2 F2 D' B2 D2 R2"],
+					[['uf', 'ur', 'ub', 'uf'], rule("R2 D' U2 R' L F2 R L' D R2")],
+					[['uf', 'ub', 'ur', 'uf'], rule("R2 D' R' L F2 R L' U2 D R2")],
+					[
+						['uf', 'ur', 'uf', '', 'ul', 'ub', 'ul'],
+						rule("R2 D2 B2 D L2 F2 L2 F2 L2 F2 D' B2 D2 R2")
+					],
 					// Already in place.
-					[['uf', 'uf', '', 'ur', 'ur', '', 'ub', 'ub', '', 'ul', 'ul'], '']
+					[['uf', 'uf', '', 'ur', 'ur', '', 'ub', 'ub', '', 'ul', 'ul'], []]
 				]
 			]
 		];
@@ -270,14 +285,17 @@ export class Singmaster {
 		const corners: Cubie[] = ['ulb', 'ubr', 'urf', 'ufl'];
 		const rules: Rule[] = [
 			[
-				'y',
+				alg('y'),
 				[
-					[['ufl', 'ulb', 'ubr', 'ufl'], "L' U R U' R' L R U R' U'"],
-					[['ufl', 'ubr', 'ulb', 'ufl'], "U R U' R' L' R U R' U' L"],
-					[['ufl', 'urf', 'ufl', '', 'ulb', 'ubr', 'ulb'], "B L U L' U' L U L' U' L U L' U' B'"],
+					[['ufl', 'ulb', 'ubr', 'ufl'], rule("L' U R U' R' L R U R' U'")],
+					[['ufl', 'ubr', 'ulb', 'ufl'], rule("U R U' R' L' R U R' U' L")],
+					[
+						['ufl', 'urf', 'ufl', '', 'ulb', 'ubr', 'ulb'],
+						rule("B L U L' U' L U L' U' L U L' U' B'")
+					],
 					[
 						['ufl', 'ubr', 'ufl', '', 'urf', 'ulb', 'urf'],
-						"R' B2 F R F' R' F R F' R' F R F' R' B2 R"
+						rule("R' B2 F R F' R' F R F' R' F R F' R' B2 R")
 					]
 				]
 			]
@@ -301,11 +319,11 @@ export class Singmaster {
 	private orientDCorners(): void {
 		const rules: Rule[] = [
 			[
-				'',
+				[],
 				[
-					['rfu', "D F D' F' D F D' F'"], // counterclockwise
-					['fur', "F D F' D' F D F' D'"], // clockwise
-					['urf', '']
+					['rfu', rule("D F D' F' D F D' F'")], // counterclockwise
+					['fur', rule("F D F' D' F D F' D'")], // clockwise
+					['urf', []]
 				]
 			]
 		];

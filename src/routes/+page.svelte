@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Permutation } from '$lib/cube/permutation';
-	import { applyMoves, parseMoves, permutationOf } from '$lib/cube/moves';
-	import type { Cube, CycleNotation, Face, Move, MoveName, Notation } from '$lib/cube/types';
+	import { applyMoves, formatMoves, permutationOf } from '$lib/cube/moves';
+	import type { Cube, Face, Move, MoveName } from '$lib/cube/types';
 	import { MoveList } from '$lib/cube/move-list';
 	import { CATALOG, type CatalogEntry } from '$lib/cube/catalog';
 	import { SOLVERS } from '$lib/cube/solvers';
@@ -271,7 +271,7 @@
 
 	interface MethodSequence {
 		label: string;
-		moves: Notation;
+		moves: Move[];
 		// A picture of what to look for (see CaseDiagram), and a caption.
 		diagram?: Case;
 		look?: string;
@@ -362,7 +362,7 @@
 		}
 	];
 
-	const catalog = CATALOG.map((entry): CatalogEntry & { effect: CycleNotation } => ({
+	const catalog = CATALOG.map((entry): CatalogEntry & { effect: string } => ({
 		...entry,
 		effect: permutationOf(entry.moves).toString()
 	}));
@@ -536,7 +536,7 @@
 			<li>
 				<h3>{step.title}</h3>
 				<p>{step.text}</p>
-				{#each step.sequences as { label, moves, diagram, look } (moves)}
+				{#each step.sequences as { label, moves, diagram, look } (label)}
 					<div class="sequence" class:with-diagram={diagram}>
 						{#if diagram}
 							<CaseDiagram kind={diagram} label={look ?? label} />
@@ -545,10 +545,8 @@
 							<span class="sequence-label">{label}:</span>
 							{#if look}<span class="look">{look}</span>{/if}
 							<span class="sequence-moves">
-								<code>{moves}</code>
-								<button onclick={(): void => play(parseMoves(moves), `Try It: ${label}`)}
-									>Try it</button
-								>
+								<code>{formatMoves(moves)}</code>
+								<button onclick={(): void => play(moves, `Try It: ${label}`)}>Try it</button>
 							</span>
 						</div>
 					</div>

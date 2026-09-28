@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Permutation } from './permutation';
 import {
+	alg,
 	appendMove,
 	formatMoves,
 	invertMoves,
@@ -11,14 +12,13 @@ import {
 	type Move
 } from './moves';
 import { CATALOG } from './catalog';
-import type { Notation } from './types';
 import referenceJson from './fixtures/reference-2003.json';
 
 // Moves, label, and cycles; or moves and their reduction.
 interface Reference {
-	catalog: [Notation, string, string][];
-	extra: [Notation, string, string][];
-	reduce: [Notation, Notation][];
+	catalog: [string, string, string][];
+	extra: [string, string, string][];
+	reduce: [string, string][];
 }
 
 const reference = referenceJson as Reference;
@@ -38,16 +38,16 @@ describe('Permutation', () => {
 	});
 
 	it('composes, inverts and powers', () => {
-		const r = permutationOf('R');
+		const r = permutationOf(alg('R'));
 		expect(r.power(4).isIdentity()).toBe(true);
 		expect(r.compose(r.inverse()).isIdentity()).toBe(true);
-		expect(r.power(3).equals(permutationOf("R'"))).toBe(true);
-		expect(permutationOf("R U R' U'").power(6).isIdentity()).toBe(true);
+		expect(r.power(3).equals(permutationOf(alg("R'")))).toBe(true);
+		expect(permutationOf(alg("R U R' U'")).power(6).isIdentity()).toBe(true);
 	});
 
 	it('shows twisted cycles', () => {
-		expect(permutationOf("F U F' U'").toString()).toBe('(flu dlf)+ (fl fu ru) (ubr fur)-');
-		expect(permutationOf('').toString()).toBe('()');
+		expect(permutationOf(alg("F U F' U'")).toString()).toBe('(flu dlf)+ (fl fu ru) (ubr fur)-');
+		expect(permutationOf(alg('')).toString()).toBe('()');
 	});
 });
 
@@ -59,18 +59,18 @@ describe('moves', () => {
 
 	it('has the right order for every move', () => {
 		for (const name of 'UDLRFBMESxyz') {
-			expect(permutationOf(name).isIdentity(), name).toBe('xyz'.includes(name));
-			expect(permutationOf(`${name}2 ${name}2`).isIdentity(), name).toBe(true);
-			expect(permutationOf(`${name} ${name}'`).isIdentity(), name).toBe(true);
+			expect(permutationOf(parseMoves(name)).isIdentity(), name).toBe('xyz'.includes(name));
+			expect(permutationOf(parseMoves(`${name}2 ${name}2`)).isIdentity(), name).toBe(true);
+			expect(permutationOf(parseMoves(`${name} ${name}'`)).isIdentity(), name).toBe(true);
 		}
 	});
 
 	it('matches rotations to face and slice turns', () => {
-		expect(permutationOf("R M' L'").equals(permutationOf("L' M' R"))).toBe(true);
+		expect(permutationOf(alg("R M' L'")).equals(permutationOf(alg("L' M' R")))).toBe(true);
 		// After turning the cube with x, the Front face is what was the Down face.
-		expect(permutationOf("x F x'").equals(permutationOf('D'))).toBe(true);
-		expect(permutationOf("y R y'").equals(permutationOf('B'))).toBe(true);
-		expect(permutationOf("z U z'").equals(permutationOf('L'))).toBe(true);
+		expect(permutationOf(alg("x F x'")).equals(permutationOf(alg('D')))).toBe(true);
+		expect(permutationOf(alg("y R y'")).equals(permutationOf(alg('B')))).toBe(true);
+		expect(permutationOf(alg("z U z'")).equals(permutationOf(alg('L')))).toBe(true);
 	});
 
 	it('undoes a sequence with its inverse', () => {
@@ -107,7 +107,7 @@ describe('2003 compatibility', () => {
 
 	it('matches the 2003 simulator for single moves (ignoring centers)', () => {
 		for (const [moves, , cycles] of reference.extra) {
-			expect(centerlessCycles(permutationOf(moves).toString()), moves).toBe(cycles);
+			expect(centerlessCycles(permutationOf(parseMoves(moves)).toString()), moves).toBe(cycles);
 		}
 	});
 
