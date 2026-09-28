@@ -20,7 +20,7 @@ export default defineConfig({
 		baseURL: 'http://localhost:4173/cubing/',
 		trace: 'on-first-retry',
 		launchOptions: {
-			executablePath,
+			...(executablePath === undefined ? {} : { executablePath }),
 			// Software WebGL, for headless browsers without a GPU.
 			args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
 		}

@@ -99,6 +99,10 @@ export type MoveToken = `${MoveName}${'' | '2' | "'"}`;
 // Move[] for values that have been parsed.
 export type Notation = string;
 
+// A permutation written in cycle notation, e.g. "(uf ur ub) (urf)+", or
+// "()" for the identity.
+export type CycleNotation = string;
+
 export const FACE_LETTERS: readonly FaceLetter[] = ['u', 'd', 'f', 'b', 'l', 'r'];
 
 const EDGES = ['uf', 'ur', 'ub', 'ul', 'df', 'dr', 'db', 'dl', 'fr', 'fl', 'br', 'bl'] as const;

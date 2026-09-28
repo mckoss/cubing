@@ -34,15 +34,14 @@ export default defineConfig(
 		}
 	},
 	{
-		// Strict typing (2026 refactoring). Warnings for now; they become
-		// errors once the code base is fully typed.
+		// Strict typing: explicit return types, no any, no non-null assertions.
 		rules: {
 			'@typescript-eslint/explicit-function-return-type': [
-				'warn',
+				'error',
 				{ allowExpressions: false, allowTypedFunctionExpressions: true }
 			],
-			'@typescript-eslint/no-explicit-any': 'warn',
-			'@typescript-eslint/no-non-null-assertion': 'warn'
+			'@typescript-eslint/no-explicit-any': 'error',
+			'@typescript-eslint/no-non-null-assertion': 'error'
 		}
 	}
 );

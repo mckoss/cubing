@@ -12,7 +12,7 @@
 // The constructor takes a list of cycles.  E.g.:
 // (a b c)(d e) -> new Permutation([["a", "b", "c"], ["d", "e"]]);
 
-import { rotateName, type Location } from './types';
+import { rotateName, type CycleNotation, type Location } from './types';
 
 export { Permutation };
 
@@ -137,7 +137,7 @@ class Permutation {
 	// Cycle notation, e.g. "(uf ur ub) (urf)+", or "()" for the identity.  A
 	// "+" or "-" means the pieces in the cycle come back rotated (clockwise
 	// or counterclockwise).
-	toString(): string {
+	toString(): CycleNotation {
 		const marked = new Set<Location>();
 		const mark = (loc: Location): void => {
 			for (let rot = 0; rot < loc.length; rot++) {

@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { Permutation } from '$lib/cube/permutation';
 	import { applyMoves, parseMoves, permutationOf } from '$lib/cube/moves';
-	import type { Cube, Face, Move, MoveName, Notation } from '$lib/cube/types';
+	import type { Cube, CycleNotation, Face, Move, MoveName, Notation } from '$lib/cube/types';
 	import { MoveList } from '$lib/cube/move-list';
 	import { CATALOG, type CatalogEntry } from '$lib/cube/catalog';
 	import { SOLVERS } from '$lib/cube/solvers';
@@ -362,7 +362,7 @@
 		}
 	];
 
-	const catalog = CATALOG.map((entry): CatalogEntry & { effect: string } => ({
+	const catalog = CATALOG.map((entry): CatalogEntry & { effect: CycleNotation } => ({
 		...entry,
 		effect: permutationOf(entry.moves).toString()
 	}));
