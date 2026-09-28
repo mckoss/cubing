@@ -9,8 +9,22 @@
 import { Permutation } from './permutation';
 import { applyMoves, invertMoves, parseMoves, permutationOf, type Move } from './moves';
 import type { MoveList } from './move-list';
-import { solveVia, type Rule } from './singmaster';
-import { rotateName, type Location } from './types';
+import {
+	rotatePattern,
+	solveVia,
+	topEdgePattern,
+	type Place,
+	type Rule,
+	type TopEdgePattern
+} from './singmaster';
+import {
+	rotateName,
+	type Cube,
+	type Cubie,
+	type Location,
+	type MoveToken,
+	type Notation
+} from './types';
 
 // The sequences from Mike's notes.
 export const SEQUENCES = {
@@ -22,29 +36,68 @@ export const SEQUENCES = {
 	cycleCornersBack: "U' L' U R U' L U R'",
 	twistCorner: "R' D' R D R' D' R D",
 	twistCornerBack: "D' R' D R D' R' D R"
-} as const;
+} as const satisfies Record<string, Notation>;
 
 const S = SEQUENCES;
 
-const WHOLE_CUBE_TURN = 'y';
-const WHOLE_CUBE_TURN_BACK = "y'";
+const WHOLE_CUBE_TURN: MoveToken = 'y';
+const WHOLE_CUBE_TURN_BACK: MoveToken = "y'";
 const TURN = parseMoves(WHOLE_CUBE_TURN);
 const U = parseMoves('U');
 
-// A place, ignoring which way the piece in it faces (e.g. "df" for fd):
-// its letters in alphabetical order.
-function slot(place: Location): string {
-	return [...place].sort().join('');
+// A place for an edge or corner, ignoring which way the piece in it faces:
+// named by the piece whose home it is (e.g. "db" for bd).
+type EdgeSlot = 'uf' | 'ur' | 'ub' | 'ul' | 'df' | 'dr' | 'db' | 'dl' | 'fr' | 'fl' | 'br' | 'bl';
+type CornerSlot = 'ufl' | 'ulb' | 'ubr' | 'urf' | 'dlf' | 'dfr' | 'drb' | 'dbl';
+type Slot = EdgeSlot | CornerSlot;
+
+const SLOTS: ReadonlySet<Location> = new Set<Slot>([
+	'uf',
+	'ur',
+	'ub',
+	'ul',
+	'df',
+	'dr',
+	'db',
+	'dl',
+	'fr',
+	'fl',
+	'br',
+	'bl',
+	'ufl',
+	'ulb',
+	'ubr',
+	'urf',
+	'dlf',
+	'dfr',
+	'drb',
+	'dbl'
+]);
+
+function isSlot(place: Location): place is Slot {
+	return SLOTS.has(place);
+}
+
+// The slot of an edge or corner place.
+function slot(place: Location): Slot {
+	let loc = place;
+	for (let rot = 0; rot < place.length; rot++) {
+		if (isSlot(loc)) {
+			return loc;
+		}
+		loc = rotateName(loc);
+	}
+	throw new Error(`Not an edge or corner: ${place}`);
 }
 
 // Where a piece must be for moves to put it in its place.
-function placeFor(moves: string, piece: Location): Location {
+function placeFor(moves: Notation, piece: Cubie): Location {
 	return permutationOf(invertMoves(parseMoves(moves))).apply(piece);
 }
 
 // Putting a piece down from above its place, for each way it can face.
-function downRules(piece: Location, sequences: string[]): Rule[] {
-	return [['U', sequences.map((moves) => [placeFor(moves, piece), moves])]];
+function downRules(piece: Cubie, sequences: Notation[]): Rule[] {
+	return [['U', sequences.map((moves): [Place, Notation] => [placeFor(moves, piece), moves])]];
 }
 
 // The bottom front edge, from the top front.
@@ -55,10 +108,12 @@ const CORNER_DOWN = downRules('dfr', ["R U R'", "F' U' F", "R U2 R' U' R U R'"])
 
 // Moving a piece to the top from a place on the bottom or in the middle,
 // without disturbing the other pieces on the bottom.
-const EDGE_OUT: Record<string, string> = {
+type KickOut = Partial<Record<Slot, Notation>>;
+
+const EDGE_OUT: KickOut = {
 	df: 'F2',
 	dr: 'R2',
-	bd: 'B2',
+	db: 'B2',
 	dl: 'L2',
 	fr: "R U R'",
 	br: "R' U R",
@@ -66,21 +121,17 @@ const EDGE_OUT: Record<string, string> = {
 	fl: "L' U L"
 };
 
-const CORNER_OUT: Record<string, string> = {
+const CORNER_OUT: KickOut = {
 	dfr: "R U R'",
-	bdr: "R' U' R",
-	bdl: "L U L'",
-	dfl: "L' U' L"
+	drb: "R' U' R",
+	dbl: "L U L'",
+	dlf: "L' U' L"
 };
 
-const TOP_CORNERS: Location[] = ['ulb', 'ubr', 'urf', 'ufl'];
-
-function rotate(st: string, n: number): string {
-	return st.substring(n) + st.substring(0, n);
-}
+const TOP_CORNERS: Cubie[] = ['ulb', 'ubr', 'urf', 'ufl'];
 
 export class Beginner {
-	private perm!: Permutation;
+	private perm: Cube = new Permutation();
 
 	constructor(private moveList: MoveList) {}
 
@@ -89,7 +140,7 @@ export class Beginner {
 		this.perm = applyMoves(this.perm, moves);
 	}
 
-	solve(perm: Permutation): void {
+	solve(perm: Cube): void {
 		const block = this.moveList.openBlock('Basic Modern Solution');
 		this.perm = perm;
 
@@ -109,7 +160,7 @@ export class Beginner {
 	// down.  A piece stuck in the wrong place on the bottom (or in the middle)
 	// is first moved up to the top.
 	private solveFirstFace(): void {
-		const face: Location[] = ['df', 'dr', 'db', 'dl', 'dfr', 'drb', 'dbl', 'dlf'];
+		const face: Cubie[] = ['df', 'dr', 'db', 'dl', 'dfr', 'drb', 'dbl', 'dlf'];
 		if (face.every((piece) => this.perm.apply(piece) === piece)) {
 			return;
 		}
@@ -129,13 +180,17 @@ export class Beginner {
 		block.close();
 	}
 
-	private placeBottomPiece(piece: Location, out: Record<string, string>, down: Rule[]): void {
+	private placeBottomPiece(piece: Cubie, out: KickOut, down: Rule[]): void {
 		const at = this.perm.apply(piece);
 		if (at === piece) {
 			return;
 		}
 		if (!at.includes('u')) {
-			this.move(parseMoves(out[slot(at)]));
+			const moves = out[slot(at)];
+			if (moves === undefined) {
+				throw new Error(`No way to move ${piece} out of ${at}`);
+			}
+			this.move(parseMoves(moves));
 		}
 		this.move(solveVia(this.perm, piece, down) ?? []);
 	}
@@ -146,7 +201,8 @@ export class Beginner {
 	private solveMiddle(): void {
 		// An edge stuck in the wrong slot of the middle layer: turn that slot to
 		// the front right, and insert any edge there to move it to the top.
-		const kickOut = (turns: string, back: string): string => `${turns} ${S.insertRight} ${back}`;
+		const kickOut = (turns: Notation, back: Notation): Notation =>
+			`${turns} ${S.insertRight} ${back}`;
 		const y = WHOLE_CUBE_TURN;
 		const yBack = WHOLE_CUBE_TURN_BACK;
 		const stuck: Rule[] = [
@@ -190,7 +246,7 @@ export class Beginner {
 
 	// Top cross: dot, L, line, cross, each with F (R U R' U') F'.
 	private solveTopCross(): void {
-		const cases: Record<string, string> = {
+		const cases: Partial<Record<TopEdgePattern, Notation>> = {
 			UUUU: '',
 			XUXU: S.topCross, // line, left to right
 			XXUU: S.topCross, // L, at the back and left
@@ -200,18 +256,17 @@ export class Beginner {
 		const block = this.moveList.openBlock('Top Cross');
 		for (let tries = 0; tries < 4; tries++) {
 			// Which top edges have their top color up (F, R, B, L).
-			const inverse = this.perm.inverse();
-			let up = '';
-			for (const face of ['f', 'r', 'b', 'l'] as const) {
-				up += inverse.apply(`u${face}`).charAt(0) === 'u' ? 'U' : 'X';
-			}
+			const up = topEdgePattern(this.perm);
 			if (up === 'UUUU') {
 				break;
 			}
 			for (let turns = 0; turns < 4; turns++) {
-				const sequence = cases[rotate(up, turns)];
+				const sequence = cases[rotatePattern(up, turns)];
 				if (sequence !== undefined) {
-					this.move([...Array.from({ length: turns }, () => U).flat(), ...parseMoves(sequence)]);
+					this.move([
+						...Array.from({ length: turns }, (): Move[] => U).flat(),
+						...parseMoves(sequence)
+					]);
 					break;
 				}
 			}
@@ -283,7 +338,7 @@ export class Beginner {
 	}
 
 	// For each place on top, the corner in it (ignoring twist).
-	private cornerPlaces(): Permutation {
+	private cornerPlaces(): Cube {
 		const map = new Permutation();
 		for (const corner of TOP_CORNERS) {
 			let place = this.perm.apply(corner);

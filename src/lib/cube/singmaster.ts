@@ -12,21 +12,47 @@
 // exactly the moves the 2003 solver did.
 
 import { Permutation, type Path } from './permutation';
-import { rotateName, type Location } from './types';
+import {
+	rotateName,
+	type Cube,
+	type Cubie,
+	type Location,
+	type MoveToken,
+	type Notation
+} from './types';
 import { applyMoves, invertMoves, parseMoves, type Move } from './moves';
 import type { MoveList } from './move-list';
 
 // A place is a piece's location (e.g. "fd": the uf edge is at df, flipped),
 // or a path of pieces (see Permutation.hasMap).
 export type Place = Location | Path;
-// A generator and sequences are in standard notation; a sequence may use
-// "P" to undo the generator moves made so far.  An empty sequence means the
-// piece is already where it should be.
-export type Rule = [generator: string, cases: [place: Place, sequence: string][]];
+// The generator is one move ('' for none: only the cube as it is is
+// checked).  Sequences are in standard notation, and may use "P" to undo
+// the generator moves made so far.  An empty sequence means the piece is
+// already where it should be.
+export type Rule = [generator: MoveToken | '', cases: [place: Place, sequence: Notation][]];
+
+// Which of the four top edges (front, right, back, left) have their top
+// color up ("U") or not ("X"), e.g. "XUXU".
+type Up = 'U' | 'X';
+export type TopEdgePattern = `${Up}${Up}${Up}${Up}`;
+
+export function topEdgePattern(cube: Cube): TopEdgePattern {
+	// Which pieces are in each place (the inverse of where each piece is).
+	const inverse = cube.inverse();
+	const up = (edge: 'uf' | 'ur' | 'ub' | 'ul'): Up =>
+		inverse.apply(edge).charAt(0) === 'u' ? 'U' : 'X';
+	return `${up('uf')}${up('ur')}${up('ub')}${up('ul')}`;
+}
+
+// The pattern seen after turning the top n quarter turns clockwise.
+export function rotatePattern(pattern: TopEdgePattern, n: number): TopEdgePattern {
+	return (pattern.substring(n) + pattern.substring(0, n)) as TopEdgePattern;
+}
 
 // Expand a sequence, replacing each "P" with the inverse of the generator
 // moves made.
-function expand(sequence: string, generated: Move[]): Move[] {
+function expand(sequence: Notation, generated: Move[]): Move[] {
 	const undo = invertMoves(generated);
 	return sequence
 		.split('P')
@@ -37,17 +63,13 @@ function expand(sequence: string, generated: Move[]): Move[] {
 // one of the places in a rule.  Returns the generator moves and the sequence
 // for that place (undefined if none match).
 // The piece is '' when the rules' places are all paths.
-export function solveVia(
-	perm: Permutation,
-	piece: Location | '',
-	rules: Rule[]
-): Move[] | undefined {
+export function solveVia(perm: Cube, piece: Cubie | '', rules: Rule[]): Move[] | undefined {
 	for (const [generator, cases] of rules) {
 		const turn = parseMoves(generator);
 		let p = perm;
 		let moves: Move[] = [];
 		for (let i = 0; i < 4; i++) {
-			const loc = piece === '' ? '' : p.apply(piece);
+			const loc: Location | '' = piece === '' ? '' : p.apply(piece);
 			for (const [place, sequence] of cases) {
 				if (typeof place === 'string' ? place === loc : p.hasMap(place)) {
 					return [...moves, ...expand(sequence, moves)];
@@ -65,12 +87,8 @@ const Y = parseMoves('y');
 const U = parseMoves('U');
 const Z2 = parseMoves('z2');
 
-function rotate(st: string, n: number): string {
-	return st.substring(n) + st.substring(0, n);
-}
-
 export class Singmaster {
-	private perm = new Permutation();
+	private perm: Cube = new Permutation();
 
 	constructor(private moveList: MoveList) {}
 
@@ -79,7 +97,7 @@ export class Singmaster {
 		this.perm = applyMoves(this.perm, moves);
 	}
 
-	solve(perm: Permutation): void {
+	solve(perm: Cube): void {
 		const block = this.moveList.openBlock('David Singmaster Solution');
 
 		this.perm = perm;
@@ -98,7 +116,7 @@ export class Singmaster {
 	}
 
 	// Solve the Up layer only (used for the first layer of other methods).
-	solveFirstLayer(perm: Permutation): Permutation {
+	solveFirstLayer(perm: Cube): Cube {
 		this.perm = perm;
 		this.solveUEdges();
 		this.solveUCorners();
@@ -195,27 +213,23 @@ export class Singmaster {
 	}
 
 	private orientDEdges(): void {
-		// Which pieces are in each place (the inverse of where each piece is).
-		const inverse = this.perm.inverse();
-		let up = '';
-		for (const face of ['f', 'r', 'b', 'l'] as const) {
-			up += inverse.apply(`u${face}`).charAt(0) === 'u' ? 'U' : 'X';
-		}
+		const sequences: Partial<Record<TopEdgePattern, Notation>> = {
+			UUUU: '',
+			XUXU: "B L U L' U' B'",
+			UUXX: "B U L U' L' B'",
+			XXXX: "B L U L' U' B' y2 B U L U' L' B'"
+		};
+		let up = topEdgePattern(this.perm);
 
 		const block = this.moveList.openBlock('Orient D Edges');
 		let moves: Move[] = [];
 		for (let j = 0; j < 4; j++) {
-			const sequence = {
-				UUUU: '',
-				XUXU: "B L U L' U' B'",
-				UUXX: "B U L U' L' B'",
-				XXXX: "B L U L' U' B' y2 B U L U' L' B'"
-			}[up];
+			const sequence = sequences[up];
 			if (sequence !== undefined) {
 				moves = [...moves, ...parseMoves(sequence)];
 				break;
 			}
-			up = rotate(up, 1);
+			up = rotatePattern(up, 1);
 			moves = [...moves, ...Y];
 		}
 		this.move(moves);
@@ -253,7 +267,7 @@ export class Singmaster {
 	}
 
 	private placeDCorners(): void {
-		const corners: Location[] = ['ulb', 'ubr', 'urf', 'ufl'];
+		const corners: Cubie[] = ['ulb', 'ubr', 'urf', 'ufl'];
 		const rules: Rule[] = [
 			[
 				'y',
