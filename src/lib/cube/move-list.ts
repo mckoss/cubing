@@ -6,7 +6,7 @@
 // that undoes the one before it cancels out, but never across the start of
 // a block.
 
-import { from2003Notation, simplifyMoves, type Move } from './moves';
+import { from2003Notation, simplifyMoves, to2003Notation, type Move } from './moves';
 
 function changeCase(ch: string): string {
 	return ch === ch.toUpperCase() ? ch.toLowerCase() : ch.toUpperCase();
@@ -101,6 +101,12 @@ export class MoveList {
 		this.pending = this.pending.substring(1);
 		this.pendingWall = Math.max(0, this.pendingWall - 1);
 		return ch;
+	}
+
+	// Add moves (standard notation).  During the 2026 refactoring this is
+	// the way in for code that no longer uses the 2003 notation.
+	add(moves: Move[]) {
+		this.appendMoves(to2003Notation(moves));
 	}
 
 	appendMoves(add: string) {
