@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Permutation } from '$lib/cube/permutation';
-	import { applyMoves, parseMoves, permutationOf, type Move, type MoveName } from '$lib/cube/moves';
+	import { applyMoves, parseMoves, permutationOf } from '$lib/cube/moves';
+	import type { Face, Move, MoveName, Notation } from '$lib/cube/types';
 	import { MoveList } from '$lib/cube/move-list';
-	import { CATALOG } from '$lib/cube/catalog';
+	import { CATALOG, type CatalogEntry } from '$lib/cube/catalog';
 	import { SOLVERS } from '$lib/cube/solvers';
 	import { SEQUENCES } from '$lib/cube/beginner';
-	import { CubeView, SPEEDS, type Speed } from '$lib/cube/view';
+	import { CubeView, SPEED_NAMES, type Speed } from '$lib/cube/view';
 	import HistoryBlock from '$lib/components/HistoryBlock.svelte';
 	import TopCrossSteps from '$lib/components/TopCrossSteps.svelte';
 	import CaseDiagram, { type Case } from '$lib/components/CaseDiagram.svelte';
@@ -22,9 +23,9 @@
 	// Bumped whenever the move list changes, to update the page.
 	let version = $state(0);
 	let speed: Speed = $state('Slow');
-	let solverName = $state(SOLVERS[0].name);
+	let solverName: string = $state(SOLVERS[0]?.name ?? '');
 	let showLabels = $state(true);
-	let error = $state('');
+	let error: string = $state('');
 
 	// Read `version` so these update when the move list changes.
 	const history = $derived.by(() => {
@@ -56,11 +57,11 @@
 			noWebGL = true;
 		}
 		void animate();
-		return () => view?.dispose();
+		return (): void => view?.dispose();
 	});
 
 	// Add moves, optionally as a named block.
-	function play(moves: Move[], blockName?: string) {
+	function play(moves: Move[], blockName?: string): void {
 		const block = blockName ? moveList.openBlock(blockName) : undefined;
 		moveList.add(moves);
 		block?.close();
@@ -76,7 +77,7 @@
 	let animating = false;
 	// Changed by Reset, so a move that was turning is dropped.
 	let generation = 0;
-	async function animate() {
+	async function animate(): Promise<void> {
 		if (animating || (!view && !noWebGL)) return;
 		animating = true;
 		const current = generation;
@@ -105,15 +106,15 @@
 		return applyMoves(perm, [...(turning ? [turning] : []), ...moveList.pending]);
 	}
 
-	function move(name: MoveName, counterclockwise: boolean) {
+	function move(name: MoveName, counterclockwise: boolean): void {
 		const m: Move = { name, turns: counterclockwise ? 3 : 1 };
 		play([m]);
 	}
 
 	// Scramble with 25 random face turns, never the same face twice in a row
 	// (as in 2003).
-	function scramble() {
-		const faces: MoveName[] = ['L', 'R', 'D', 'U', 'B', 'F'];
+	function scramble(): void {
+		const faces: readonly Face[] = ['L', 'R', 'D', 'U', 'B', 'F'];
 		const moves: Move[] = [];
 		let last = -1;
 		for (let i = 0; i < 25; i++) {
@@ -122,7 +123,11 @@
 				face = Math.floor(Math.random() * 6);
 			} while (face === last);
 			last = face;
-			moves.push({ name: faces[face], turns: Math.random() < 0.5 ? 3 : 1 });
+			const name = faces[face];
+			if (name === undefined) {
+				throw new Error(`No face ${face}`);
+			}
+			moves.push({ name, turns: Math.random() < 0.5 ? 3 : 1 });
 		}
 		moveList.clear();
 		paused = false;
@@ -132,14 +137,21 @@
 
 	// Where we are in the moves being played (for stepping through them),
 	// counting a half turn as one move, as the history does.
-	const stage = $derived.by(() => {
+	// The block being played, and which of its moves.
+	interface Stage {
+		name: string;
+		move: number;
+		of: number;
+	}
+
+	const stage = $derived.by((): Stage | undefined => {
 		void version;
 		if (moveList.pending.length === 0 && turning === undefined) return undefined;
 		const position = moveList.played - (turning ? 1 : 0);
 		const block = moveList.blockAt(position);
 		if (block === undefined) return undefined;
 		const end = block.end ?? moveList.moves.length;
-		const count = (from: number, to: number) => moveList.movesBetween(from, to).length;
+		const count = (from: number, to: number): number => moveList.movesBetween(from, to).length;
 		return {
 			name: block.name,
 			move: count(block.start, position) + 1,
@@ -147,13 +159,13 @@
 		};
 	});
 
-	function play_pause() {
+	function play_pause(): void {
 		paused = !paused;
 		steps = 0;
 		void animate();
 	}
 
-	function nextMove() {
+	function nextMove(): void {
 		paused = true;
 		// A half turn is the same quarter turn twice in a row: play both.
 		const [first, second] = moveList.pending;
@@ -167,17 +179,21 @@
 		void animate();
 	}
 
-	function nextStage() {
+	function nextStage(): void {
 		paused = true;
 		steps = moveList.nextBoundary(moveList.played) - moveList.played;
 		void animate();
 	}
 
-	function solve() {
+	function solve(): void {
+		const solver = SOLVERS.find((s) => s.name === solverName);
+		if (solver === undefined) {
+			error = `Unknown solver: ${solverName}`;
+			return;
+		}
 		error = '';
 		paused = stepThrough;
 		steps = 0;
-		const solver = SOLVERS.find((s) => s.name === solverName)!;
 		try {
 			solver.solve(finalPerm(), moveList);
 		} catch (e) {
@@ -187,7 +203,7 @@
 		void animate();
 	}
 
-	function reset() {
+	function reset(): void {
 		generation++;
 		paused = false;
 		steps = 0;
@@ -198,7 +214,10 @@
 		version++;
 	}
 
-	const KEYS: Record<string, MoveName> = {
+	// The key for each move: its letter, in lower case (with Shift for
+	// counterclockwise).
+	type MoveKey = Lowercase<MoveName>;
+	const KEYS: Readonly<Record<MoveKey, MoveName>> = {
 		u: 'U',
 		d: 'D',
 		l: 'L',
@@ -213,19 +232,29 @@
 		z: 'z'
 	};
 
-	function onKeydown(ev: KeyboardEvent) {
-		const target = ev.target as HTMLElement;
-		if (ev.ctrlKey || ev.metaKey || ev.altKey || target.closest('input, select, textarea')) {
+	function isMoveKey(key: string): key is MoveKey {
+		return Object.hasOwn(KEYS, key);
+	}
+
+	function onKeydown(ev: KeyboardEvent): void {
+		const target = ev.target;
+		if (
+			ev.ctrlKey ||
+			ev.metaKey ||
+			ev.altKey ||
+			(target instanceof Element && target.closest('input, select, textarea'))
+		) {
 			return;
 		}
-		const name = KEYS[ev.key.toLowerCase()];
+		const key = ev.key.toLowerCase();
+		const name = isMoveKey(key) ? KEYS[key] : undefined;
 		if (name !== undefined) {
 			ev.preventDefault();
 			move(name, ev.shiftKey);
 		}
 	}
 
-	const PAD: { name: MoveName; label: string }[] = [
+	const PAD: readonly { name: MoveName; label: string }[] = [
 		{ name: 'U', label: 'Up face' },
 		{ name: 'D', label: 'Down face' },
 		{ name: 'L', label: 'Left face' },
@@ -242,13 +271,19 @@
 
 	interface MethodSequence {
 		label: string;
-		moves: string;
+		moves: Notation;
 		// A picture of what to look for (see CaseDiagram), and a caption.
 		diagram?: Case;
 		look?: string;
 	}
 
-	const METHOD_STEPS: { title: string; text: string; sequences: MethodSequence[] }[] = [
+	interface MethodStep {
+		title: string;
+		text: string;
+		sequences: MethodSequence[];
+	}
+
+	const METHOD_STEPS: readonly MethodStep[] = [
 		{
 			title: 'First face',
 			text: 'Hold the white face down, and solve it with the edges and corners matching the centers around it. (My notes skip this step as obvious.) Find a white piece on top, turn the top until it is over its place, and put it down: the edges first, then the corners. A white piece on the bottom in the wrong place, or in the middle layer, goes up to the top first.',
@@ -327,7 +362,7 @@
 		}
 	];
 
-	const catalog = CATALOG.map((entry) => ({
+	const catalog = CATALOG.map((entry): CatalogEntry & { effect: string } => ({
 		...entry,
 		effect: permutationOf(entry.moves).toString()
 	}));
@@ -370,16 +405,20 @@
 					</select>
 				{/if}
 			</div>
-			<button onclick={() => view?.flip()} title="Turn the view upside down" data-testid="flip"
-				>Flip</button
+			<button
+				onclick={(): void => view?.flip()}
+				title="Turn the view upside down"
+				data-testid="flip">Flip</button
 			>
 			<button onclick={reset} data-testid="reset">Reset</button>
 			<div class="speed" role="group" aria-label="Speed">
-				{#each Object.keys(SPEEDS) as s (s)}
+				{#each SPEED_NAMES as s (s)}
 					<button
 						class:selected={speed === s}
 						aria-pressed={speed === s}
-						onclick={() => (speed = s as Speed)}>{s}</button
+						onclick={(): void => {
+							speed = s;
+						}}>{s}</button
 					>
 				{/each}
 			</div>
@@ -416,8 +455,10 @@
 			<div class="pad">
 				{#each PAD as { name, label } (name)}
 					<div class="pair" title={label}>
-						<button onclick={() => move(name, false)} data-testid="move-{name}">{name}</button>
-						<button onclick={() => move(name, true)} data-testid="move-{name}-prime">{name}′</button
+						<button onclick={(): void => move(name, false)} data-testid="move-{name}">{name}</button
+						>
+						<button onclick={(): void => move(name, true)} data-testid="move-{name}-prime"
+							>{name}′</button
 						>
 					</div>
 				{/each}
@@ -469,7 +510,8 @@
 						</td>
 						<td class="mono effect">{entry.effect}</td>
 						<td>
-							<button onclick={() => play(entry.moves, `Try It: ${entry.label || entry.notation}`)}
+							<button
+								onclick={(): void => play(entry.moves, `Try It: ${entry.label || entry.notation}`)}
 								>Try it</button
 							>
 						</td>
@@ -504,7 +546,9 @@
 							{#if look}<span class="look">{look}</span>{/if}
 							<span class="sequence-moves">
 								<code>{moves}</code>
-								<button onclick={() => play(parseMoves(moves), `Try It: ${label}`)}>Try it</button>
+								<button onclick={(): void => play(parseMoves(moves), `Try It: ${label}`)}
+									>Try it</button
+								>
 							</span>
 						</div>
 					</div>

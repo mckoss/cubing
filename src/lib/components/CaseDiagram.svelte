@@ -10,6 +10,8 @@
 </script>
 
 <script lang="ts">
+	import type { Face } from '$lib/cube/types';
+
 	// Small pictures of what to look for before each sequence of the Basic
 	// Modern Solution, after Mike's handwritten notes. The cube uses the 2003
 	// colors: yellow top, blue front, orange right, red left.
@@ -31,9 +33,27 @@
 	const BODY = '#1b1b1f';
 	const ARROW = 'white';
 
+	// A CSS color.
+	type Color = string;
+	// A point of the picture, and a 3D point of the isometric cube.
+	interface Point {
+		x: number;
+		y: number;
+	}
+	type Point3 = [number, number, number];
+	// A square cell of a grid, of size `s`.
+	interface Cell extends Point {
+		s: number;
+		fill: Color;
+	}
+	// The faces shown in the 3D picture.
+	type ShownFace = Extract<Face, 'U' | 'F' | 'R'>;
+	// A cell of a face (a, b), 0-based.
+	type FacePlace = [number, number];
+
 	// A 3x3 grid of cells starting at (x, y), with cells of size `s`.
-	function cells(x: number, y: number, s: number, fill: (r: number, c: number) => string) {
-		const out: { x: number; y: number; s: number; fill: string }[] = [];
+	function cells(x: number, y: number, s: number, fill: (r: number, c: number) => Color): Cell[] {
+		const out: Cell[] = [];
 		for (let r = 0; r < 3; r++) {
 			for (let c = 0; c < 3; c++) {
 				out.push({ x: x + c * s + 1, y: y + r * s + 1, s: s - 2, fill: fill(r, c) });
@@ -43,8 +63,21 @@
 	}
 
 	// Center of cell (r, c) of a 3x3 grid at (x, y) with cells of size `s`.
-	function at(x: number, y: number, s: number, r: number, c: number) {
+	function at(x: number, y: number, s: number, r: number, c: number): Point {
 		return { x: x + c * s + s / 2, y: y + r * s + s / 2 };
+	}
+
+	// The arrows along a path: each point to the next.
+	function segments(path: Point[]): [Point, Point][] {
+		const out: [Point, Point][] = [];
+		let prev: Point | undefined;
+		for (const q of path) {
+			if (prev !== undefined) {
+				out.push([prev, q]);
+			}
+			prev = q;
+		}
+		return out;
 	}
 
 	// Isometric projection for the 3D cube: x to the right, y up, z toward
@@ -54,11 +87,11 @@
 		const c = Math.cos(Math.PI / 6);
 		return [ISO.x0 + (x - z) * c * ISO.s, ISO.y0 + ((x + z) / 2 - y) * ISO.s];
 	}
-	function poly(points: [number, number, number][]): string {
+	function poly(points: Point3[]): string {
 		return points.map((p) => iso(...p).join(',')).join(' ');
 	}
 	// The sticker at (a, b) on a face of the 3x3x3 cube, inset a little.
-	function sticker(face: 'U' | 'F' | 'R', a: number, b: number): string {
+	function sticker(face: ShownFace, a: number, b: number): string {
 		const e = 0.08;
 		const [a0, a1, b0, b1] = [a + e, a + 1 - e, b + e, b + 1 - e];
 		if (face === 'U') {
@@ -87,23 +120,23 @@
 	// The whole cube, solved but for two top corners: the front right one,
 	// colored to show where its yellow sticker is, and another corner twisted
 	// the other way (a single corner can't be twisted by itself).
-	function twistCube(yellowOn: 'F' | 'R') {
-		const faces: { points: string; fill: string }[] = [];
+	function twistCube(yellowOn: Extract<ShownFace, 'F' | 'R'>): { points: string; fill: Color }[] {
+		const faces: { points: string; fill: Color }[] = [];
 		// With yellow facing right, the orange sticker is in front and the
 		// blue one on top; the back right corner is twisted the other way
 		// (yellow on the right, green on top).  With yellow facing front, blue
 		// is on the right and orange on top; the front left corner is twisted
 		// the other way (yellow in front, red on top).
-		const twisted =
+		const twisted: Record<ShownFace, Color> =
 			yellowOn === 'R' ? { U: BLUE, F: ORANGE, R: YELLOW } : { U: ORANGE, F: YELLOW, R: BLUE };
 		// The other corner: where its top sticker is (x, z) and its color, and
 		// the face and place (a, b) of its yellow sticker.
-		const other =
+		const other: { top: FacePlace; color: Color; face: ShownFace; at: FacePlace } =
 			yellowOn === 'R'
 				? { top: [2, 0], color: GREEN, face: 'R', at: [0, 2] }
 				: { top: [0, 2], color: RED, face: 'F', at: [0, 2] };
-		const is = (p: number[], a: number, b: number) => p[0] === a && p[1] === b;
-		const yellow = (face: string, a: number, b: number) =>
+		const is = (p: FacePlace, a: number, b: number): boolean => p[0] === a && p[1] === b;
+		const yellow = (face: ShownFace, a: number, b: number): boolean =>
 			face === other.face && is(other.at, a, b);
 		for (let a = 0; a < 3; a++) {
 			for (let b = 0; b < 3; b++) {
@@ -261,11 +294,8 @@
 		{@const br = at(T.x, T.y, T.s, 0, 2)}
 		{@const fl = at(T.x, T.y, T.s, 2, 0)}
 		{@const fr = at(T.x, T.y, T.s, 2, 2)}
-		{@const path = back ? [bl, br, fr, bl] : [br, bl, fl, br]}
 		{@const stays = back ? fl : fr}
-		{#each [0, 1, 2] as i (i)}
-			{@const p = path[i]}
-			{@const q = path[i + 1]}
+		{#each segments(back ? [bl, br, fr, bl] : [br, bl, fl, br]) as [p, q], i (i)}
 			{@const dx = q.x - p.x}
 			{@const dy = q.y - p.y}
 			{@const len = Math.hypot(dx, dy)}
