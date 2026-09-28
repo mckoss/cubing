@@ -1,15 +1,50 @@
 import { describe, expect, it } from 'vitest';
 import { Permutation } from './permutation';
-import { applyMoves, invertMoves, parseMoves, permutationOf, type Move } from './moves';
+import { applyMoves, FACES, invertMoves, parseMoves, permutationOf } from './moves';
 import { MoveList } from './move-list';
-import { rotateName, type Location } from './types';
+import {
+	rotateName,
+	type Cube,
+	type Cubie,
+	type Location,
+	type Move,
+	type MoveName,
+	type Notation,
+	type Turns
+} from './types';
 import { Beginner, SEQUENCES } from './beginner';
 
-function random(seed: number) {
-	return () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+const TURNS: readonly Turns[] = [1, 2, 3];
+
+function pick<T>(items: readonly T[], r: number): T {
+	const item = items[Math.floor(r * items.length)];
+	if (item === undefined) {
+		throw new Error(`No item at ${r}`);
+	}
+	return item;
 }
 
-function solve(start: Permutation) {
+// A random scramble of moves with the given names.
+function randomMoves(rand: () => number, names: readonly MoveName[], length: number): Move[] {
+	return Array.from({ length }, (): Move => ({
+		name: pick(names, rand()),
+		turns: pick(TURNS, rand())
+	}));
+}
+
+function random(seed: number): () => number {
+	return (): number => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+}
+
+// A value that must be there.
+function defined<T>(value: T | undefined, what: string): T {
+	if (value === undefined) {
+		throw new Error(`Missing ${what}`);
+	}
+	return value;
+}
+
+function solve(start: Cube): MoveList {
 	const list = new MoveList();
 	new Beginner(list).solve(start);
 	return list;
@@ -32,10 +67,7 @@ describe('Basic Modern Solution', () => {
 	it('solves random scrambles', () => {
 		const rand = random(1980);
 		for (let i = 0; i < 500; i++) {
-			const moves = Array.from({ length: 30 }, () => ({
-				name: 'UDLRFB'[Math.floor(rand() * 6)],
-				turns: 1 + Math.floor(rand() * 3)
-			})) as Move[];
+			const moves = randomMoves(rand, FACES, 30);
 			const start = permutationOf(moves);
 			const list = solve(start);
 			expect(applyMoves(start, list.moves).toString(), `scramble ${i}`).toBe('()');
@@ -63,12 +95,12 @@ describe('first face, white down', () => {
 	it('never turns the cube over', () => {
 		const rand = random(2003);
 		for (let i = 0; i < 100; i++) {
-			const moves = Array.from({ length: 30 }, () => ({
-				name: 'UDLRFB'[Math.floor(rand() * 6)],
-				turns: 1 + Math.floor(rand() * 3)
-			})) as Move[];
+			const moves = randomMoves(rand, FACES, 30);
 			const list = solve(permutationOf(moves));
-			const first = list.blocks.find((b) => b.name === 'First Face (White)')!;
+			const first = defined(
+				list.blocks.find((b) => b.name === 'First Face (White)'),
+				'first face block'
+			);
 			// Only turns of the whole cube about the vertical axis (y).
 			const turns = list.moves.slice(first.start, first.end);
 			expect(turns.filter((m) => m.name === 'x' || m.name === 'z')).toEqual([]);
@@ -80,8 +112,8 @@ describe('first face, white down', () => {
 
 	it('puts pieces down without disturbing the pieces already down', () => {
 		// The edges go first, so the edges may move the bottom corners.
-		const edges: Location[] = ['df', 'dr', 'db', 'dl'];
-		const cases: [Location, string[], Location[]][] = [
+		const edges: Cubie[] = ['df', 'dr', 'db', 'dl'];
+		const cases: [Cubie, Notation[], Cubie[]][] = [
 			['df', ['F2', "U' R' F R"], edges],
 			['dfr', ["R U R'", "F' U' F", "R U2 R' U' R U R'"], [...edges, 'drb', 'dbl', 'dlf']]
 		];
@@ -100,7 +132,7 @@ describe('first face, white down', () => {
 
 describe('top cross pictures', () => {
 	// Which top edges show the top color (u), in the order f r b l.
-	const pattern = (p: Permutation) => {
+	const pattern = (p: Cube): string => {
 		const inverse = p.inverse();
 		return (['f', 'r', 'b', 'l'] as const)
 			.filter((f) => inverse.apply(`u${f}`).charAt(0) === 'u')
@@ -108,17 +140,16 @@ describe('top cross pictures', () => {
 	};
 
 	// Cubes reached by the top cross sequence and turns of the top.
-	const cubes = () => {
+	const cubes = (): Cube[] => {
 		const cross = parseMoves(SEQUENCES.topCross);
 		const turns = ['U', 'U2', "U'"].map((m) => parseMoves(m));
 		const flipTwo = parseMoves("F U R U' R' F'");
-		const found: Permutation[] = [];
-		let seed = 11;
-		const rand = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+		const found: Cube[] = [];
+		const rand = random(11);
 		for (let i = 0; i < 500; i++) {
 			let p = new Permutation();
 			for (let k = 0; k < 8; k++) {
-				p = applyMoves(p, rand() < 0.5 ? cross : turns[Math.floor(rand() * 3)]);
+				p = applyMoves(p, rand() < 0.5 ? cross : pick(turns, rand()));
 			}
 			if (rand() < 0.3) p = applyMoves(p, flipTwo);
 			found.push(p);
@@ -130,24 +161,26 @@ describe('top cross pictures', () => {
 		const after = new Map<string, Set<string>>();
 		for (const p of cubes()) {
 			const before = pattern(p);
-			if (!after.has(before)) after.set(before, new Set());
-			after.get(before)!.add(pattern(applyMoves(p, parseMoves(SEQUENCES.topCross))));
+			const seen = after.get(before) ?? new Set<string>();
+			after.set(before, seen);
+			seen.add(pattern(applyMoves(p, parseMoves(SEQUENCES.topCross))));
 		}
+		const patternsAfter = (before: string): string[] => [...defined(after.get(before), before)];
 		// Dot -> L at the front right; L at the back left -> line from left to
 		// right; line -> cross.
-		expect([...after.get('')!]).toEqual(['fr']);
-		expect([...after.get('bl')!]).toEqual(['rl']);
-		expect([...after.get('rl')!]).toEqual(['frbl']);
+		expect(patternsAfter('')).toEqual(['fr']);
+		expect(patternsAfter('bl')).toEqual(['rl']);
+		expect(patternsAfter('rl')).toEqual(['frbl']);
 		// Held the wrong way: an L elsewhere stays an L; a line front to back
 		// goes back to a dot.
-		expect([...after.get('rb')!]).toEqual(['rb']);
-		expect([...after.get('fb')!]).toEqual(['']);
+		expect(patternsAfter('rb')).toEqual(['rb']);
+		expect(patternsAfter('fb')).toEqual(['']);
 	});
 });
 
 describe('case pictures', () => {
 	// The arrangement a sequence fixes is the one its inverse makes.
-	const fixes = (moves: string) => permutationOf(invertMoves(parseMoves(moves)));
+	const fixes = (moves: Notation): Cube => permutationOf(invertMoves(parseMoves(moves)));
 
 	it('twist the front right corner the way its yellow sticker faces', () => {
 		// (R' D' R D)x2 when yellow (the U sticker) faces right...
@@ -171,7 +204,7 @@ describe('case pictures', () => {
 			'ur'
 		]);
 		// Where a corner goes, ignoring its twist (the next step fixes that).
-		const place = (p: Permutation, corner: Location): Location => {
+		const place = (p: Cube, corner: Cubie): Location => {
 			let at = p.apply(corner);
 			while (!at.startsWith('u')) at = rotateName(at);
 			return at;

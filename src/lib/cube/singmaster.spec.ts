@@ -1,13 +1,36 @@
 import { describe, expect, it } from 'vitest';
-import { applyMoves, formatMoves, permutationOf, type Move } from './moves';
+import { applyMoves, FACES, formatMoves, MOVE_NAMES, permutationOf } from './moves';
 import { MoveList } from './move-list';
 import { Singmaster } from './singmaster';
+import type { Move, MoveName, Notation, Turns } from './types';
 import reference from './fixtures/singmaster-2003.json';
+
+const TURNS: readonly Turns[] = [1, 2, 3];
+
+function pick<T>(items: readonly T[], r: number): T {
+	const item = items[Math.floor(r * items.length)];
+	if (item === undefined) {
+		throw new Error(`No item at ${r}`);
+	}
+	return item;
+}
+
+// A random scramble of moves with the given names.
+function randomMoves(rand: () => number, names: readonly MoveName[], length: number): Move[] {
+	return Array.from({ length }, (): Move => ({
+		name: pick(names, rand()),
+		turns: pick(TURNS, rand())
+	}));
+}
+
+function random(seed: number): () => number {
+	return (): number => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+}
 
 // The fixture holds the 2003 program's solutions, in quarter turns (as the
 // 2003 program recorded them, one letter per quarter turn), with the block
 // positions counted in quarter turns.
-function solve(scramble: string): MoveList {
+function solve(scramble: Notation): MoveList {
 	const list = new MoveList();
 	new Singmaster(list).solve(permutationOf(scramble));
 	return list;
@@ -44,13 +67,9 @@ describe('Singmaster solver', () => {
 	});
 
 	it('solves random face turn scrambles', () => {
-		let seed = 42;
-		const rand = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+		const rand = random(42);
 		for (let i = 0; i < 300; i++) {
-			const moves = Array.from({ length: 30 }, () => ({
-				name: 'UDLRFB'[Math.floor(rand() * 6)],
-				turns: 1 + Math.floor(rand() * 3)
-			})) as Move[];
+			const moves = randomMoves(rand, FACES, 30);
 			const start = permutationOf(moves);
 			const list = new MoveList();
 			new Singmaster(list).solve(start);
@@ -62,14 +81,10 @@ describe('Singmaster solver', () => {
 describe('solvers', () => {
 	it('solve scrambles with slices and whole cube turns', async () => {
 		const { SOLVERS } = await import('./solvers');
-		let seed = 7;
-		const rand = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+		const rand = random(7);
 		for (const solver of SOLVERS) {
 			for (let i = 0; i < 200; i++) {
-				const moves = Array.from({ length: 30 }, () => ({
-					name: 'UDLRFBMESxyz'[Math.floor(rand() * 12)],
-					turns: 1 + Math.floor(rand() * 3)
-				})) as Move[];
+				const moves = randomMoves(rand, MOVE_NAMES, 30);
 				const start = permutationOf(moves);
 				const list = new MoveList();
 				solver.solve(start, list);

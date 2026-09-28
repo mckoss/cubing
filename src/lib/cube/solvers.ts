@@ -1,6 +1,6 @@
 // The solvers the simulator offers.
 
-import type { Permutation } from './permutation';
+import type { Cube } from './types';
 import { applyMoves, parseMoves, type Move } from './moves';
 import type { MoveList } from './move-list';
 import { Singmaster } from './singmaster';
@@ -9,18 +9,23 @@ import { Beginner } from './beginner';
 export interface Solver {
 	name: string;
 	description: string;
-	solve(perm: Permutation, moveList: MoveList): void;
+	solve(perm: Cube, moveList: MoveList): void;
 }
 
 // Sequences of slice moves, shortest first: every arrangement of the
 // centers is reached within three.  (The order of the turns is the order
 // the 2003 slices were tried in.)
-const SLICE_MOVES: Move[][] = (() => {
+const SLICE_MOVES: Move[][] = ((): Move[][] => {
 	const turns = parseMoves("M' E' S' M E S");
 	const found: Move[][] = [[]];
-	for (let i = 0; found.length < 1000; i++) {
+	// Extend each sequence in turn; the loop also visits the sequences it
+	// adds.
+	for (const prefix of found) {
+		if (found.length >= 1000) {
+			break;
+		}
 		for (const turn of turns) {
-			found.push([...found[i], turn]);
+			found.push([...prefix, turn]);
 		}
 	}
 	return found;
@@ -29,8 +34,8 @@ const SLICE_MOVES: Move[][] = (() => {
 // Slice moves (M, E, S) move the centers, which the 2003 simulator didn't
 // track.  Turn the slices to put the centers back in place, so the solvers
 // (which leave the centers alone) can finish the job.  (Added in 2026.)
-function placeCenters(perm: Permutation, moveList: MoveList): Permutation {
-	const centered = (p: Permutation): boolean => p.apply('u') === 'u' && p.apply('f') === 'f';
+function placeCenters(perm: Cube, moveList: MoveList): Cube {
+	const centered = (p: Cube): boolean => p.apply('u') === 'u' && p.apply('f') === 'f';
 	if (centered(perm)) {
 		return perm;
 	}
@@ -49,7 +54,7 @@ export const SOLVERS: Solver[] = [
 		name: 'Singmaster',
 		description:
 			"David Singmaster's layer-by-layer solution, from Notes on Rubik's Magic Cube (1981), as programmed in 2003.",
-		solve(perm, moveList) {
+		solve(perm, moveList): void {
 			new Singmaster(moveList).solve(placeCenters(perm, moveList));
 		}
 	},
@@ -57,7 +62,7 @@ export const SOLVERS: Solver[] = [
 		name: 'Basic Modern Solution',
 		description:
 			'The simple, basic modern layer-by-layer solution, as Mike learned it: first face, middle layer, then the top.',
-		solve(perm, moveList) {
+		solve(perm, moveList): void {
 			new Beginner(moveList).solve(placeCenters(perm, moveList));
 		}
 	}
