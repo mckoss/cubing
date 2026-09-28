@@ -1,16 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Permutation } from '$lib/cube/permutation';
-	import {
-		apply2003,
-		from2003Notation,
-		parseMoves,
-		simplifyMoves,
-		permutationOf,
-		to2003Notation,
-		type Move,
-		type MoveName
-	} from '$lib/cube/moves';
+	import { applyMoves, parseMoves, permutationOf, type Move, type MoveName } from '$lib/cube/moves';
 	import { MoveList } from '$lib/cube/move-list';
 	import { CATALOG } from '$lib/cube/catalog';
 	import { SOLVERS } from '$lib/cube/solvers';
@@ -26,8 +17,8 @@
 
 	// The arrangement shown (updated as each move finishes turning).
 	let perm = $state(new Permutation());
-	// The move now turning (2003 notation), if any.
-	let turning = $state('');
+	// The move (a quarter turn) now turning, if any.
+	let turning: Move | undefined = $state();
 	// Bumped whenever the move list changes, to update the page.
 	let version = $state(0);
 	let speed: Speed = $state('Slow');
@@ -45,7 +36,7 @@
 		return moveList.pending.length;
 	});
 	const solved = $derived(perm.isIdentity());
-	const idle = $derived(pendingCount === 0 && turning === '');
+	const idle = $derived(pendingCount === 0 && turning === undefined);
 
 	$effect(() => {
 		if (view) view.speed = speed;
@@ -68,10 +59,10 @@
 		return () => view?.dispose();
 	});
 
-	// Add moves (2003 notation), optionally as a named block.
-	function play(moves: string, blockName?: string) {
+	// Add moves, optionally as a named block.
+	function play(moves: Move[], blockName?: string) {
 		const block = blockName ? moveList.openBlock(blockName) : undefined;
-		moveList.appendMoves(moves);
+		moveList.add(moves);
 		block?.close();
 		version++;
 		void animate();
@@ -89,19 +80,19 @@
 		if (animating || (!view && !noWebGL)) return;
 		animating = true;
 		const current = generation;
-		let ch: string | undefined;
+		let next: Move | undefined;
 		while (
 			current === generation &&
 			(!paused || steps > 0) &&
-			(ch = moveList.nextMove()) !== undefined
+			(next = moveList.nextMove()) !== undefined
 		) {
 			if (paused) steps--;
-			turning = ch;
+			turning = next;
 			version++;
-			await view?.turn(from2003Notation(ch)[0]);
+			await view?.turn(next);
 			if (current !== generation) break;
-			perm = apply2003(perm, ch);
-			turning = '';
+			perm = applyMoves(perm, [next]);
+			turning = undefined;
 		}
 		animating = false;
 		version++;
@@ -111,19 +102,19 @@
 
 	// The arrangement once all queued moves are made.
 	function finalPerm(): Permutation {
-		return apply2003(apply2003(perm, turning), moveList.pending);
+		return applyMoves(perm, [...(turning ? [turning] : []), ...moveList.pending]);
 	}
 
 	function move(name: MoveName, counterclockwise: boolean) {
 		const m: Move = { name, turns: counterclockwise ? 3 : 1 };
-		play(to2003Notation([m]));
+		play([m]);
 	}
 
 	// Scramble with 25 random face turns, never the same face twice in a row
 	// (as in 2003).
 	function scramble() {
-		const faces = 'lrdubf';
-		let moves = '';
+		const faces: MoveName[] = ['L', 'R', 'D', 'U', 'B', 'F'];
+		const moves: Move[] = [];
 		let last = -1;
 		for (let i = 0; i < 25; i++) {
 			let face: number;
@@ -131,8 +122,7 @@
 				face = Math.floor(Math.random() * 6);
 			} while (face === last);
 			last = face;
-			const ch = faces.charAt(face);
-			moves += Math.random() < 0.5 ? ch.toUpperCase() : ch;
+			moves.push({ name: faces[face], turns: Math.random() < 0.5 ? 3 : 1 });
 		}
 		moveList.clear();
 		paused = false;
@@ -144,13 +134,12 @@
 	// counting a half turn as one move, as the history does.
 	const stage = $derived.by(() => {
 		void version;
-		if (moveList.pending === '' && turning === '') return undefined;
-		const position = moveList.played - turning.length;
+		if (moveList.pending.length === 0 && turning === undefined) return undefined;
+		const position = moveList.played - (turning ? 1 : 0);
 		const block = moveList.blockAt(position);
 		if (block === undefined) return undefined;
 		const end = block.end ?? moveList.moves.length;
-		const count = (from: number, to: number) =>
-			simplifyMoves(from2003Notation(moveList.moves.substring(from, to))).length;
+		const count = (from: number, to: number) => moveList.movesBetween(from, to).length;
 		return {
 			name: block.name,
 			move: count(block.start, position) + 1,
@@ -166,9 +155,15 @@
 
 	function nextMove() {
 		paused = true;
-		// A half turn is two letters in a row (e.g. "ff"): play both.
-		const next = moveList.pending;
-		steps = next.length >= 2 && next[0] === next[1] ? 2 : 1;
+		// A half turn is the same quarter turn twice in a row: play both.
+		const [first, second] = moveList.pending;
+		steps =
+			first !== undefined &&
+			second !== undefined &&
+			first.name === second.name &&
+			first.turns === second.turns
+				? 2
+				: 1;
 		void animate();
 	}
 
@@ -199,7 +194,7 @@
 		moveList.clear();
 		view?.reset();
 		perm = new Permutation();
-		turning = '';
+		turning = undefined;
 		version++;
 	}
 
@@ -481,8 +476,7 @@
 						</td>
 						<td class="mono effect">{entry.effect}</td>
 						<td>
-							<button
-								onclick={() => play(entry.original, `Try It: ${entry.label || entry.notation}`)}
+							<button onclick={() => play(entry.moves, `Try It: ${entry.label || entry.notation}`)}
 								>Try it</button
 							>
 						</td>
@@ -517,9 +511,7 @@
 							{#if look}<span class="look">{look}</span>{/if}
 							<span class="sequence-moves">
 								<code>{moves}</code>
-								<button onclick={() => play(to2003Notation(parseMoves(moves)), `Try It: ${label}`)}
-									>Try it</button
-								>
+								<button onclick={() => play(parseMoves(moves), `Try It: ${label}`)}>Try it</button>
 							</span>
 						</div>
 					</div>

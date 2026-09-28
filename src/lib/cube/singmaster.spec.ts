@@ -1,21 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { Permutation } from './permutation';
-import { apply2003, from2003Notation, applyMoves, permutationOf, type Move } from './moves';
+import { applyMoves, formatMoves, permutationOf, type Move } from './moves';
 import { MoveList } from './move-list';
 import { Singmaster } from './singmaster';
 import reference from './fixtures/singmaster-2003.json';
 
-function solve2003(scramble: string) {
+// The fixture holds the 2003 program's solutions, in quarter turns (as the
+// 2003 program recorded them, one letter per quarter turn), with the block
+// positions counted in quarter turns.
+function solve(scramble: string): MoveList {
 	const list = new MoveList();
-	new Singmaster(list).solve(apply2003(new Permutation(), scramble));
+	new Singmaster(list).solve(permutationOf(scramble));
 	return list;
 }
 
 describe('Singmaster solver', () => {
 	it('matches the 2003 solver move for move', () => {
 		for (const { scramble, moves, blocks } of reference) {
-			const list = solve2003(scramble);
-			expect(list.moves, scramble).toBe(moves);
+			const list = solve(scramble);
+			expect(
+				list.moves.every((m) => m.turns !== 2),
+				scramble
+			).toBe(true);
+			expect(formatMoves(list.moves), scramble).toBe(moves);
 			expect(
 				list.blocks.map((b) => [b.name, b.start, b.end ?? null]),
 				scramble
@@ -25,15 +31,15 @@ describe('Singmaster solver', () => {
 
 	it('queues the same moves it records in the history', () => {
 		for (const { scramble } of reference) {
-			const list = solve2003(scramble);
-			expect(list.pending, scramble).toBe(list.moves);
+			const list = solve(scramble);
+			expect(list.pending, scramble).toEqual(list.moves);
 		}
 	});
 
 	it('solves every reference scramble', () => {
 		for (const { scramble } of reference) {
-			const list = solve2003(scramble);
-			expect(apply2003(apply2003(new Permutation(), scramble), list.moves).isIdentity()).toBe(true);
+			const list = solve(scramble);
+			expect(applyMoves(permutationOf(scramble), list.moves).isIdentity()).toBe(true);
 		}
 	});
 
@@ -48,7 +54,7 @@ describe('Singmaster solver', () => {
 			const start = permutationOf(moves);
 			const list = new MoveList();
 			new Singmaster(list).solve(start);
-			expect(applyMoves(start, from2003Notation(list.moves)).isIdentity()).toBe(true);
+			expect(applyMoves(start, list.moves).isIdentity()).toBe(true);
 		}
 	});
 });
@@ -67,9 +73,7 @@ describe('solvers', () => {
 				const start = permutationOf(moves);
 				const list = new MoveList();
 				solver.solve(start, list);
-				expect(applyMoves(start, from2003Notation(list.moves)).isIdentity(), solver.name).toBe(
-					true
-				);
+				expect(applyMoves(start, list.moves).isIdentity(), solver.name).toBe(true);
 			}
 		}
 	});
