@@ -58,23 +58,24 @@ assert solved(c basic(c))
 
 Every special character and its uses:
 
-| Token    | Meaning                                                                          |
-| -------- | -------------------------------------------------------------------------------- |
-| `#`      | comment to the end of the line                                                   |
-| `'` `2`  | part of a move, `R'`, `U2`; `'` also inverts a name or a group: `t'`, `(R U)'`   |
-| `( )`    | grouping `(R U)'`; a cycle `(uf ur ub)`; the identity `()`; arguments `order(p)` |
-| `+` `-`  | after a cycle: its pieces come back turned, `(urf)+`                             |
-| `/ /`    | a pattern, `/u__/`; followed by `r`, any rotation, `/ulb/r`                      |
-| `*`      | after a generator in a search: zero or more of that turn, `U*`, `y* U*`          |
-| `[ ]`    | a face picture, rows separated by `/`: `face U [_u_/uuu/_u_]`                    |
-| `_`      | in a pattern or picture: any sticker                                             |
-| `!`      | in a pattern or picture: any sticker but, `!u`                                   |
-| `{ }`    | a block: `stage "…" goal … { … }`, `each y { … }`                                |
-| `->`     | a case and what to do: `case … -> do R U R'`                                     |
-| `=` `==` | `let` binding; equality                                                          |
-| `,`      | separates arguments: `commutator(R, U)`                                          |
-| `:`      | in `all c in …: …`                                                               |
-| `" "`    | a string: stage names, captions                                                  |
+| Token    | Meaning                                                                                          |
+| -------- | ------------------------------------------------------------------------------------------------ |
+| `#`      | comment to the end of the line                                                                   |
+| `'` `2`  | part of a move, `R'`, `U2`; `'` also inverts a name or a group: `t'`, `(R U)'`                   |
+| `N`      | a number after `)` repeats the group: `(R U R' U')3`                                             |
+| `( )`    | grouping `(R U)'`, `(R U R' U')3`; a cycle `(uf ur ub)`; the identity `()`; arguments `order(p)` |
+| `+` `-`  | after a cycle: its pieces come back turned, `(urf)+`                                             |
+| `/ /`    | a pattern, `/u__/`; followed by `r`, any rotation, `/ulb/r`                                      |
+| `*`      | after a generator in a search: zero or more of that turn, `U*`, `y* U*`                          |
+| `[ ]`    | a face picture, rows separated by `/`: `face U [_u_/uuu/_u_]`                                    |
+| `_`      | in a pattern or picture: any sticker                                                             |
+| `!`      | in a pattern or picture: any sticker but, `!u`                                                   |
+| `{ }`    | a block: `stage "…" goal … { … }`, `each y { … }`                                                |
+| `->`     | a case and what to do: `case … -> do R U R'`                                                     |
+| `=` `==` | `let` binding; equality                                                                          |
+| `,`      | separates arguments: `commutator(R, U)`                                                          |
+| `:`      | in `all c in …: …`                                                                               |
+| `" "`    | a string: stage names, captions                                                                  |
 
 Keywords so far: `solution for stage let fn do each match case otherwise
 using turns until max goal if not and or in is all has face` (and, if the
@@ -172,9 +173,12 @@ in the letter order of the place it's tested against:
 | `uf is /…/` | Location, Pattern | Bool     | the piece at uf matches the pattern                             |
 | `uf is c`   | Location, Cubie   | Bool     | the piece at uf is the (physical) cubie c                       |
 
-- **No power notation.** Repeats are written out (`p p p`), or named first
-  (`let sexy = R U R' U'`, then `sexy sexy`). The inverse is `'`; `R2` stays
-  as part of a single move, as in standard notation.
+- **Repeats:** a number straight after a closing parenthesis repeats the
+  group, like `R2` on a single move: `(R U R' U')3` is `R U R' U'` three
+  times, `(sexy)2` a name twice. No space before the number (`(R U) 3` is an
+  error). A name alone can't take a number (`sexy3` would be a different
+  name), so it's written `(sexy)3`. The inverse is `'`: `(R U)'`, or
+  `(R U)3'` for the inverse of three repeats.
 - Applying a bare move (`R(U)`) is allowed but warned against: it reads
   backwards (`R(U(R'(U')))` is `U' R' U R`).
 - `==` never looks inside a place; `is` always does.
@@ -299,8 +303,8 @@ or the move list.
    reviewer's recommendation), or add a forward keyword (`p then q`).
 3. _(Resolved: commutators and conjugates are functions, `commutator(a, b)`
    and `conjugate(a, b)`, in cubers' order.)_
-4. _(Resolved: `'` inverts names and groups, e.g. `t'`, `(R U)'`; there is
-   no `^`.)_
+4. _(Resolved: `'` inverts names and groups, e.g. `t'`, `(R U)'`; a number
+   after a group repeats it, `(R U)3`; there is no `^`.)_
 5. **Searches: `using U* match` vs. a named search.** Proposal:
    ```
    find /uf/ by U* as t {
@@ -416,7 +420,7 @@ or the move list.
 | `*` for composition                                                 | Suggests order doesn't matter; side by side is used (`*` appears only as a suffix on a search generator, `U*`)       |
 | Sequences in brackets with commas `[R, U, F]`                       | Reads as the commutator `[R, U]`, and arrays with commas imply a different order convention                          |
 | Commutator brackets `[A, B]`, `[A: B]`; GAP's `Comm(a, b)`, `a^b`   | Brackets are face pictures, and GAP's definitions run the other way from cubers'; named functions say which is meant |
-| Powers: `p^3`, `p^-1` (and `p3`, `(…)x3`, `p*3`)                    | Another notation for little gain: write repeats out (`p p p`) and invert with `'`                                    |
+| Powers: `p^3`, `p^-1` (and `p3`, `(…)x3`, `p*3`)                    | `(p)3`, as cubers write it, and `'` for the inverse                                                                  |
 | GAP's `i^p` for "where i goes"                                      | Function notation `p(uf)` chosen                                                                                     |
 | `<Identity>`                                                        | `()`                                                                                                                 |
 | Moves without spaces (`RUR'U'`)                                     | Spaces everywhere, one rule                                                                                          |
@@ -438,8 +442,8 @@ solution basic for cube3 {
   let swapEdges        = R U R' U R U2 R' U
   let cycleCorners     = U R U' L' U R' U' L
   let cycleCornersBack = U' L' U R U' L U R'
-  let twistCorner      = R' D' R D R' D' R D
-  let twistCornerBack  = D' R' D R D' R' D R
+  let twistCorner      = (R' D' R D)2
+  let twistCornerBack  = (D' R' D R)2
 
   # Moving a piece to the top without disturbing the bottom.
   fn edgeUp(x) = match slot(x) {
@@ -614,16 +618,16 @@ solution singmaster for cube3 {
     using y* match {                             # positions only, twists ignored
       case positions(cube) has (ufl ulb ubr)         -> do L' U R U' R' L R U R' U'
       case positions(cube) has (ufl ubr ulb)         -> do U R U' R' L' R U R' U' L
-      case positions(cube) has (ufl urf) (ulb ubr)   -> do B L U L' U' L U L' U' L U L' U' B'
-      case positions(cube) has (ufl ubr) (urf ulb)   -> do R' B2 F R F' R' F R F' R' F R F' R' B2 R
+      case positions(cube) has (ufl urf) (ulb ubr)   -> do B (L U L' U')3 B'
+      case positions(cube) has (ufl ubr) (urf ulb)   -> do R' B2 (F R F' R')3 B2 R
     }
   }
 
   stage "Orient D Corners" goal solved(cube) {
     each U {
       match {
-        case rfu is /u__/ -> do D F D' F' D F D' F'    # counterclockwise
-        case fur is /u__/ -> do F D F' D' F D F' D'    # clockwise
+        case rfu is /u__/ -> do (D F D' F')2    # counterclockwise
+        case fur is /u__/ -> do (F D F' D')2    # clockwise
         case urf is /u__/ -> ()
       }
     }
