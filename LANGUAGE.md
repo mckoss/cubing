@@ -68,7 +68,7 @@ Every special character and its uses:
 | `[ ]`    | a face picture, rows separated by `/`: `face U [_u_/uuu/_u_]`                    |
 | `_`      | in a pattern or picture: any sticker                                             |
 | `!`      | in a pattern or picture: any sticker but, `!u`                                   |
-| `{ }`    | a block: `stage "…" { … }`, `each y { … }`                                       |
+| `{ }`    | a block: `stage "…" goal … { … }`, `each y { … }`                                |
 | `->`     | a case and what to do: `case … -> do R U R'`                                     |
 | `=` `==` | `let` binding; equality                                                          |
 | `,`      | separates arguments and generators: `using y, U`                                 |
@@ -76,7 +76,7 @@ Every special character and its uses:
 | `" "`    | a string: stage names, captions                                                  |
 
 Keywords so far: `solution for stage let fn do each match case otherwise
-using turns until max skip if not and or in is all has face` (and, if the
+using turns until max goal if not and or in is all has face` (and, if the
 named search is adopted, `find by as at else`).
 
 ### Locations
@@ -221,15 +221,14 @@ be used as a permutation, not the reverse), Int, Bool.
 | Construct                        | Meaning                                                                                                                                                         |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `solution basic for cube3 { … }` | a solution for a puzzle                                                                                                                                         |
-| `stage "Middle" { … }`           | a named stage (shown in the history)                                                                                                                            |
+| `stage "Middle" goal … { … }`    | a named stage with its goal (see Stages)                                                                                                                        |
 | `let name = …`                   | single assignment                                                                                                                                               |
 | `do R U R'`                      | play moves (the only thing that changes the cube)                                                                                                               |
 | `each y { … }`                   | do the block 4 times, turning y after each (`each U` turns the top)                                                                                             |
 | `match { case … -> … }`          | first matching case wins; `-> ()` means "nothing to do"                                                                                                         |
 | `using U match { … }`            | search: try each case; if none match, turn U and try again (up to 3 more times); `turns` is the moves the search made, so `turns'` undoes them (Singmaster's P) |
 | `otherwise -> …`                 | when nothing matches                                                                                                                                            |
-| `until <cond> max n { … }`       | retry a block                                                                                                                                                   |
-| `skip if <cond>`                 | skip a stage                                                                                                                                                    |
+| `until <cond> max n { … }`       | retry a block; `until goal max n` repeats until the stage's goal holds                                                                                          |
 | `if <cond> { … }`                | plain condition                                                                                                                                                 |
 | `fn name(p) = …`                 | small helper returning a sequence                                                                                                                               |
 
@@ -245,6 +244,29 @@ display**: it shows which part of the move sequence accomplishes what.
 - Stages don't change which moves are made: without them, a solution makes
   exactly the same moves.
 - Stages nest (Bottom Edges inside First Face).
+
+**Every stage states its goal**, an assertable invariant for the part of
+the solution it names:
+
+```
+stage "Middle" goal solved(layer(D) layer(E)) { … }
+```
+
+- **Checked at the end:** when the stage finishes, its goal must hold, or
+  the solve stops with an error naming the stage.
+- **Skipped when already true:** a stage whose goal holds at the start
+  makes no moves (this replaces `skip if`).
+- **Goals accumulate:** at the end of each stage, the goals of the stages
+  before it at the same level must still hold, so a stage can disturb
+  earlier work along the way (Twist Corners scrambles the bottom) but must
+  restore it by its end.
+- **Goals keep their frame:** a goal is checked in the orientation the cube
+  had when its stage ran; the runtime accounts for later whole cube turns
+  (Singmaster's `z2`), so "the top layer is solved" still means that layer
+  after the cube is turned over.
+- **Each stage can be tested alone:** start from random cubes where the
+  earlier goals hold, run the stage, check its goal.
+- The page can show each stage's goal next to its moves.
 
 ### Generalization
 
@@ -325,12 +347,6 @@ or the move list.
     `3Rw`); the pyraminx's lower case tip moves clash with lower case place
     names; face pictures for triangles; a sticker-numbered engine (as GAP
     does) under the names.
-17. **Stage goals:** a stage could state its goal, e.g.
-    `stage "Middle" goal solved(layer(D) layer(E)) { … }` — documentation
-    that can be checked: a solve that ends a stage without reaching its goal
-    fails there, naming the stage; a stage whose goal already holds is
-    skipped (replacing `skip if`); the page could show each goal; and each
-    stage could be tested alone.
 
 ## Problems with the current design
 
@@ -374,6 +390,7 @@ or the move list.
 | `where(c)`                                                          | Sounds like a loop; now `location(p)`                                                                          |
 | `solvable(p)`                                                       | Sounds like it returns moves; now `legal(p)` (a yes/no check)                                                  |
 | `sticker(x)`                                                        | Replaced by patterns: `uf is /u_/`                                                                             |
+| `skip if <cond>`                                                    | A stage's goal: a stage whose goal already holds is skipped                                                    |
 | `around y`                                                          | Renamed `each y` (open)                                                                                        |
 | `search U { … }`                                                    | Now `using U match` (and maybe `find … by U as t`)                                                             |
 | `*` for composition                                                 | Suggests order doesn't matter; side by side is used                                                            |
@@ -415,10 +432,9 @@ solution basic for cube3 {
     case drb -> R' U' R     case dlf -> L' U' L
   }
 
-  stage "First Face" {
-    skip if solved(layer(D))
+  stage "First Face" goal solved(layer(D)) {
 
-    stage "Bottom Edges" {
+    stage "Bottom Edges" goal solved(df dr db dl) {
       each y {
         if not solved(df) {
           if location(/df/) not in layer(U) { do edgeUp(location(/df/)) }
@@ -430,7 +446,7 @@ solution basic for cube3 {
       }
     }
 
-    stage "Bottom Corners" {
+    stage "Bottom Corners" goal solved(layer(D)) {
       each y {
         if not solved(dfr) {
           if location(/dfr/) not in layer(U) { do cornerUp(location(/dfr/)) }
@@ -444,7 +460,7 @@ solution basic for cube3 {
     }
   }
 
-  stage "Middle" {
+  stage "Middle" goal solved(layer(D) layer(E)) {
     each y {
       # Stuck in the wrong middle slot: turn the cube to it and kick it out.
       if location(/fr/) in layer(E) and not solved(fr) {
@@ -464,8 +480,8 @@ solution basic for cube3 {
     }
   }
 
-  stage "Top Cross" {
-    until face U [_u_ / uuu / _u_] max 4 {
+  stage "Top Cross" goal face U [_u_ / uuu / _u_] {
+    until goal max 4 {
       using U match {
         case face U [_!u_ / uuu  / _!u_] -> do topCross   # line
         case face U [_u_  / uu!u / _!u_] -> do topCross   # L, back left
@@ -474,8 +490,8 @@ solution basic for cube3 {
     }
   }
 
-  stage "Top Edges" {
-    until solved(uf ur ub ul) max 3 {
+  stage "Top Edges" goal solved(uf ur ub ul) {
+    until goal max 3 {
       using y, U match {
         case solved(uf ur ub ul)                                    -> ()
         case uf is /ul/ and ul is /uf/ and solved(ub ur)            -> do swapEdges
@@ -484,8 +500,8 @@ solution basic for cube3 {
     }
   }
 
-  stage "Top Corners" {
-    until placed(urf ufl ulb ubr) max 3 {
+  stage "Top Corners" goal placed(urf ufl ulb ubr) {
+    until goal max 3 {
       using y match {
         case ubr is /ulb/r and ulb is /ufl/r and ufl is /ubr/r -> do cycleCorners
         case ulb is /ubr/r and ubr is /urf/r and urf is /ulb/r -> do cycleCornersBack
@@ -494,7 +510,7 @@ solution basic for cube3 {
     }
   }
 
-  stage "Twist Corners" {
+  stage "Twist Corners" goal solved(cube) {
     each U {                                   # turn the top, not the cube
       match {
         case rfu is /u__/ -> do twistCorner     # top color facing right
@@ -520,7 +536,7 @@ question 5:
 ```
 solution singmaster for cube3 {
 
-  stage "Solve U Edges" {
+  stage "Solve U Edges" goal solved(uf ur ub ul) {
     each y {
       find /uf/ by D as t  { at df -> t F2
                              at fd -> t F' U' R U }
@@ -531,7 +547,7 @@ solution singmaster for cube3 {
     }
   }
 
-  stage "Solve U Corners" {
+  stage "Solve U Corners" goal solved(layer(U)) {
     each y {
       find /urf/ by D as t { at rdf -> t D F D' F'
                              at frd -> t D' R' D R
@@ -544,7 +560,7 @@ solution singmaster for cube3 {
 
   do z2
 
-  stage "Solve Middle Edges" {
+  stage "Solve Middle Edges" goal solved(layer(D) layer(E)) {   # after z2
     each y {
       if not solved(rf) {                       # stuck in the middle: lift it out
         find /rf/ by E' as t { at rf -> t B' U' R2 U2 R2 U2 R2 U2 U B t'
@@ -555,7 +571,7 @@ solution singmaster for cube3 {
     }
   }
 
-  stage "Orient D Edges" {                      # the (new) top: which edges show u?
+  stage "Orient D Edges" goal face U [_u_ / uuu / _u_] {   # the new top
     using y match {
       case face U [_u_  / uuu   / _u_ ] -> ()
       case face U [_!u_ / uuu   / _!u_] -> do B L U L' U' B'
@@ -564,7 +580,7 @@ solution singmaster for cube3 {
     }
   }
 
-  stage "Place D Edges" {
+  stage "Place D Edges" goal solved(uf ur ub ul) {
     using y, U match {                          # cycles of the top edges
       case cube has (uf ur ub)      -> do R2 D' U2 R' L F2 R L' D R2
       case cube has (uf ub ur)      -> do R2 D' R' L F2 R L' U2 D R2
@@ -573,7 +589,7 @@ solution singmaster for cube3 {
     }
   }
 
-  stage "Place D Corners" {
+  stage "Place D Corners" goal placed(urf ufl ulb ubr) {
     using y match {                             # positions only, twists ignored
       case positions(cube) has (ufl ulb ubr)         -> do L' U R U' R' L R U R' U'
       case positions(cube) has (ufl ubr ulb)         -> do U R U' R' L' R U R' U' L
@@ -582,7 +598,7 @@ solution singmaster for cube3 {
     }
   }
 
-  stage "Orient D Corners" {
+  stage "Orient D Corners" goal solved(cube) {
     each U {
       match {
         case rfu is /u__/ -> do D F D' F' D F D' F'    # counterclockwise
