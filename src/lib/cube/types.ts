@@ -11,8 +11,9 @@ export type FaceLetter = 'u' | 'd' | 'f' | 'b' | 'l' | 'r';
 
 // A place on the cube, including which way the piece in it faces: the
 // piece's first sticker is on the face of the first letter.  Corners are
-// named clockwise, so "ufl", "flu", and "luf" are the same corner place,
-// starting from a different sticker.
+// named clockwise (seen from outside the cube), so "urf", "rfu", and "fur"
+// are the same corner place, starting from a different sticker; the
+// counterclockwise "ufr" (and its rotations) is not a name.
 export type CenterLocation = FaceLetter;
 
 export type EdgeLocation =
@@ -148,9 +149,14 @@ export function isLocation(name: string): name is Location {
 	return LOCATION_SET.has(name);
 }
 
-// Check a name read from text.
+// Check a name read from text.  Corners must be named clockwise, so a
+// counterclockwise name (e.g. "ufr") is rejected with the right spelling.
 export function parseLocation(name: string): Location {
 	if (!isLocation(name)) {
+		const clockwise = name.length === 3 ? name.charAt(0) + name.charAt(2) + name.charAt(1) : '';
+		if (isLocation(clockwise)) {
+			throw new Error(`Not a location: ${name} (corners are named clockwise: ${clockwise})`);
+		}
 		throw new Error(`Not a location: ${name}`);
 	}
 	return name;

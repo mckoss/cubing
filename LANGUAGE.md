@@ -34,8 +34,8 @@ assert c basic(c) == ()          # the cube, then the moves: solved
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `# …`                                   | Comment to the end of the line                                                                                                    |
 | `U D L R F B`, `M E S`, `x y z`, `Rw` … | Moves, in standard (WCA) notation: capitals; `'` and `2` are part of the move (`R'`, `U2`); wide turns are `Rw`, never lower case |
-| `ufr`, `uf`, `u`                        | Cubies: lower case face letters                                                                                                   |
-| `@ufr`                                  | Locations (see below)                                                                                                             |
+| `urf`, `uf`, `u`                        | Cubies: lower case face letters                                                                                                   |
+| `@urf`                                  | Locations (see below)                                                                                                             |
 | other lower case words                  | Variables and keywords (`x`, `y`, `z` are reserved: they're moves)                                                                |
 
 - Items are separated by spaces, moves included (`R U R' U'`, not `RUR'U'`).
@@ -45,11 +45,20 @@ assert c basic(c) == ()          # the cube, then the moves: solved
 
 ### Cubies and locations
 
-- A **cubie** is a piece, named by its home: `ufr`. The order of the letters
+- A **cubie** is a piece, named by its home: `urf`. The order of the letters
   picks a sticker, so `rfu` is the same piece read from its r sticker; this
   is how orientation is written.
+- **Corners are named clockwise**, reading the corner's faces clockwise as
+  seen from outside the cube: `urf`, `rfu`, and `fur` all name the up-right-
+  front corner, but `ufr` (counterclockwise) is not a name, and neither are
+  its rotations `fru` and `ruf`. The eight corners are `urf ufl ulb ubr` and
+  `dfr dlf dbl drb` (as Singmaster and Kociemba write them). This gives each
+  corner exactly three names, one per sticker, and keeps a name's rotations
+  meaningful: rotating a clockwise name gives the same corner from the next
+  sticker. A counterclockwise name is an error that suggests the clockwise
+  one.
 - A **location** (Singmaster's _cubicle_) is a place, with which way the
-  piece in it faces: `@ufr`, `@rfu`. `@` is our invention; the literature
+  piece in it faces: `@urf`, `@rfu`. `@` is our invention; the literature
   uses the same name for both and relies on context.
 - **All names are relative to the cube as it's held now** (relative to the
   centers): after `y`, `fr` means the piece that now belongs at the front
@@ -75,7 +84,7 @@ assert c basic(c) == ()          # the cube, then the moves: solved
 - Letter order is orientation: `(uf ub)` swaps two edges; `(uf bu)` swaps
   them and flips both.
 - A suffix means the pieces come back turned: `+` once (corners clockwise,
-  edges flipped), `-` twice (corners). E.g. `(ufr)+` twists a corner in place.
+  edges flipped), `-` twice (corners). E.g. `(urf)+` twists a corner in place.
 - **Identity:** `()`.
 - **Order:** the least common multiple of the cycle orders; a cycle of _n_
   pieces has order _n_, or 3*n* (corners) / 2*n* (edges) with a suffix.
@@ -98,8 +107,8 @@ assert c basic(c) == ()          # the cube, then the moves: solved
 - `p^3`, not `p3`, `p*3`, or `(…)x3`.
 - Applying a bare move (`R(U)`) is allowed but warned against: it reads
   backwards (`R(U(R'(U')))` is `U' R' U R`).
-- `p(ufr)` (a permutation applied to a cubie) is a type error: permutations
-  move places. Use `home(ufr)`, or `location(ufr)` for the current cube.
+- `p(urf)` (a permutation applied to a cubie) is a type error: permutations
+  move places. Use `home(urf)`, or `location(urf)` for the current cube.
 
 ### Functions
 
@@ -108,7 +117,7 @@ assert c basic(c) == ()          # the cube, then the moves: solved
 | `order(p)`    | the order of p                                                                      |
 | `inverse(p)`  | `p^-1`                                                                              |
 | `legal(p)`    | whether some sequence of moves makes p (flip parity, twist sum, permutation parity) |
-| `home(c)`     | the location cubie c belongs in: `home(ufr) == @ufr`                                |
+| `home(c)`     | the location cubie c belongs in: `home(urf) == @urf`                                |
 | `location(c)` | where cubie c is now (in the current cube)                                          |
 | `cubie(@x)`   | which cubie is in place x now                                                       |
 
@@ -122,7 +131,7 @@ permutation, not the reverse), Int, Bool.
 
 - `@uf == u_`: the piece at uf, read from the sticker facing u, has the top
   color there; `_` is a wildcard. `@fr == fr` (home and right way round),
-  `@fr == rf` (home, flipped), `@ufr == u__`.
+  `@fr == rf` (home, flipped), `@urf == u__`.
 - `!u`: anything but u. `{f r}`: either.
 - Lists of places: `[@uf @ur @ub @ul] == [u_ !u_ u_ !u_]`.
 - **Face pictures**, read in a fixed order (for U: back row `@ulb @ub @ubr`,
@@ -222,8 +231,8 @@ scheme, `legal`. `solution basic for cube3`. The parser must not hard-code
 14. **Output:** the JSON the compiler produces isn't designed yet.
 15. **Rotations and locations (a tension to resolve):** permutations are
     read relative to the centers, so a whole cube turn doesn't rearrange any
-    cubie (`x == ()`), yet it changes which place `@ufr` names
-    (`y(@ufr) == @ulf` as the cube is held). Decide whether `x y z` are
+    cubie (`x == ()`), yet it changes which place `@urf` names
+    (`y(@urf) == @ufl` as the cube is held). Decide whether `x y z` are
     permutations of locations, or a separate "frame" that's not a
     permutation at all.
 16. **Other puzzles:** the reference frame without fixed centers (2×2,
@@ -245,7 +254,7 @@ scheme, `legal`. `solution basic for cube3`. The parser must not hard-code
   with `and` still depend on order.
 - **Cubie names change** with whole cube turns and slices. Intended, but
   surprising; code that wants one physical piece must bind it first.
-- **Cubie and Location share their spelling** (`ufr` vs `@ufr`); the type
+- **Cubie and Location share their spelling** (`urf` vs `@urf`); the type
   checker must keep them apart, and `home` is needed to cross between them.
 - **The 2003 quirks** the TypeScript solvers keep for move-for-move
   compatibility (half turns always clockwise, `U2 U` written out, quarter
@@ -256,7 +265,8 @@ scheme, `legal`. `solution basic for cube3`. The parser must not hard-code
 | Idea                                                                | Why                                                                                         |
 | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations) | Replaced everywhere by standard notation                                                    |
-| Upper case piece names (`UFR`)                                      | Reads as moves U F R; Singmaster used lower case                                            |
+| Upper case piece names (`URF`)                                      | Reads as moves U R F; Singmaster used lower case                                            |
+| Corner names in either winding (`ufr` as well as `urf`)             | Six spellings per corner; clockwise only gives exactly three, one per sticker               |
 | Cubies named by color (`$ybo`), `#` as their mark                   | `#` is for comments; names relative to the centers make rules work on every side            |
 | Permanent cubie identity (a letter always means one color)          | The meaning of `u` would split after `x`; rules must follow the cube as held                |
 | `where(c)`                                                          | Sounds like a loop; now `location(c)`                                                       |

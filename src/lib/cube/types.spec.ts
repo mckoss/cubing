@@ -8,12 +8,24 @@ describe('types', () => {
 		expect(new Set(LOCATIONS).size).toBe(54);
 	});
 
+	it('names each corner clockwise only', () => {
+		const corners = LOCATIONS.filter((l) => l.length === 3);
+		expect(corners.length).toBe(24);
+		for (const c of corners) {
+			const counter = c.charAt(0) + c.charAt(2) + c.charAt(1);
+			expect(isLocation(counter), counter).toBe(false);
+		}
+	});
+
 	it('checks names read from text', () => {
 		expect(isLocation('ufl')).toBe(true);
 		expect(isLocation('lfu')).toBe(false); // counterclockwise: not a name
 		expect(isLocation('UFL')).toBe(false);
 		expect(parseLocation('bd')).toBe('bd');
 		expect(() => parseLocation('fb')).toThrow();
+		// Corners are named clockwise only: urf, rfu, fur, never ufr, fru, ruf.
+		expect(() => parseLocation('ufr')).toThrow('corners are named clockwise: urf');
+		expect(() => parseLocation('fru')).toThrow('corners are named clockwise: fur');
 	});
 
 	it('rotates names', () => {
