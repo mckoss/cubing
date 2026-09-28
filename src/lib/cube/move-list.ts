@@ -6,7 +6,7 @@
 // ("Scramble", "Solve U Edges", ...), and a move that undoes the one before
 // it cancels out, but never across the start of a block.
 
-import { from2003Notation, inverseTurns, isRotation, simplifyMoves, type Move } from './moves';
+import { inverseTurns, isRotation, simplifyMoves, type Move } from './moves';
 
 // Moves whose 2003 letter turned the other way from standard notation (the
 // slices, and z): a half turn is two of their counterclockwise quarter
@@ -130,11 +130,6 @@ export class MoveList {
 		const quarters = quarterTurns(moves);
 		this.pending = MoveList.appendAfter(this.pending, this.pendingWall, quarters);
 		this.moves = MoveList.appendAfter(this.moves, this.wall, quarters);
-	}
-
-	/** @deprecated Add moves in the 2003 notation; use add(). */
-	appendMoves(st: string): void {
-		this.add(from2003Notation(st));
 	}
 
 	// Append quarter turns to the moves after the wall: a move that undoes
