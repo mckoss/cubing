@@ -65,13 +65,14 @@ Every special character and its uses:
 | `( )`    | grouping `(R U)'`; a cycle `(uf ur ub)`; the identity `()`; arguments `order(p)` |
 | `+` `-`  | after a cycle: its pieces come back turned, `(urf)+`                             |
 | `/ /`    | a pattern, `/u__/`; followed by `r`, any rotation, `/ulb/r`                      |
+| `*`      | after a generator in a search: zero or more of that turn, `U*`, `y* U*`          |
 | `[ ]`    | a face picture, rows separated by `/`: `face U [_u_/uuu/_u_]`                    |
 | `_`      | in a pattern or picture: any sticker                                             |
 | `!`      | in a pattern or picture: any sticker but, `!u`                                   |
 | `{ }`    | a block: `stage "…" goal … { … }`, `each y { … }`                                |
 | `->`     | a case and what to do: `case … -> do R U R'`                                     |
 | `=` `==` | `let` binding; equality                                                          |
-| `,`      | separates arguments and generators: `using y, U`                                 |
+| `,`      | separates arguments: `commutator(R, U)`                                          |
 | `:`      | in `all c in …: …`                                                               |
 | `" "`    | a string: stage names, captions                                                  |
 
@@ -223,19 +224,19 @@ be used as a permutation, not the reverse), Int, Bool.
 
 ### Structure and control
 
-| Construct                        | Meaning                                                                                                                                                         |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `solution basic for cube3 { … }` | a solution for a puzzle                                                                                                                                         |
-| `stage "Middle" goal … { … }`    | a named stage with its goal (see Stages)                                                                                                                        |
-| `let name = …`                   | single assignment                                                                                                                                               |
-| `do R U R'`                      | play moves (the only thing that changes the cube)                                                                                                               |
-| `each y { … }`                   | do the block 4 times, turning y after each (`each U` turns the top)                                                                                             |
-| `match { case … -> … }`          | first matching case wins; `-> ()` means "nothing to do"                                                                                                         |
-| `using U match { … }`            | search: try each case; if none match, turn U and try again (up to 3 more times); `turns` is the moves the search made, so `turns'` undoes them (Singmaster's P) |
-| `otherwise -> …`                 | when nothing matches                                                                                                                                            |
-| `until <cond> max n { … }`       | retry a block; `until goal max n` repeats until the stage's goal holds                                                                                          |
-| `if <cond> { … }`                | plain condition                                                                                                                                                 |
-| `fn name(p) = …`                 | small helper returning a sequence                                                                                                                               |
+| Construct                        | Meaning                                                                                                                                                                                                                                                         |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `solution basic for cube3 { … }` | a solution for a puzzle                                                                                                                                                                                                                                         |
+| `stage "Middle" goal … { … }`    | a named stage with its goal (see Stages)                                                                                                                                                                                                                        |
+| `let name = …`                   | single assignment                                                                                                                                                                                                                                               |
+| `do R U R'`                      | play moves (the only thing that changes the cube)                                                                                                                                                                                                               |
+| `each y { … }`                   | do the block 4 times, turning y after each (`each U` turns the top)                                                                                                                                                                                             |
+| `match { case … -> … }`          | first matching case wins; `-> ()` means "nothing to do"                                                                                                                                                                                                         |
+| `using U* match { … }`           | search: try each case with zero turns, then after each further U (up to the turn's order: `U*` is nothing, U, U U, U U U); `turns` is the turns the search made, so `turns'` undoes them (Singmaster's P); `using y* U*` tries every U turn within every y turn |
+| `otherwise -> …`                 | when nothing matches                                                                                                                                                                                                                                            |
+| `until <cond> max n { … }`       | retry a block; `until goal max n` repeats until the stage's goal holds                                                                                                                                                                                          |
+| `if <cond> { … }`                | plain condition                                                                                                                                                                                                                                                 |
+| `fn name(p) = …`                 | small helper returning a sequence                                                                                                                                                                                                                               |
 
 ### Stages
 
@@ -300,23 +301,34 @@ or the move list.
    and `conjugate(a, b)`, in cubers' order.)_
 4. _(Resolved: `'` inverts names and groups, e.g. `t'`, `(R U)'`; there is
    no `^`.)_
-5. **Searches: `using U match` vs. a named search.** Proposal:
+5. **Searches: `using U* match` vs. a named search.** Proposal:
    ```
-   find /uf/ by U as t {
+   find /uf/ by U* as t {
      at uf -> t F2 t' F2
      at fu -> t F t' U' R U
    }
    ```
+   - `U*` (settled): zero or more U turns, borrowed from regular
+     expressions. Zero is tried first, so "already in place" needs no turn;
+     a turn's order bounds it (`U*` is at most three turns), so the search
+     is finite, shortest first, and repeatable. `y* U*` tries every U turn
+     within every y turn.
    - `find` looks for a complete pattern (a piece); `at` names where it is.
    - The search is named (`t`), so its undo is visible (`t'`), unlike P.
    - Explicit (`t` written where it's done) or implicit (`bring … as t`
      does `t` first)? Leaning explicit.
-   - `by U, y`: search several moves, shortest first, to a depth limit;
-     the order must be fixed so solutions are repeatable.
    - Several targets in one search (Singmaster tries `uf` and `fu`
      together at each turn; separate searches could give different moves).
    - When nothing is found: an explicit `else`, not silently skipping.
-   - If adopted, `using U match` becomes a special case, or goes away.
+   - **Merge the two?** `using U* match` is `find` without a name. One
+     construct could cover both: `search U* as t { … }`, with `as t`
+     optional.
+   - **Alternatives and a depth limit:** searching over several moves,
+     e.g. `(U|D)*`, never runs out of combinations, so it would need a
+     limit, as in regular expressions: `(U|D){0,3}`. Leave out until a
+     method needs it?
+   - **`U?`** (zero or one turn) would come with the analogy too; neither
+     method needs it.
 6. **`each`** as the keyword for "4 times, turning after each"?
    (Alternatives: `for each y`, `4 times then y`.)
 7. **Face pictures: minimal or complete?** For matching, `_` means "don't
@@ -338,8 +350,8 @@ or the move list.
     character class like `[fr]` would clash with face pictures' brackets);
     whether `is not` reads better than `not (… is …)`; which face a picture
     without `face U` would mean.
-13. **Searching two generators:** `using y, U match` (each y, then each U),
-    needed by Top Edges.
+13. _(Resolved: `y* U*` searches two generators, every U turn within
+    every y turn.)_
 14. **Output:** the JSON the compiler produces isn't designed yet.
 15. **Rotations and locations (a tension to resolve):** permutations are
     read relative to the centers, so a whole cube turn doesn't rearrange any
@@ -400,8 +412,8 @@ or the move list.
 | `sticker(x)`                                                        | Replaced by patterns: `uf is /u_/`                                                                                   |
 | `skip if <cond>`                                                    | A stage's goal: a stage whose goal already holds is skipped                                                          |
 | `around y`                                                          | Renamed `each y` (open)                                                                                              |
-| `search U { … }`                                                    | Now `using U match` (and maybe `find … by U as t`)                                                                   |
-| `*` for composition                                                 | Suggests order doesn't matter; side by side is used                                                                  |
+| `search U { … }`, `using U match`, `using y, U match`               | Now `using U* match` / `y* U*` (and maybe `find … by U* as t`): the star says zero or more                           |
+| `*` for composition                                                 | Suggests order doesn't matter; side by side is used (`*` appears only as a suffix on a search generator, `U*`)       |
 | Sequences in brackets with commas `[R, U, F]`                       | Reads as the commutator `[R, U]`, and arrays with commas imply a different order convention                          |
 | Commutator brackets `[A, B]`, `[A: B]`; GAP's `Comm(a, b)`, `a^b`   | Brackets are face pictures, and GAP's definitions run the other way from cubers'; named functions say which is meant |
 | Powers: `p^3`, `p^-1` (and `p3`, `(…)x3`, `p*3`)                    | Another notation for little gain: write repeats out (`p p p`) and invert with `'`                                    |
@@ -447,7 +459,7 @@ solution basic for cube3 {
       each y {
         if not solved(df) {
           if location(/df/) not in layer(U) { do edgeUp(location(/df/)) }
-          using U match {
+          using U* match {
             case uf is /df/ -> do F2                  # its bottom color up
             case fu is /df/ -> do U' R' F R           # its bottom color facing front
           }
@@ -459,7 +471,7 @@ solution basic for cube3 {
       each y {
         if not solved(dfr) {
           if location(/dfr/) not in layer(U) { do cornerUp(location(/dfr/)) }
-          using U match {
+          using U* match {
             case rfu is /dfr/ -> do R U R'             # bottom color facing right
             case fur is /dfr/ -> do F' U' F            # bottom color facing front
             case urf is /dfr/ -> do R U2 R' U' R U R'  # bottom color up
@@ -481,7 +493,7 @@ solution basic for cube3 {
         }
       }
       if not solved(fr) {
-        using U match {
+        using U* match {
           case fu is /fr/ -> do insertRight           # front color in front
           case ur is /fr/ -> do y insertLeft y'       # right color on the right
         }
@@ -491,7 +503,7 @@ solution basic for cube3 {
 
   stage "Top Cross" goal face U [_u_ / uuu / _u_] {
     until goal max 4 {
-      using U match {
+      using U* match {
         case face U [_!u_ / uuu  / _!u_] -> do topCross   # line
         case face U [_u_  / uu!u / _!u_] -> do topCross   # L, back left
         case face U [_!u_ / !uu!u / _!u_] -> do topCross  # dot
@@ -501,7 +513,7 @@ solution basic for cube3 {
 
   stage "Top Edges" goal solved(uf ur ub ul) {
     until goal max 3 {
-      using y, U match {
+      using y* U* match {
         case solved(uf ur ub ul)                                    -> ()
         case uf is /ul/ and ul is /uf/ and solved(ub ur)            -> do swapEdges
         case uf is /ub/ and ub is /uf/ and solved(ul ur)            -> do swapEdges
@@ -511,7 +523,7 @@ solution basic for cube3 {
 
   stage "Top Corners" goal placed(urf ufl ulb ubr) {
     until goal max 3 {
-      using y match {
+      using y* match {
         case ubr is /ulb/r and ulb is /ufl/r and ufl is /ubr/r -> do cycleCorners
         case ulb is /ubr/r and ubr is /urf/r and urf is /ulb/r -> do cycleCornersBack
         otherwise                                              -> do cycleCorners
@@ -547,21 +559,21 @@ solution singmaster for cube3 {
 
   stage "Solve U Edges" goal solved(uf ur ub ul) {
     each y {
-      find /uf/ by D as t  { at df -> t F2
+      find /uf/ by D* as t  { at df -> t F2
                              at fd -> t F' U' R U }
-      find /uf/ by E' as t { at lf -> t F t'
+      find /uf/ by E'* as t { at lf -> t F t'
                              at rf -> t F' t' }
-      find /uf/ by U as t  { at uf -> t F2 t' F2
+      find /uf/ by U* as t  { at uf -> t F2 t' F2
                              at fu -> t F t' U' R U }
     }
   }
 
   stage "Solve U Corners" goal solved(layer(U)) {
     each y {
-      find /urf/ by D as t { at rdf -> t D F D' F'
+      find /urf/ by D* as t { at rdf -> t D F D' F'
                              at frd -> t D' R' D R
                              at dfr -> t F D' F' R' D2 R }
-      find /urf/ by U as t { at urf -> t F D F' t' F D' F'
+      find /urf/ by U* as t { at urf -> t F D F' t' F D' F'
                              at rfu -> t R' D2 R t' F D2 F'
                              at fur -> t F D2 F' t' R' D2 R }
     }
@@ -572,16 +584,16 @@ solution singmaster for cube3 {
   stage "Solve Middle Edges" goal solved(layer(D) layer(E)) {   # after z2
     each y {
       if not solved(rf) {                       # stuck in the middle: lift it out
-        find /rf/ by E' as t { at rf -> t B' U' R2 U2 R2 U2 R2 U2 U B t'
+        find /rf/ by E'* as t { at rf -> t B' U' R2 U2 R2 U2 R2 U2 U B t'
                                at fr -> t L U' F2 U2 F2 U2 F2 U2 U L' t' }
       }
-      find /rf/ by U as t    { at ub -> t B' U' R2 U2 R2 U2 R2 U2 U B
+      find /rf/ by U* as t    { at ub -> t B' U' R2 U2 R2 U2 R2 U2 U B
                                at lu -> t L U' F2 U2 F2 U2 F2 U2 U L' }
     }
   }
 
   stage "Orient D Edges" goal face U [_u_ / uuu / _u_] {   # the new top
-    using y match {
+    using y* match {
       case face U [_u_  / uuu   / _u_ ] -> ()
       case face U [_!u_ / uuu   / _!u_] -> do B L U L' U' B'
       case face U [_!u_ / !uuu  / _u_ ] -> do B U L U' L' B'   # front and right
@@ -590,7 +602,7 @@ solution singmaster for cube3 {
   }
 
   stage "Place D Edges" goal solved(uf ur ub ul) {
-    using y, U match {                          # cycles of the top edges
+    using y* U* match {                          # cycles of the top edges
       case cube has (uf ur ub)      -> do R2 D' U2 R' L F2 R L' D R2
       case cube has (uf ub ur)      -> do R2 D' R' L F2 R L' U2 D R2
       case cube has (uf ur) (ul ub) -> do R2 D2 B2 D L2 F2 L2 F2 L2 F2 D' B2 D2 R2
@@ -599,7 +611,7 @@ solution singmaster for cube3 {
   }
 
   stage "Place D Corners" goal placed(urf ufl ulb ubr) {
-    using y match {                             # positions only, twists ignored
+    using y* match {                             # positions only, twists ignored
       case positions(cube) has (ufl ulb ubr)         -> do L' U R U' R' L R U R' U'
       case positions(cube) has (ufl ubr ulb)         -> do U R U' R' L' R U R' U' L
       case positions(cube) has (ufl urf) (ulb ubr)   -> do B L U L' U' L U L' U' L U L' U' B'
