@@ -20,7 +20,7 @@ export { Permutation };
 export type Path = (Location | '')[];
 
 // Suffixes for cycles that return a piece rotated (twisted or flipped).
-const ROTATION_SUFFIX = ['', '+', '-'] as const;
+const ROTATION_SUFFIX: readonly string[] = ['', '+', '-'];
 
 // How many times a must be rotated to equal b (or undefined if never).
 function rotationsBetween(a: Location, b: Location): number | undefined {
@@ -53,9 +53,13 @@ class Permutation {
 	}
 
 	private addCycle(cycle: Location[]): void {
-		for (let i = 0; i < cycle.length; i++) {
-			this.addMap(cycle[i], cycle[(i + 1) % cycle.length]);
-		}
+		cycle.forEach((from, i) => {
+			const to = cycle[(i + 1) % cycle.length];
+			if (to === undefined) {
+				throw new Error(`Bad cycle: ${cycle.join(' ')}`);
+			}
+			this.addMap(from, to);
+		});
 	}
 
 	// Where the sticker (or piece) named `from` is moved to.
@@ -155,7 +159,7 @@ class Permutation {
 				mark(elem);
 				elem = this.apply(elem);
 			}
-			cycle += ')' + ROTATION_SUFFIX[rotationsBetween(init, elem) ?? 0];
+			cycle += ')' + (ROTATION_SUFFIX[rotationsBetween(init, elem) ?? 0] ?? '');
 			cycles.push(cycle);
 		}
 		return cycles.length === 0 ? '()' : cycles.join(' ');
