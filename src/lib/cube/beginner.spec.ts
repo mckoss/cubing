@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Permutation } from './permutation';
-import {
-	applyMoves,
-	from2003Notation,
-	invertMoves,
-	parseMoves,
-	permutationOf,
-	type Move
-} from './moves';
+import { applyMoves, invertMoves, parseMoves, permutationOf, type Move } from './moves';
 import { MoveList } from './move-list';
 import { Beginner, SEQUENCES } from './beginner';
 
@@ -32,7 +25,7 @@ describe('Basic Modern Solution', () => {
 	});
 
 	it('leaves a solved cube alone', () => {
-		expect(solve(new Permutation()).moves).toBe('');
+		expect(solve(new Permutation()).moves).toEqual([]);
 	});
 
 	it('solves random scrambles', () => {
@@ -44,9 +37,7 @@ describe('Basic Modern Solution', () => {
 			})) as Move[];
 			const start = permutationOf(moves);
 			const list = solve(start);
-			expect(applyMoves(start, from2003Notation(list.moves)).toString(), `scramble ${i}`).toBe(
-				'<Identity>'
-			);
+			expect(applyMoves(start, list.moves).toString(), `scramble ${i}`).toBe('<Identity>');
 		}
 	});
 
@@ -78,7 +69,7 @@ describe('first face, white down', () => {
 			const list = solve(permutationOf(moves));
 			const first = list.blocks.find((b) => b.name === 'First Face (White)')!;
 			// Only turns of the whole cube about the vertical axis (y).
-			const turns = from2003Notation(list.moves.slice(first.start, first.end));
+			const turns = list.moves.slice(first.start, first.end);
 			expect(turns.filter((m) => m.name === 'x' || m.name === 'z')).toEqual([]);
 			expect(list.blocks.map((b) => b.name)).toEqual(
 				expect.arrayContaining(['Bottom Edges', 'Bottom Corners'])

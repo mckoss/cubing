@@ -1,7 +1,7 @@
 [
 	{
 		"scramble": "",
-		"moves": "kkkk",
+		"moves": "z' z' z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 4],
@@ -16,8 +16,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "f",
-		"moves": "Fkkkk",
+		"scramble": "F",
+		"moves": "F' z' z' z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 5],
@@ -32,8 +32,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "u",
-		"moves": "UffuffjdffjdffjdffjufdFUfDFjufdFUfDFjDfDFRddrjRdrjkkyBUrruurruurrUbYBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjUlUffuuffuuffULjjbluLUBurURLruRUlfdFDfdFDufdFDfdFDuufdFDfdFDukk",
+		"scramble": "U",
+		"moves": "U' F F U F F y D F F y D F F y D F F y U F D F' U' F D' F' y U F D F' U' F D' F' y D' F D' F' R' D D R y R' D R y z' z' E' B' U' R R U U R R U U R R U' B E B' U' R R U U R R U U R R U' B y E' L U' F F U U F F U U F F U' L' E U B' U' R R U U R R U U R R U' B y E' L U' F F U U F F U U F F U' L' E U B' U' R R U U R R U U R R U' B y U' L U' F F U U F F U U F F U' L' y y B L U L' U' B' U R U' R' L' R U R' U' L F D F' D' F D F' D' U F D F' D' F D F' D' U U F D F' D' F D F' D' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 210],
@@ -48,8 +48,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "fr",
-		"moves": "ufUUrujffJdfDFkkuulUffuuffuuffULJuuBUrruurruurrUbjuurrDuuRlffrLdrrLurURlruRUufdFDfdFDufdFDfdFDufdFDfdFDukk",
+		"scramble": "F R",
+		"moves": "U F U' U' R U y F F y' D F D' F' z' z' U U L U' F F U U F F U U F F U' L' y' U U B' U' R R U U R R U U R R U' B y U U R R D' U U R' L F F R L' D R R L' U R U' R' L R U R' U' U F D F' D' F D F' D' U F D F' D' F D F' D' U F D F' D' F D F' D' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 106],
@@ -64,8 +64,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "rUfLdB",
-		"moves": "uffUffjDFUrujfUrujddFUrujfDFjRddrfddFjuRddrUfddFjDRdrjkkBUrruurruurrUbjuBUrruurruurrUbjUBUrruurruurrUbjUlUffuuffuuffULjjjbulULBurrddbbdllffllffllffDbbddrrJurURLruRUlfdFDfdFDUdfDFdfDFukk",
+		"scramble": "R U' F L' D B'",
+		"moves": "U F F U' F F y D' F' U' R U y F U' R U y D D F' U' R U y F D' F' y R' D D R F D D F' y U R' D D R U' F D D F' y D' R' D R y z' z' B' U' R R U U R R U U R R U' B y U B' U' R R U U R R U U R R U' B y U' B' U' R R U U R R U U R R U' B y U' L U' F F U U F F U U F F U' L' y y y B U L U' L' B' U R R D D B B D L L F F L L F F L L F F D' B B D D R R y' U R U' R' L' R U R' U' L F D F' D' F D F' D' U' D F D' F' D F D' F' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 185],
@@ -80,8 +80,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "lrurdBrLFuLURBDbrdbRLDUdL",
-		"moves": "uuffUUffjdFUrujufUUrujDffjuufdFUUfDFjfDFRddrjdfDFjDfDFRddrjkkUBUrruurruurrUbjlUffuuffuuffULuBUrruurruurrUbjulUffuuffuuffULjlUffuuffuuffULuBUrruurruurrUbjJbulULBrrddbbdllffllffllffDbbddrrjjLurURlruRUfdFDfdFDuufdFDfdFDufdFDfdFDukk",
+		"scramble": "L R U R D B' R L' F' U L' U' R' B' D' B R D B R' L' D' U' D L'",
+		"moves": "U U F F U' U' F F y D F' U' R U y U F U' U' R U y D' F F y U U F D F' U' U' F D' F' y F D' F' R' D D R y D F D' F' y D' F D' F' R' D D R y z' z' U' B' U' R R U U R R U U R R U' B y L U' F F U U F F U U F F U' L' U B' U' R R U U R R U U R R U' B y U L U' F F U U F F U U F F U' L' y L U' F F U U F F U U F F U' L' U B' U' R R U U R R U U R R U' B y y' B U L U' L' B' R R D D B B D L L F F L L F F L L F F D' B B D D R R y y L' U R U' R' L R U R' U' F D F' D' F D F' D' U U F D F' D' F D F' D' U F D F' D' F D F' D' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 228],
@@ -96,8 +96,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "bDBuRUFdRBUlfDrFuLdLRbDlB",
-		"moves": "dFUrujdffjdFUrujffjfDFjDfDFRddrjDRdrjddfDFjkkuBUrruurruurrUbjuuBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjuBUrruurruurrUbjjjbulULBjurrDRlffrLuudrrfdFDfdFDufdFDfdFDufdFDfdFDuukk",
+		"scramble": "B D' B' U R' U' F' D R' B' U' L F D' R F' U L' D L' R' B D' L B'",
+		"moves": "D F' U' R U y D F F y D F' U' R U y F F y F D' F' y D' F D' F' R' D D R y D' R' D R y D D F D' F' y z' z' U B' U' R R U U R R U U R R U' B y U U B' U' R R U U R R U U R R U' B y E' L U' F F U U F F U U F F U' L' E U B' U' R R U U R R U U R R U' B y U B' U' R R U U R R U U R R U' B y y y B U L U' L' B' y U R R D' R' L F F R L' U U D R R F D F' D' F D F' D' U F D F' D' F D F' D' U F D F' D' F D F' D' U U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 180],
@@ -112,8 +112,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "uFlBUBUbluBdRufDuBUfDruFl",
-		"moves": "YFyjFjFUrujfUrujddfDFRddrjddfDFjDDRdrjDDRdrjkkBUrruurruurrUbjuBUrruurruurrUbjuulUffuuffuuffULjlUffuuffuuffULjjbulULBjjrrDRlffrLuudrrdfDFdfDFUfdFDfdFDukk",
+		"scramble": "U F' L B' U' B' U' B L U B' D R' U F D' U B' U' F D' R U F' L",
+		"moves": "E F' E' y F' y F' U' R U y F U' R U y D D F D' F' R' D D R y D D F D' F' y D' D' R' D R y D' D' R' D R y z' z' B' U' R R U U R R U U R R U' B y U B' U' R R U U R R U U R R U' B y U U L U' F F U U F F U U F F U' L' y L U' F F U U F F U U F F U' L' y y B U L U' L' B' y y R R D' R' L F F R L' U U D R R D F D' F' D F D' F' U' F D F' D' F D F' D' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 152],
@@ -128,8 +128,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "fRBrUfLFBdUBFdFubFblFLrbf",
-		"moves": "ufUUrujddffjYFyjdffjURddrufddFjuRddrUfddFjdfDFjdRdrjkkjyyBUrruurruurrUbYYBUrruurruurrUbjuuBUrruurruurrUbjuuBUrruurruurrUbjbluLUBjjbulULBUrrDRlffrLuudrrjbluLUluLUluLUBdfDFdfDFuufdFDfdFDuukk",
+		"scramble": "F R' B' R U' F L' F' B' D U' B' F' D F' U B F' B L F' L' R B F",
+		"moves": "U F U' U' R U y D D F F y E F' E' y D F F y U' R' D D R U F D D F' y U R' D D R U' F D D F' y D F D' F' y D R' D R y z' z' y E' E' B' U' R R U U R R U U R R U' B E E B' U' R R U U R R U U R R U' B y U U B' U' R R U U R R U U R R U' B y U U B' U' R R U U R R U U R R U' B y B L U L' U' B' y y B U L U' L' B' U' R R D' R' L F F R L' U U D R R y B L U L' U' L U L' U' L U L' U' B' D F D' F' D F D' F' U U F D F' D' F D F' D' U U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 188],
@@ -144,8 +144,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "lFdUBDbDUdrBDURdldLuLBdrf",
-		"moves": "ffjufUUrujFjdFUrujufddFURddrjRdrjdfDFjdfDFjkkYBUrruurruurrUbyBUrruurruurrUbjyylUffuuffuuffULYYuBUrruurruurrUbjulUffuuffuuffULjulUffuuffuuffULjjbulULBjUrrDRlffrLuudrrJLurURlruRUdfDFdfDFufdFDfdFDudfDFdfDFufdFDfdFDukk",
+		"scramble": "L F' D U' B' D' B D' U' D R B' D' U' R' D L D L' U L' B' D R F",
+		"moves": "F F y U F U' U' R U y F' y D F' U' R U y U F D D F' U' R' D D R y R' D R y D F D' F' y D F D' F' y z' z' E B' U' R R U U R R U U R R U' B E' B' U' R R U U R R U U R R U' B y E' E' L U' F F U U F F U U F F U' L' E E U B' U' R R U U R R U U R R U' B y U L U' F F U U F F U U F F U' L' y U L U' F F U U F F U U F F U' L' y y B U L U' L' B' y U' R R D' R' L F F R L' U U D R R y' L' U R U' R' L R U R' U' D F D' F' D F D' F' U F D F' D' F D F' D' U D F D' F' D F D' F' U F D F' D' F D F' D' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 214],
@@ -160,8 +160,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "ULUfrUDLUDblblurdbRLUBDRu",
-		"moves": "jfjfUrujyyFYYjjdRdrjdfDFjfDFRddrjkkulUffuuffuuffULjyBUrruurruurrUbYBUrruurruurrUbjUlUffuuffuuffULjuulUffuuffuuffULjJbulULBuurrDuuRlffrLdrrbluLUluLUluLUBfdFDfdFDuufdFDfdFDufdFDfdFDukk",
+		"scramble": "U' L' U' F R U' D' L' U' D' B L B L U R D B R' L' U' B' D' R' U",
+		"moves": "y F y F U' R U y E' E' F' E E y y D R' D R y D F D' F' y F D' F' R' D D R y z' z' U L U' F F U U F F U U F F U' L' y E' B' U' R R U U R R U U R R U' B E B' U' R R U U R R U U R R U' B y U' L U' F F U U F F U U F F U' L' y U U L U' F F U U F F U U F F U' L' y y' B U L U' L' B' U U R R D' U U R' L F F R L' D R R B L U L' U' L U L' U' L U L' U' B' F D F' D' F D F' D' U U F D F' D' F D F' D' U F D F' D' F D F' D' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 182],
@@ -176,8 +176,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "UbdfBLFBufuFbrDfBdRbDBRUr",
-		"moves": "FUrujfUrujyyFYYjjufddFURddrjDRdrjjdRdrjkklUffuuffuuffULuBUrruurruurrUbjuBUrruurruurrUbjlUffuuffuuffULuBUrruurruurrUbjlUffuuffuuffULuBUrruurruurrUbjjbluLUBfdFDfdFDufdFDfdFDuufdFDfdFDukk",
+		"scramble": "U' B D F B' L' F' B' U F U F' B R D' F B' D R' B D' B' R' U' R",
+		"moves": "F' U' R U y F U' R U y E' E' F' E E y y U F D D F' U' R' D D R y D' R' D R y y D R' D R y z' z' L U' F F U U F F U U F F U' L' U B' U' R R U U R R U U R R U' B y U B' U' R R U U R R U U R R U' B y L U' F F U U F F U U F F U' L' U B' U' R R U U R R U U R R U' B y L U' F F U U F F U U F F U' L' U B' U' R R U U R R U U R R U' B y y B L U L' U' B' F D F' D' F D F' D' U F D F' D' F D F' D' U U F D F' D' F D F' D' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 184],
@@ -192,8 +192,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "DlDBrBdrubdblRbRDBfRBUDUr",
-		"moves": "uufurujDFUrujdffjYfyjRdrjDfDFRddrjDRdrjRdrjkkjlUffuuffuuffULuBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjlUffuuffuuffULuBUrruurruurrUbjjjbulULBubluLUluLUluLUBkk",
+		"scramble": "D' L D' B' R B' D R U B D B L R' B R' D' B' F R' B' U' D' U' R",
+		"moves": "U U F U R U y D' F' U' R U y D F F y E F E' y R' D R y D' F D' F' R' D D R y D' R' D R y R' D R y z' z' y L U' F F U U F F U U F F U' L' U B' U' R R U U R R U U R R U' B y E' L U' F F U U F F U U F F U' L' E U B' U' R R U U R R U U R R U' B y L U' F F U U F F U U F F U' L' U B' U' R R U U R R U U R R U' B y y y B U L U' L' B' U B L U L' U' L U L' U' L U L' U' B' z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 163],
@@ -208,8 +208,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "uLDLuFldburfRuLDLRLFBFRLU",
-		"moves": "ddffjddFUrujdffjyFYjdRdrjDfDFjdRdrjddfDFjkkuBUrruurruurrUbjBUrruurruurrUbjlUffuuffuuffULuBUrruurruurrUbjuulUffuuffuuffULjbulULBjjrrDRlffrLuudrrjurURLruRUldfDFdfDFuudfDFdfDFudfDFdfDFukk",
+		"scramble": "U L' D' L' U F' L D B U R F R' U L' D' L' R' L' F' B' F' R' L' U'",
+		"moves": "D D F F y D D F' U' R U y D F F y E' F' E y D R' D R y D' F D' F' y D R' D R y D D F D' F' y z' z' U B' U' R R U U R R U U R R U' B y B' U' R R U U R R U U R R U' B y L U' F F U U F F U U F F U' L' U B' U' R R U U R R U U R R U' B y U U L U' F F U U F F U U F F U' L' y B U L U' L' B' y y R R D' R' L F F R L' U U D R R y U R U' R' L' R U R' U' L D F D' F' D F D' F' U U D F D' F' D F D' F' U D F D' F' D F D' F' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 184],
@@ -224,8 +224,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "BdUrbFdufUbDlfdRLubrBuRfl",
-		"moves": "UffuffjyfYjyFYjyFYjufddFURddrjuRddrUfddFjfDFRddrjRdrjkkuBUrruurruurrUbjlUffuuffuuffULuBUrruurruurrUbjuuBUrruurruurrUbjulUffuuffuuffULjjjbulULBjjurrDRlffrLuudrrfdFDfdFDufdFDfdFDudfDFdfDFudfDFdfDFukk",
+		"scramble": "B' D U' R B F' D U F U' B D' L F D R' L' U B R B' U R' F L",
+		"moves": "U' F F U F F y E' F E y E' F' E y E' F' E y U F D D F' U' R' D D R y U R' D D R U' F D D F' y F D' F' R' D D R y R' D R y z' z' U B' U' R R U U R R U U R R U' B y L U' F F U U F F U U F F U' L' U B' U' R R U U R R U U R R U' B y U U B' U' R R U U R R U U R R U' B y U L U' F F U U F F U U F F U' L' y y y B U L U' L' B' y y U R R D' R' L F F R L' U U D R R F D F' D' F D F' D' U F D F' D' F D F' D' U D F D' F' D F D' F' U D F D' F' D F D' F' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 197],
@@ -240,8 +240,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "lDUdRlbufLdUbUBDRbDlrbUFD",
-		"moves": "DffjFjufUUrujfUrujDfDFRddrjdRdrjjDfDFRddrjkkYlUffuuffuuffULyuBUrruurruurrUbjuulUffuuffuuffULjBUrruurruurrUbjulUffuuffuuffULjbluLUBjjbulULBUrrDuuRlffrLdrrurURLruRUlfdFDfdFDUdfDFdfDFukk",
+		"scramble": "L D' U' D R' L B U F L' D U' B U' B' D' R' B D' L R B U' F' D'",
+		"moves": "D' F F y F' y U F U' U' R U y F U' R U y D' F D' F' R' D D R y D R' D R y y D' F D' F' R' D D R y z' z' E L U' F F U U F F U U F F U' L' E' U B' U' R R U U R R U U R R U' B y U U L U' F F U U F F U U F F U' L' y B' U' R R U U R R U U R R U' B y U L U' F F U U F F U U F F U' L' y B L U L' U' B' y y B U L U' L' B' U' R R D' U U R' L F F R L' D R R U R U' R' L' R U R' U' L F D F' D' F D F' D' U' D F D' F' D F D' F' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 183],
@@ -256,8 +256,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "ubrUrdLdulrldlflrULRUDflD",
-		"moves": "jdffjddffjddffjddfDFRddrjddfDFRddrjRdrjddfDFjkkuuBUrruurruurrUbjuBUrruurruurrUbjlUffuuffuuffULjlUffuuffuuffULuBUrruurruurrUbjbulULBuuJLurURlruRUfdFDfdFDuudfDFdfDFuukk",
+		"scramble": "U B R U' R D L' D U L R L D L F L R U' L' R' U' D' F L D'",
+		"moves": "y D F F y D D F F y D D F F y D D F D' F' R' D D R y D D F D' F' R' D D R y R' D R y D D F D' F' y z' z' U U B' U' R R U U R R U U R R U' B y U B' U' R R U U R R U U R R U' B y L U' F F U U F F U U F F U' L' y L U' F F U U F F U U F F U' L' U B' U' R R U U R R U U R R U' B y B U L U' L' B' U U y' L' U R U' R' L R U R' U' F D F' D' F D F' D' U U D F D' F' D F D' F' U U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 166],
@@ -272,8 +272,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "FLbrdBfbLDfBDRdRBurBULuBL",
-		"moves": "DFUrujyyFYYjFUrujddffjUfdFufDFjddfDFRddrjDfDFRddrjddfDFRddrjkkUlUffuuffuuffULjyylUffuuffuuffULYYuBUrruurruurrUbjuulUffuuffuuffULjuBUrruurruurrUbjbluLUBuuudfDFdfDFuufdFDfdFDukk",
+		"scramble": "F' L' B R D B' F B L' D' F B' D' R' D R' B' U R B' U' L' U B' L'",
+		"moves": "D' F' U' R U y E' E' F' E E y F' U' R U y D D F F y U' F D F' U F D' F' y D D F D' F' R' D D R y D' F D' F' R' D D R y D D F D' F' R' D D R y z' z' U' L U' F F U U F F U U F F U' L' y E' E' L U' F F U U F F U U F F U' L' E E U B' U' R R U U R R U U R R U' B y U U L U' F F U U F F U U F F U' L' y U B' U' R R U U R R U U R R U' B y B L U L' U' B' U U U D F D' F' D F D' F' U U F D F' D' F D F' D' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 175],
@@ -288,8 +288,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "ufdlUfrlBDluDBUDbFLBurbul",
-		"moves": "UfrujfUrujddFUrujdffjRdrjjdfDFRddrjddfDFjkkulUffuuffuuffULjBUrruurruurrUbjUlUffuuffuuffULjUlUffuuffuuffULjJbulULBUrrDuuRlffrLdrrurURLruRUlkk",
+		"scramble": "U F D L U' F R L B' D' L U D' B' U' D' B F' L' B' U R B U L",
+		"moves": "U' F R U y F U' R U y D D F' U' R U y D F F y R' D R y y D F D' F' R' D D R y D D F D' F' y z' z' U L U' F F U U F F U U F F U' L' y B' U' R R U U R R U U R R U' B y U' L U' F F U U F F U U F F U' L' y U' L U' F F U U F F U U F F U' L' y y' B U L U' L' B' U' R R D' U U R' L F F R L' D R R U R U' R' L' R U R' U' L z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 140],
@@ -304,8 +304,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "FlFLfLFlBFRFUBdfuFBUfrLuB",
-		"moves": "yyfYYjuufurujddFUrujfjDfDFjfDFjDfDFRddrjDDRdrjkkyyBUrruurruurrUbYYBUrruurruurrUbjlUffuuffuuffULjulUffuuffuuffULjjbluLUBjjbulULBrrDRlffrLuudrrRbbfrFRfrFRfrFRbbrfdFDfdFDudfDFdfDFudfDFdfDFufdFDfdFDukk",
+		"scramble": "F' L F' L' F L' F' L B' F' R' F' U' B' D F U F' B' U' F R L' U B'",
+		"moves": "E' E' F E E y U U F U R U y D D F' U' R U y F y D' F D' F' y F D' F' y D' F D' F' R' D D R y D' D' R' D R y z' z' E' E' B' U' R R U U R R U U R R U' B E E B' U' R R U U R R U U R R U' B y L U' F F U U F F U U F F U' L' y U L U' F F U U F F U U F F U' L' y y B L U L' U' B' y y B U L U' L' B' R R D' R' L F F R L' U U D R R R' B B F R F' R' F R F' R' F R F' R' B B R F D F' D' F D F' D' U D F D' F' D F D' F' U D F D' F' D F D' F' U F D F' D' F D F' D' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 197],
@@ -320,8 +320,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "RUfrudlDLbRlDflrFUDbUFuRU",
-		"moves": "YFyjDffjffjFUrujuRddrUfddFjuufddFUURddrjfddFRddrjjkkyBUrruurruurrUbYBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjBUrruurruurrUbjuulUffuuffuuffULjbulULBrrddbbdllffllffllffDbbddrrjbluLUluLUluLUBudfDFdfDFuufdFDfdFDukk",
+		"scramble": "R' U' F R U D L D' L' B R' L D' F L R F' U' D' B U' F' U R' U'",
+		"moves": "E F' E' y D' F F y F F y F' U' R U y U R' D D R U' F D D F' y U U F D D F' U' U' R' D D R y F D D F' R' D D R y y z' z' E' B' U' R R U U R R U U R R U' B E B' U' R R U U R R U U R R U' B y E' L U' F F U U F F U U F F U' L' E U B' U' R R U U R R U U R R U' B y B' U' R R U U R R U U R R U' B y U U L U' F F U U F F U U F F U' L' y B U L U' L' B' R R D D B B D L L F F L L F F L L F F D' B B D D R R y B L U L' U' L U L' U' L U L' U' B' U D F D' F' D F D' F' U U F D F' D' F D F' D' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 216],
@@ -336,8 +336,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "FuLrdlublDLDBurfdLdrdBFbR",
-		"moves": "dffjuffUffjFUrujFUrujDDRdrjuRddrUfddFjDDRdrjddfDFjkkBUrruurruurrUbjlUffuuffuuffULjuBUrruurruurrUbjUBUrruurruurrUbjUrrDuuRlffrLdrrLurURlruRUdfDFdfDFudfDFdfDFuudfDFdfDFukk",
+		"scramble": "F' U L' R D L U B L D' L' D' B' U R F D L' D R D B' F' B R'",
+		"moves": "D F F y U F F U' F F y F' U' R U y F' U' R U y D' D' R' D R y U R' D D R U' F D D F' y D' D' R' D R y D D F D' F' y z' z' B' U' R R U U R R U U R R U' B y L U' F F U U F F U U F F U' L' y U B' U' R R U U R R U U R R U' B y U' B' U' R R U U R R U U R R U' B y U' R R D' U U R' L F F R L' D R R L' U R U' R' L R U R' U' D F D' F' D F D' F' U D F D' F' D F D' F' U U D F D' F' D F D' F' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 169],
@@ -352,8 +352,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "BrUDRBLDbfLdurFDLrUBUBURL",
-		"moves": "ufUUrujufUUrujuffUffjFUrujddfDFRddrjufddFURddrjdfDFRddrjdfDFRddrjkklUffuuffuuffULjjlUffuuffuuffULuBUrruurruurrUbjuuBUrruurruurrUbjjbluLUBurrDuuRlffrLdrrurURLruRUlfdFDfdFDufdFDfdFDufdFDfdFDuukk",
+		"scramble": "B' R U' D' R' B' L' D' B F L' D U R F' D' L' R U' B' U' B' U' R' L'",
+		"moves": "U F U' U' R U y U F U' U' R U y U F F U' F F y F' U' R U y D D F D' F' R' D D R y U F D D F' U' R' D D R y D F D' F' R' D D R y D F D' F' R' D D R y z' z' L U' F F U U F F U U F F U' L' y y L U' F F U U F F U U F F U' L' U B' U' R R U U R R U U R R U' B y U U B' U' R R U U R R U U R R U' B y y B L U L' U' B' U R R D' U U R' L F F R L' D R R U R U' R' L' R U R' U' L F D F' D' F D F' D' U F D F' D' F D F' D' U F D F' D' F D F' D' U U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 192],
@@ -368,8 +368,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "bdBUbULDbrLBDubDFUrdBFldf",
-		"moves": "UfrujYfyjufUUrujyFYjdfDFjdfDFRddrjfDFjDRdrjkkjlUffuuffuuffULuBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjuuBUrruurruurrUbjrrddbbdllffllffllffDbbddrrjurURLruRUldfDFdfDFufdFDfdFDUkk",
+		"scramble": "B D B' U' B U' L' D' B R L' B' D' U B D' F' U' R D B' F' L D F",
+		"moves": "U' F R U y E F E' y U F U' U' R U y E' F' E y D F D' F' y D F D' F' R' D D R y F D' F' y D' R' D R y z' z' y L U' F F U U F F U U F F U' L' U B' U' R R U U R R U U R R U' B y E' L U' F F U U F F U U F F U' L' E U B' U' R R U U R R U U R R U' B y U U B' U' R R U U R R U U R R U' B y R R D D B B D L L F F L L F F L L F F D' B B D D R R y U R U' R' L' R U R' U' L D F D' F' D F D' F' U F D F' D' F D F' D' U' z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 182],
@@ -384,8 +384,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "DlBFrudRBdUfudLrFUFRBUfrF",
-		"moves": "UfrujuffUffjDffjdffjfDFRddrjRdrjddfDFRddrjjkkUlUffuuffuuffULjyBUrruurruurrUbYBUrruurruurrUbjuuBUrruurruurrUbjjjbulULBjUrrDRlffrLuudrrjLurURlruRUdfDFdfDFuudfDFdfDFudfDFdfDFukk",
+		"scramble": "D' L B' F' R U D R' B' D U' F U D L' R F' U' F' R' B' U' F R F'",
+		"moves": "U' F R U y U F F U' F F y D' F F y D F F y F D' F' R' D D R y R' D R y D D F D' F' R' D D R y y z' z' U' L U' F F U U F F U U F F U' L' y E' B' U' R R U U R R U U R R U' B E B' U' R R U U R R U U R R U' B y U U B' U' R R U U R R U U R R U' B y y y B U L U' L' B' y U' R R D' R' L F F R L' U U D R R y L' U R U' R' L R U R' U' D F D' F' D F D' F' U U D F D' F' D F D' F' U D F D' F' D F D' F' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 174],
@@ -400,8 +400,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "FBrDrudfrubFRFruLuLRluldb",
-		"moves": "yfYjyfYjyfYjfUrujuRddrUfddFjfDFRddrjufdFUfDFjdfDFRddrjkklUffuuffuuffULjuuBUrruurruurrUbjlUffuuffuuffULjlUffuuffuuffULjbulULBUbluLUluLUluLUBfdFDfdFDudfDFdfDFudfDFdfDFufdFDfdFDukk",
+		"scramble": "F' B' R D' R U D F R U B F' R' F' R U L' U L' R' L U L D B",
+		"moves": "E' F E y E' F E y E' F E y F U' R U y U R' D D R U' F D D F' y F D' F' R' D D R y U F D F' U' F D' F' y D F D' F' R' D D R y z' z' L U' F F U U F F U U F F U' L' y U U B' U' R R U U R R U U R R U' B y L U' F F U U F F U U F F U' L' y L U' F F U U F F U U F F U' L' y B U L U' L' B' U' B L U L' U' L U L' U' L U L' U' B' F D F' D' F D F' D' U D F D' F' D F D' F' U D F D' F' D F D' F' U F D F' D' F D F' D' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 177],
@@ -416,8 +416,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "UdfRFBfdufruLBubDFRluBUbr",
-		"moves": "UffuffjfjDFUrujyFYjDfDFRddrjdRdrjDfDFjDRdrjkklUffuuffuuffULuBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjyBUrruurruurrUbYBUrruurruurrUbjlUffuuffuuffULjbulULBuujLurURlruRUdfDFdfDFufdFDfdFDufdFDfdFDudfDFdfDFukk",
+		"scramble": "U' D F R' F' B' F D U F R U L' B' U B D' F' R' L U B' U' B R",
+		"moves": "U' F F U F F y F y D' F' U' R U y E' F' E y D' F D' F' R' D D R y D R' D R y D' F D' F' y D' R' D R y z' z' L U' F F U U F F U U F F U' L' U B' U' R R U U R R U U R R U' B y E' L U' F F U U F F U U F F U' L' E U B' U' R R U U R R U U R R U' B y E' B' U' R R U U R R U U R R U' B E B' U' R R U U R R U U R R U' B y L U' F F U U F F U U F F U' L' y B U L U' L' B' U U y L' U R U' R' L R U R' U' D F D' F' D F D' F' U F D F' D' F D F' D' U F D F' D' F D F' D' U D F D' F' D F D' F' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 210],
@@ -432,8 +432,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "ulBDudfDLBrudFURLBRLFdUDF",
-		"moves": "FUrujuffUffjyfYjDffjuuRddrUUfddFjdfDFRddrjfddFRddrjddfDFjkkyylUffuuffuuffULYYuBUrruurruurrUbjjUlUffuuffuuffULjlUffuuffuuffULjjbulULBjjuurrDRlffrLuudrrJLurURlruRUdfDFdfDFuudfDFdfDFudfDFdfDFukk",
+		"scramble": "U L B' D' U D F D' L' B' R U D F' U' R' L' B' R' L' F' D U' D' F'",
+		"moves": "F' U' R U y U F F U' F F y E' F E y D' F F y U U R' D D R U' U' F D D F' y D F D' F' R' D D R y F D D F' R' D D R y D D F D' F' y z' z' E' E' L U' F F U U F F U U F F U' L' E E U B' U' R R U U R R U U R R U' B y y U' L U' F F U U F F U U F F U' L' y L U' F F U U F F U U F F U' L' y y B U L U' L' B' y y U U R R D' R' L F F R L' U U D R R y' L' U R U' R' L R U R' U' D F D' F' D F D' F' U U D F D' F' D F D' F' U D F D' F' D F D' F' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 191],
@@ -448,8 +448,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "dRUdUBludLdLUrUDfLbDflbuf",
-		"moves": "fUrujufUUrujFjfjfDFjdRdrjddfDFjDfDFjkklUffuuffuuffULjuuBUrruurruurrUbjUBUrruurruurrUbjjjbulULBjjrrDRlffrLuudrrRbbfrFRfrFRfrFRbbrudfDFdfDFudfDFdfDFudfDFdfDFukk",
+		"scramble": "D R' U' D U' B' L U D L' D L' U' R U' D' F L' B D' F L B U F",
+		"moves": "F U' R U y U F U' U' R U y F' y F y F D' F' y D R' D R y D D F D' F' y D' F D' F' y z' z' L U' F F U U F F U U F F U' L' y U U B' U' R R U U R R U U R R U' B y U' B' U' R R U U R R U U R R U' B y y y B U L U' L' B' y y R R D' R' L F F R L' U U D R R R' B B F R F' R' F R F' R' F R F' R' B B R U D F D' F' D F D' F' U D F D' F' D F D' F' U D F D' F' D F D' F' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 158],
@@ -464,8 +464,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "FLUFDbdfDuRdLRURFBDudBlrf",
-		"moves": "yFYjyFYjyfYjdFUrujDfDFjjDfDFjdfDFRddrjkkyylUffuuffuuffULYYuBUrruurruurrUbjyyBUrruurruurrUbYYBUrruurruurrUbjUlUffuuffuuffULjjjjbulULBUrrddbbdllffllffllffDbbddrrjLurURlruRUkk",
+		"scramble": "F' L' U' F' D' B D F D' U R' D L' R' U' R' F' B' D' U D B' L R F",
+		"moves": "E' F' E y E' F' E y E' F E y D F' U' R U y D' F D' F' y y D' F D' F' y D F D' F' R' D D R y z' z' E' E' L U' F F U U F F U U F F U' L' E E U B' U' R R U U R R U U R R U' B y E' E' B' U' R R U U R R U U R R U' B E E B' U' R R U U R R U U R R U' B y U' L U' F F U U F F U U F F U' L' y y y y B U L U' L' B' U' R R D D B B D L L F F L L F F L L F F D' B B D D R R y L' U R U' R' L R U R' U' z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 172],
@@ -480,8 +480,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "flblBRFLUbfbLFDFDBfldLRDF",
-		"moves": "yyfYYjyFYjdFUrujYFyjuuRddrUUfddFjdRdrjDDRdrjjkkulUffuuffuuffULjuuBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjulUffuuffuuffULjjjbulULBurrDuuRlffrLdrrjLurURlruRUdfDFdfDFuudfDFdfDFudfDFdfDFukk",
+		"scramble": "F L B L B' R' F' L' U' B F B L' F' D' F' D' B' F L D L' R' D' F'",
+		"moves": "E' E' F E E y E' F' E y D F' U' R U y E F' E' y U U R' D D R U' U' F D D F' y D R' D R y D' D' R' D R y y z' z' U L U' F F U U F F U U F F U' L' y U U B' U' R R U U R R U U R R U' B y E' L U' F F U U F F U U F F U' L' E U B' U' R R U U R R U U R R U' B y U L U' F F U U F F U U F F U' L' y y y B U L U' L' B' U R R D' U U R' L F F R L' D R R y L' U R U' R' L R U R' U' D F D' F' D F D' F' U U D F D' F' D F D' F' U D F D' F' D F D' F' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 192],
@@ -496,8 +496,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "LUDrDRuLFdLDlfrdFRfblUfrF",
-		"moves": "yFYjuffUffjdffjFUrujfddFRddrjuuRddrUUfddFJkkBUrruurruurrUbjuuBUrruurruurrUbjUBUrruurruurrUbjUBUrruurruurrUbjbulULBjjurrDRlffrLuudrrjLurURlruRUdfDFdfDFuudfDFdfDFudfDFdfDFukk",
+		"scramble": "L' U' D' R D' R' U L' F' D L' D' L F R D F' R' F B L U' F R F'",
+		"moves": "E' F' E y U F F U' F F y D F F y F' U' R U y F D D F' R' D D R y U U R' D D R U' U' F D D F' y' z' z' B' U' R R U U R R U U R R U' B y U U B' U' R R U U R R U U R R U' B y U' B' U' R R U U R R U U R R U' B y U' B' U' R R U U R R U U R R U' B y B U L U' L' B' y y U R R D' R' L F F R L' U U D R R y L' U R U' R' L R U R' U' D F D' F' D F D' F' U U D F D' F' D F D' F' U D F D' F' D F D' F' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 172],
@@ -512,8 +512,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "DlbfuRfLFLDUbFDlFduRlFdFl",
-		"moves": "DffjddffjYFyjddffjRddrfddFjjddfDFRddrjdfDFjkkjyyBUrruurruurrUbYYBUrruurruurrUbjUBUrruurruurrUbjUlUffuuffuuffULjjbulULBrrDuuRlffrLdrrjLurURlruRUfdFDfdFDuufdFDfdFDufdFDfdFDukk",
+		"scramble": "D' L B F U R' F L' F' L' D' U' B F' D' L F' D U R' L F' D F' L",
+		"moves": "D' F F y D D F F y E F' E' y D D F F y R' D D R F D D F' y y D D F D' F' R' D D R y D F D' F' y z' z' y E' E' B' U' R R U U R R U U R R U' B E E B' U' R R U U R R U U R R U' B y U' B' U' R R U U R R U U R R U' B y U' L U' F F U U F F U U F F U' L' y y B U L U' L' B' R R D' U U R' L F F R L' D R R y L' U R U' R' L R U R' U' F D F' D' F D F' D' U U F D F' D' F D F' D' U F D F' D' F D F' D' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 173],
@@ -528,8 +528,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "FLUfRbubLfBuFLUDubdbrlfdR",
-		"moves": "yyfYYjufUUrujdffjYFyjDfDFRddrjfDFjddfDFjjkkulUffuuffuuffULjyBUrruurruurrUbYBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjBUrruurruurrUbjbluLUBjjbulULBrrDRlffrLuudrrkk",
+		"scramble": "F' L' U' F R' B U B L' F B' U F' L' U' D' U B D B R L F D R'",
+		"moves": "E' E' F E E y U F U' U' R U y D F F y E F' E' y D' F D' F' R' D D R y F D' F' y D D F D' F' y y z' z' U L U' F F U U F F U U F F U' L' y E' B' U' R R U U R R U U R R U' B E B' U' R R U U R R U U R R U' B y E' L U' F F U U F F U U F F U' L' E U B' U' R R U U R R U U R R U' B y B' U' R R U U R R U U R R U' B y B L U L' U' B' y y B U L U' L' B' R R D' R' L F F R L' U U D R R z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 167],
@@ -544,8 +544,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "bFdLUDbufrUdlBufubrFbFlfD",
-		"moves": "DFUrujuffUffjfUrujDffjddfDFRddrjddfDFRddrjufddFURddrjfddFRddrjkkUlUffuuffuuffULjBUrruurruurrUbjUlUffuuffuuffULjuBUrruurruurrUbjjbluLUBrrddbbdllffllffllffDbbddrrjjLurURlruRUdfDFdfDFufdFDfdFDufdFDfdFDudfDFdfDFukk",
+		"scramble": "B F' D L' U' D' B U F R U' D L B' U F U B R F' B F' L F D'",
+		"moves": "D' F' U' R U y U F F U' F F y F U' R U y D' F F y D D F D' F' R' D D R y D D F D' F' R' D D R y U F D D F' U' R' D D R y F D D F' R' D D R y z' z' U' L U' F F U U F F U U F F U' L' y B' U' R R U U R R U U R R U' B y U' L U' F F U U F F U U F F U' L' y U B' U' R R U U R R U U R R U' B y y B L U L' U' B' R R D D B B D L L F F L L F F L L F F D' B B D D R R y y L' U R U' R' L R U R' U' D F D' F' D F D' F' U F D F' D' F D F' D' U F D F' D' F D F' D' U D F D' F' D F D' F' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 210],
@@ -560,8 +560,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "rDurFLuFUDUlDrfuBUFbfbFBf",
-		"moves": "uuffUUffjddffjDffjddFUrujufdFUfDFjDfDFRddrjfDFjddfDFRddrjkkyBUrruurruurrUbYBUrruurruurrUbjUBUrruurruurrUbjjUlUffuuffuuffULjbluLUBjjbulULBuurrDuuRlffrLdrrJurURLruRUldfDFdfDFufdFDfdFDudfDFdfDFufdFDfdFDukk",
+		"scramble": "R D' U R F' L' U F' U' D' U' L D' R F U B' U' F' B F B F' B' F",
+		"moves": "U U F F U' U' F F y D D F F y D' F F y D D F' U' R U y U F D F' U' F D' F' y D' F D' F' R' D D R y F D' F' y D D F D' F' R' D D R y z' z' E' B' U' R R U U R R U U R R U' B E B' U' R R U U R R U U R R U' B y U' B' U' R R U U R R U U R R U' B y y U' L U' F F U U F F U U F F U' L' y B L U L' U' B' y y B U L U' L' B' U U R R D' U U R' L F F R L' D R R y' U R U' R' L' R U R' U' L D F D' F' D F D' F' U F D F' D' F D F' D' U D F D' F' D F D' F' U F D F' D' F D F' D' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 202],
@@ -576,8 +576,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "UFRdBRULBfBRFBflDlbrurfBR",
-		"moves": "FjyyFYYjddFUrujddFUrujddfDFjjfddFRddrjfddFRddrjkkyylUffuuffuuffULYYuBUrruurruurrUbjlUffuuffuuffULjylUffuuffuuffULYuBUrruurruurrUbjBUrruurruurrUbjjbluLUBrrDuuRlffrLdrrjLurURlruRUdfDFdfDFufdFDfdFDufdFDfdFDudfDFdfDFukk",
+		"scramble": "U' F' R' D B' R' U' L' B' F B' R' F' B' F L D' L B R U R F B' R'",
+		"moves": "F' y E' E' F' E E y D D F' U' R U y D D F' U' R U y D D F D' F' y y F D D F' R' D D R y F D D F' R' D D R y z' z' E' E' L U' F F U U F F U U F F U' L' E E U B' U' R R U U R R U U R R U' B y L U' F F U U F F U U F F U' L' y E' L U' F F U U F F U U F F U' L' E U B' U' R R U U R R U U R R U' B y B' U' R R U U R R U U R R U' B y y B L U L' U' B' R R D' U U R' L F F R L' D R R y L' U R U' R' L R U R' U' D F D' F' D F D' F' U F D F' D' F D F' D' U F D F' D' F D F' D' U D F D' F' D F D' F' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 215],
@@ -592,8 +592,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "RDruFrlRDurUFDRlDruDRLRlR",
-		"moves": "yyFYYjyyfYYjfjdFUrujfddFRddrjuufddFUURddrjfDFRddrjjkkuuBUrruurruurrUbjuuBUrruurruurrUbjBUrruurruurrUbjjbluLUBRbbfrFRfrFRfrFRbbrudfDFdfDFuufdFDfdFDukk",
+		"scramble": "R' D' R U F' R L R' D' U R U' F' D' R' L D' R U D' R' L' R' L R'",
+		"moves": "E' E' F' E E y E' E' F E E y F y D F' U' R U y F D D F' R' D D R y U U F D D F' U' U' R' D D R y F D' F' R' D D R y y z' z' U U B' U' R R U U R R U U R R U' B y U U B' U' R R U U R R U U R R U' B y B' U' R R U U R R U U R R U' B y y B L U L' U' B' R' B B F R F' R' F R F' R' F R F' R' B B R U D F D' F' D F D' F' U U F D F' D' F D F' D' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 149],
@@ -608,8 +608,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "bluRlrdRUduRUFBuRLudlBFur",
-		"moves": "FjfjyFYjddffjddfDFRddrjuufddFUURddrjjdRdrjkkUlUffuuffuuffULjulUffuuffuuffULjBUrruurruurrUbjuuBUrruurruurrUbjbluLUBjjbulULBUrrDuuRlffrLdrrJurURLruRUldfDFdfDFudfDFdfDFuudfDFdfDFukk",
+		"scramble": "B L U R' L R D R' U' D U R' U' F' B' U R' L' U D L B' F' U R",
+		"moves": "F' y F y E' F' E y D D F F y D D F D' F' R' D D R y U U F D D F' U' U' R' D D R y y D R' D R y z' z' U' L U' F F U U F F U U F F U' L' y U L U' F F U U F F U U F F U' L' y B' U' R R U U R R U U R R U' B y U U B' U' R R U U R R U U R R U' B y B L U L' U' B' y y B U L U' L' B' U' R R D' U U R' L F F R L' D R R y' U R U' R' L' R U R' U' L D F D' F' D F D' F' U D F D' F' D F D' F' U U D F D' F' D F D' F' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 178],
@@ -624,8 +624,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "DuRurLrfDULRbdBFludFRLfld",
-		"moves": "yyFYYjYFyjdffjDffjuufddFUURddrjfDFRddrjDDRdrjdfDFRddrjkkUBUrruurruurrUbjUBUrruurruurrUbjylUffuuffuuffULYuBUrruurruurrUbjuuBUrruurruurrUbjjbluLUBjjrrDRlffrLuudrrurURLruRUldfDFdfDFufdFDfdFDUkk",
+		"scramble": "D' U R' U R L' R F D' U' L' R' B D B' F' L U D F' R' L' F L D",
+		"moves": "E' E' F' E E y E F' E' y D F F y D' F F y U U F D D F' U' U' R' D D R y F D' F' R' D D R y D' D' R' D R y D F D' F' R' D D R y z' z' U' B' U' R R U U R R U U R R U' B y U' B' U' R R U U R R U U R R U' B y E' L U' F F U U F F U U F F U' L' E U B' U' R R U U R R U U R R U' B y U U B' U' R R U U R R U U R R U' B y y B L U L' U' B' y y R R D' R' L F F R L' U U D R R U R U' R' L' R U R' U' L D F D' F' D F D' F' U F D F' D' F D F' D' U' z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 190],
@@ -640,8 +640,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "brURbdLbLDrlRDRubuFRlfUrB",
-		"moves": "DffjjYfyjjdfDFjfDFjRddrfddFjDRdrjkkYlUffuuffuuffULyuBUrruurruurrUbjjyBUrruurruurrUbYBUrruurruurrUbjUBUrruurruurrUbjbluLUBjuurrDRlffrLuudrrLurURlruRUudfDFdfDFuufdFDfdFDukk",
+		"scramble": "B R U' R' B D L' B L' D' R L R' D' R' U B U F' R' L F U' R B'",
+		"moves": "D' F F y y E F E' y y D F D' F' y F D' F' y R' D D R F D D F' y D' R' D R y z' z' E L U' F F U U F F U U F F U' L' E' U B' U' R R U U R R U U R R U' B y y E' B' U' R R U U R R U U R R U' B E B' U' R R U U R R U U R R U' B y U' B' U' R R U U R R U U R R U' B y B L U L' U' B' y U U R R D' R' L F F R L' U U D R R L' U R U' R' L R U R' U' U D F D' F' D F D' F' U U F D F' D' F D F' D' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 170],
@@ -656,8 +656,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "dUlbrubdbDFrFbRBUdRuLdfdB",
-		"moves": "fjfUrujyyfYYjyyfYYjufdFUfDFjfDFjfddFRddrjdfDFjkkBUrruurruurrUbjyBUrruurruurrUbYBUrruurruurrUbjUBUrruurruurrUbjuuBUrruurruurrUbjbluLUBjjbulULBjrrDRlffrLuudrrjbluLUluLUluLUBfdFDfdFDufdFDfdFDuufdFDfdFDukk",
+		"scramble": "D U' L B R U B D B D' F' R F' B R' B' U' D R' U L' D F D B'",
+		"moves": "F y F U' R U y E' E' F E E y E' E' F E E y U F D F' U' F D' F' y F D' F' y F D D F' R' D D R y D F D' F' y z' z' B' U' R R U U R R U U R R U' B y E' B' U' R R U U R R U U R R U' B E B' U' R R U U R R U U R R U' B y U' B' U' R R U U R R U U R R U' B y U U B' U' R R U U R R U U R R U' B y B L U L' U' B' y y B U L U' L' B' y R R D' R' L F F R L' U U D R R y B L U L' U' L U L' U' L U L' U' B' F D F' D' F D F' D' U F D F' D' F D F' D' U U F D F' D' F D F' D' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 201],
@@ -672,8 +672,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "RlUDuBDBUBUFdlFrFLduDfDbf",
-		"moves": "uffUffjdFUrujDffjjDfDFRddrjfDFRddrjfDFjdRdrjkkBUrruurruurrUbjUBUrruurruurrUbjBUrruurruurrUbjjbluLUBrrDuuRlffrLdrrLurURlruRUdfDFdfDFuudfDFdfDFudfDFdfDFukk",
+		"scramble": "R' L U' D' U B' D' B' U' B' U' F' D L F' R F' L' D U D' F D' B F",
+		"moves": "U F F U' F F y D F' U' R U y D' F F y y D' F D' F' R' D D R y F D' F' R' D D R y F D' F' y D R' D R y z' z' B' U' R R U U R R U U R R U' B y U' B' U' R R U U R R U U R R U' B y B' U' R R U U R R U U R R U' B y y B L U L' U' B' R R D' U U R' L F F R L' D R R L' U R U' R' L R U R' U' D F D' F' D F D' F' U U D F D' F' D F D' F' U D F D' F' D F D' F' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 153],
@@ -688,8 +688,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "DRLuLfULRUflFDflDLRBdldlu",
-		"moves": "ufUUrujufUUrujfUrujfUrujURddrufddFjufdFUfDFjfDFjDfDFjkkUBUrruurruurrUbjuulUffuuffuuffULjulUffuuffuuffULjuuBUrruurruurrUbjjjbulULBjuurrDRlffrLuudrrJLurURlruRUfdFDfdFDUdfDFdfDFukk",
+		"scramble": "D' R' L' U L' F U' L' R' U' F L F' D' F L D' L' R' B' D L D L U",
+		"moves": "U F U' U' R U y U F U' U' R U y F U' R U y F U' R U y U' R' D D R U F D D F' y U F D F' U' F D' F' y F D' F' y D' F D' F' y z' z' U' B' U' R R U U R R U U R R U' B y U U L U' F F U U F F U U F F U' L' y U L U' F F U U F F U U F F U' L' y U U B' U' R R U U R R U U R R U' B y y y B U L U' L' B' y U U R R D' R' L F F R L' U U D R R y' L' U R U' R' L R U R' U' F D F' D' F D F' D' U' D F D' F' D F D' F' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 177],
@@ -704,8 +704,8 @@
 		"final": "I"
 	},
 	{
-		"scramble": "FlRLFuDfBFlRLBLUdfdlfBlBf",
-		"moves": "FUrujYfyjdffjFUrujddfDFRddrjdfDFjjddfDFRddrjkkYBUrruurruurrUbyBUrruurruurrUbjuuBUrruurruurrUbjjBUrruurruurrUbjjjbulULBjjurrDRlffrLuudrrJLurURlruRUdfDFdfDFudfDFdfDFuudfDFdfDFukk",
+		"scramble": "F' L R' L' F' U D' F B' F' L R' L' B' L' U' D F D L F B' L B' F",
+		"moves": "F' U' R U y E F E' y D F F y F' U' R U y D D F D' F' R' D D R y D F D' F' y y D D F D' F' R' D D R y z' z' E B' U' R R U U R R U U R R U' B E' B' U' R R U U R R U U R R U' B y U U B' U' R R U U R R U U R R U' B y y B' U' R R U U R R U U R R U' B y y y B U L U' L' B' y y U R R D' R' L F F R L' U U D R R y' L' U R U' R' L R U R' U' D F D' F' D F D' F' U D F D' F' D F D' F' U U D F D' F' D F D' F' U z' z'",
 		"blocks": [
 			["Move History", 0, null],
 			["David Singmaster Solution", 0, 176],

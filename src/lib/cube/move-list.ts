@@ -1,42 +1,66 @@
 // The move history, ported from the 2003 Rubik's Cube Simulator.
 //
-// Moves are kept in the 2003 notation: one letter per quarter turn, lower
-// case for clockwise and upper case for counterclockwise.  Moves are
-// recorded in named blocks ("Scramble", "Solve U Edges", ...), and a move
-// that undoes the one before it cancels out, but never across the start of
-// a block.
+// Moves are kept as quarter turns (each Move has turns 1 or 3), as the 2003
+// simulator kept them (one letter per quarter turn), so positions in the
+// history count quarter turns.  Moves are recorded in named blocks
+// ("Scramble", "Solve U Edges", ...), and a move that undoes the one before
+// it cancels out, but never across the start of a block.
 
-import { from2003Notation, simplifyMoves, to2003Notation, type Move } from './moves';
+import { inverseTurns, isRotation, simplifyMoves, type Move } from './moves';
 
-function changeCase(ch: string): string {
-	return ch === ch.toUpperCase() ? ch.toLowerCase() : ch.toUpperCase();
+// Moves whose 2003 letter turned the other way from standard notation (the
+// slices, and z): a half turn is two of their counterclockwise quarter
+// turns, as the 2003 simulator recorded it.
+const REVERSED_2003 = new Set(['M', 'E', 'S', 'z']);
+
+// Split moves into quarter turns.
+function quarterTurns(moves: Move[]): Move[] {
+	const result: Move[] = [];
+	for (const { name, turns } of moves) {
+		if (turns === 2) {
+			const quarter: Move = { name, turns: REVERSED_2003.has(name) ? 3 : 1 };
+			result.push(quarter, { ...quarter });
+		} else {
+			result.push({ name, turns });
+		}
+	}
+	return result;
 }
 
-// Count the turns in a sequence, as the 2003 simulator did: a repeated
-// letter is a half turn, and counts once.  Turning the whole cube (i, j, k)
-// doesn't count.
-function countTurns(moves: string): { faceTurns: number; quarterTurns: number } {
+function sameMove(a: Move | undefined, b: Move | undefined): boolean {
+	return a !== undefined && b !== undefined && a.name === b.name && a.turns === b.turns;
+}
+
+function isInverse(a: Move | undefined, b: Move): boolean {
+	return a !== undefined && a.name === b.name && a.turns === inverseTurns(b.turns);
+}
+
+// Count the turns in a sequence of quarter turns, as the 2003 simulator
+// did: a repeated quarter turn is a half turn, and counts once.  Turning the
+// whole cube (x, y, z) doesn't count.
+function countTurns(moves: Move[]): { faceTurns: number; quarterTurns: number } {
 	let faceTurns = 0;
 	let quarterTurns = 0;
-	let prev: string | undefined;
-	for (const ch of moves) {
-		const rotation = 'ijk'.includes(ch.toLowerCase());
+	let prev: Move | undefined;
+	for (const move of moves) {
+		const rotation = isRotation(move.name);
 		if (!rotation) {
 			quarterTurns++;
 		}
-		if (ch === prev) {
+		if (sameMove(move, prev)) {
 			prev = undefined;
 			continue;
 		}
 		if (!rotation) {
 			faceTurns++;
 		}
-		prev = ch;
+		prev = move;
 	}
 	return { faceTurns, quarterTurns };
 }
 
 export class MoveBlock {
+	// Positions in the history, in quarter turns.
 	readonly start: number;
 	end: number | undefined;
 
@@ -47,7 +71,7 @@ export class MoveBlock {
 		this.start = list.setWall();
 	}
 
-	close() {
+	close(): void {
 		this.end = this.list.setWall();
 	}
 }
@@ -63,10 +87,10 @@ export interface HistoryBlock {
 }
 
 export class MoveList {
-	// Every move made (as recorded in the history).
-	moves = '';
-	// Moves waiting to be animated.
-	pending = '';
+	// Every move made (as recorded in the history), in quarter turns.
+	moves: Move[] = [];
+	// Moves waiting to be animated, in quarter turns.
+	pending: Move[] = [];
 	blocks: MoveBlock[] = [];
 	// Moves before the wall can't be combined with new ones (in the history,
 	// and in the moves waiting to be animated, so the two stay in step).
@@ -77,9 +101,9 @@ export class MoveList {
 		this.clear();
 	}
 
-	clear() {
-		this.moves = '';
-		this.pending = '';
+	clear(): void {
+		this.moves = [];
+		this.pending = [];
 		this.wall = 0;
 		this.pendingWall = 0;
 		this.blocks = [];
@@ -92,49 +116,39 @@ export class MoveList {
 		return this.wall;
 	}
 
-	// The next move to animate.
-	nextMove(): string | undefined {
-		if (this.pending === '') {
-			return undefined;
+	// The next move (a quarter turn) to animate.
+	nextMove(): Move | undefined {
+		const move = this.pending.shift();
+		if (move !== undefined) {
+			this.pendingWall = Math.max(0, this.pendingWall - 1);
 		}
-		const ch = this.pending.charAt(0);
-		this.pending = this.pending.substring(1);
-		this.pendingWall = Math.max(0, this.pendingWall - 1);
-		return ch;
+		return move;
 	}
 
-	// Add moves (standard notation).  During the 2026 refactoring this is
-	// the way in for code that no longer uses the 2003 notation.
-	add(moves: Move[]) {
-		this.appendMoves(to2003Notation(moves));
+	// Add moves (standard notation).
+	add(moves: Move[]): void {
+		const quarters = quarterTurns(moves);
+		this.pending = MoveList.appendAfter(this.pending, this.pendingWall, quarters);
+		this.moves = MoveList.appendAfter(this.moves, this.wall, quarters);
 	}
 
-	appendMoves(add: string) {
-		this.pending =
-			this.pending.substring(0, this.pendingWall) +
-			MoveList.appendMoves(this.pending.substring(this.pendingWall), add);
-		this.moves =
-			this.moves.substring(0, this.wall) +
-			MoveList.appendMoves(this.moves.substring(this.wall), add);
-	}
-
-	static appendMoves(st: string, add: string): string {
-		for (const ch of add) {
-			if (ch === ' ') {
+	// Append quarter turns to the moves after the wall: a move that undoes
+	// the last one cancels it, and three of the same quarter turn become one
+	// the other way.
+	private static appendAfter(list: Move[], wall: number, add: Move[]): Move[] {
+		const st = list.slice(wall);
+		for (const move of add) {
+			if (isInverse(st[st.length - 1], move)) {
+				st.pop();
 				continue;
 			}
-			const last = st.charAt(st.length - 1);
-			if (st !== '' && ch === changeCase(last)) {
-				st = st.substring(0, st.length - 1);
+			if (sameMove(st[st.length - 1], move) && sameMove(st[st.length - 2], move)) {
+				st.splice(-2, 2, { name: move.name, turns: inverseTurns(move.turns) });
 				continue;
 			}
-			if (st.length >= 2 && st.substring(st.length - 2) === ch + ch) {
-				st = st.substring(0, st.length - 2) + changeCase(ch);
-				continue;
-			}
-			st += ch;
+			st.push({ ...move });
 		}
-		return st;
+		return [...list.slice(0, wall), ...st];
 	}
 
 	openBlock(name: string): MoveBlock {
@@ -174,6 +188,12 @@ export class MoveList {
 		return next;
 	}
 
+	// The moves between two positions, combining quarter turns into half
+	// turns.
+	movesBetween(start: number, end: number): Move[] {
+		return simplifyMoves(this.moves.slice(start, end));
+	}
+
 	// The history as nested blocks, as the 2003 simulator displayed it.
 	history(): HistoryBlock[] {
 		// Leave out empty blocks.
@@ -196,7 +216,7 @@ export class MoveList {
 			if (pos < end) {
 				items.push(this.movesBetween(pos, end));
 			}
-			return { name: block.name, items, ...countTurns(this.moves.substring(block.start, end)) };
+			return { name: block.name, items, ...countTurns(this.moves.slice(block.start, end)) };
 		};
 
 		const result: HistoryBlock[] = [];
@@ -204,9 +224,5 @@ export class MoveList {
 			result.push(build(blocks[next++]));
 		}
 		return result;
-	}
-
-	private movesBetween(start: number, end: number): Move[] {
-		return simplifyMoves(from2003Notation(this.moves.substring(start, end)));
 	}
 }
