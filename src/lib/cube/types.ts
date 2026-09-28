@@ -91,6 +91,14 @@ export interface Move {
 	turns: Turns;
 }
 
+// One move written in standard notation, e.g. "R", "U2", or "F'".
+export type MoveToken = `${MoveName}${'' | '2' | "'"}`;
+
+// A sequence of moves written in standard notation, e.g. "R U R' U'"
+// (parse it with parseMoves).  Any string is allowed here, so prefer
+// Move[] for values that have been parsed.
+export type Notation = string;
+
 export const FACE_LETTERS: readonly FaceLetter[] = ['u', 'd', 'f', 'b', 'l', 'r'];
 
 const EDGES = ['uf', 'ur', 'ub', 'ul', 'df', 'dr', 'db', 'dl', 'fr', 'fl', 'br', 'bl'] as const;
