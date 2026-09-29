@@ -101,7 +101,6 @@ solution singmaster for cube3 {
 
   stage "Orient D Edges" goal face U [_u_ / uuu / _u_] {   # the new top
     search y* as t {
-      case face U [_u_  / uuu   / _u_ ] -> do t
       case face U [_!u_ / uuu   / _!u_] -> do t flipLeft
       case face U [_!u_ / !uuu  / _u_ ] -> do t flipFront          # front and right
       case face U [_!u_ / !uu!u / _!u_] -> do t flipLeft y2 flipFront
@@ -113,7 +112,7 @@ solution singmaster for cube3 {
       case cube has (uf ur ub)      -> do t cycleEdges
       case cube has (uf ub ur)      -> do t cycleEdgesBack
       case cube has (uf ur) (ul ub) -> do t swapEdgePairs
-      case solved(uf ur ub ul)      -> do t
+      case solved(uf ur ub ul)      -> do t       # only the top turned
     }
   }
 

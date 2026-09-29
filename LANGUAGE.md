@@ -339,7 +339,12 @@ stage "Middle" goal solved(fr fl br bl) { … }
 - **Checked at the end:** when the stage finishes, its goal must hold, or
   the solve stops with an error naming the stage.
 - **Skipped when already true:** a stage whose goal holds at the start
-  makes no moves (this replaces `skip if`).
+  is bypassed: its body doesn't run and it makes no moves (this replaces
+  `skip if`). The trace still lists the stage, marked as already done
+  ("Bottom Corners: already solved"), so every stage shows up in the
+  solution. So a stage needn't test for its own goal: a case that matches
+  only when the goal already holds is dead code, and the compiler can warn
+  about one it can see (e.g. a case whose pattern is the goal itself).
 - **Goals persist for the rest of the solution:** once a stage's goal is
   reached, it must hold at the end of **every** later stage, nested or not,
   until the solve is done. The runtime checks all of them at each stage's

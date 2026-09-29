@@ -125,7 +125,7 @@ solution basic for cube3 {
   stage "Top Edges" goal solved(uf ur ub ul) {
     until goal max 3 {
       search y* U* as t {
-        case solved(uf ur ub ul)                          -> do t
+        case solved(uf ur ub ul)                          -> do t           # only the top turned
         case uf is /ul/ and ul is /uf/ and solved(ub ur)  -> do t swapEdges   # front and left swapped
         case uf is /ub/ and ub is /uf/ and solved(ul ur)  -> do t swapEdges   # across: swap, try again
       }
