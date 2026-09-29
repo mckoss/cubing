@@ -88,6 +88,8 @@ test('plays a let, and moves typed in', async ({ page }) => {
 	await expect(page.getByTestId('lets')).toContainText("R U R' U'");
 	// Run plays the last let; six times is nothing: back to solved.
 	await expect(history(page)).toContainText('six');
+	// The history counts the moves; the status line doesn't.
+	await expect(page.getByTestId('status')).toHaveText('Played six.');
 	await expect(page.getByTestId('solved')).toBeVisible({ timeout: 30_000 });
 	await page.getByRole('button', { name: 'Play sexy' }).click();
 	await expect(history(page)).toContainText("R U R' U'");

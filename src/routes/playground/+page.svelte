@@ -117,7 +117,8 @@
 
 	function play(entry: LetEntry): void {
 		run(playEvents(entry.name, entry.moves, entry.loc));
-		status = `Played ${entry.name}: ${entry.moves.length} moves.`;
+		// The history counts the moves (as it does for main).
+		status = `Played ${entry.name}.`;
 	}
 
 	// Run the program's algo main on the cube (solved, or as it is), showing
@@ -129,7 +130,6 @@
 		const recorder = new RunRecorder(player.moveList);
 		try {
 			runProgram(evaluated, start, recorder.listener);
-			// The history counts the moves.
 			status = 'Ran main.';
 		} catch (e) {
 			error = showError(e);

@@ -192,6 +192,26 @@ describe('runProgram', () => {
 		]);
 	});
 
+	it("reports runtime errors in the program itself as the program's, with imports", () => {
+		const library = (name: string): string | undefined =>
+			({ lib: 'let fine = R\n\nalgo broken {\n  do fine\n  do missing\n}' })[name];
+		const error = errorOf(() =>
+			runProgram(
+				evaluateProgram('import lib\nalgo main {\n  do lib.fine\n  do nope\n}', library),
+				new Permutation()
+			)
+		);
+		expect([error.module, error.where, error.message]).toEqual([null, '4:6', 'Unknown name: nope']);
+	});
+
+	it('runs a main whose lets use a fun defined in it', () => {
+		const source =
+			'algo main {\n  fun twice(seq: Moves): Moves { return seq seq }\n  let a = twice(R)\n  do a\n}';
+		const { lets } = evaluateProgram(source, find);
+		expect(lets.map((entry) => formatTaggedMoves(entry.moves))).toEqual(['R R']);
+		expect(formatMoves(record(source, new Permutation()).moves)).toBe('R R');
+	});
+
 	it('stops a program that runs forever', () => {
 		const error = errorOf(() =>
 			runProgram(
