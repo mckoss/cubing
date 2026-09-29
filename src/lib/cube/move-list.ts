@@ -4,7 +4,9 @@
 // simulator kept them (one letter per quarter turn), so positions in the
 // history count quarter turns.  Moves are recorded in named blocks
 // ("Scramble", "Solve U Edges", ...), and a move that undoes the one before
-// it cancels out, but never across the start of a block.
+// it cancels out, but never across the start of a block.  Notes (a line of
+// text, such as a Rubikon trace) can be recorded between moves; they're
+// walls too.
 
 import { inverseTurns, isRotation, simplifyMoves, type Move, type MoveName } from './moves';
 
@@ -63,23 +65,43 @@ export class MoveBlock {
 	// Positions in the history, in quarter turns.
 	readonly start: number;
 	end: number | undefined;
+	// When the block was opened and closed, among the blocks and notes (see
+	// MoveList.mark), to tell which block a note is in.
+	readonly opened: number;
+	closed: number | undefined;
 
 	constructor(
 		private list: MoveList,
 		readonly name: string
 	) {
-		this.start = list.setWall();
+		({ at: this.start, seq: this.opened } = list.mark());
 	}
 
 	close(): void {
-		this.end = this.list.setWall();
+		({ at: this.end, seq: this.closed } = this.list.mark());
 	}
 }
 
+// What a note is: a Rubikon trace() line, or an algo skipped because its
+// goal already held.
+export type NoteKind = 'trace' | 'bypass';
+
+export interface HistoryNote {
+	note: NoteKind;
+	text: string;
+}
+
+interface Note extends HistoryNote {
+	at: number;
+	seq: number;
+}
+
+export type HistoryItem = Move[] | HistoryBlock | HistoryNote;
+
 export interface HistoryBlock {
 	name: string;
-	// Moves and nested blocks, in order.
-	items: (Move[] | HistoryBlock)[];
+	// Moves, notes, and nested blocks, in order.
+	items: HistoryItem[];
 	// Face turns (a half turn counts as one; turning the whole cube doesn't
 	// count), and quarter turns.
 	faceTurns: number;
@@ -92,10 +114,13 @@ export class MoveList {
 	// Moves waiting to be animated, in quarter turns.
 	pending: Move[] = [];
 	blocks: MoveBlock[] = [];
+	notes: Note[] = [];
 	// Moves before the wall can't be combined with new ones (in the history,
 	// and in the moves waiting to be animated, so the two stay in step).
 	private wall = 0;
 	private pendingWall = 0;
+	// Counts blocks opened and closed, and notes, in order.
+	private seq = 0;
 
 	constructor() {
 		this.clear();
@@ -107,6 +132,8 @@ export class MoveList {
 		this.wall = 0;
 		this.pendingWall = 0;
 		this.blocks = [];
+		this.notes = [];
+		this.seq = 0;
 		this.openBlock('Move History');
 	}
 
@@ -114,6 +141,17 @@ export class MoveList {
 		this.wall = this.moves.length;
 		this.pendingWall = this.pending.length;
 		return this.wall;
+	}
+
+	// Set a wall, and number the block boundary or note being made there.
+	mark(): { at: number; seq: number } {
+		return { at: this.setWall(), seq: this.seq++ };
+	}
+
+	// Add a line of text between the moves before and after it, in the
+	// innermost open block.
+	note(note: NoteKind, text: string): void {
+		this.notes.push({ note, text, ...this.mark() });
 	}
 
 	// The next move (a quarter turn) to animate.
@@ -194,40 +232,65 @@ export class MoveList {
 		return simplifyMoves(this.moves.slice(start, end));
 	}
 
-	// The history as nested blocks, as the 2003 simulator displayed it.
+	// The history as nested blocks, as the 2003 simulator displayed it,
+	// with the notes in the blocks that were open when they were made.
 	history(): HistoryBlock[] {
-		// Leave out empty blocks.
-		const blocks = this.blocks.filter((b) => b.start !== (b.end ?? this.moves.length));
-		let next = 0;
-
-		const build = (block: MoveBlock): HistoryBlock => {
-			const end = block.end ?? this.moves.length;
-			const items: (Move[] | HistoryBlock)[] = [];
-			let pos = block.start;
-			for (
-				let child = blocks[next];
-				child !== undefined && child.start < end;
-				child = blocks[next]
-			) {
-				next++;
-				if (child.start > pos) {
-					items.push(this.movesBetween(pos, child.start));
-				}
-				const built = build(child);
-				items.push(built);
-				pos = child.end ?? this.moves.length;
+		// Block boundaries and notes, in the order they were made.
+		type Mark =
+			| { seq: number; at: number; open: MoveBlock }
+			| { seq: number; at: number; close: MoveBlock }
+			| { seq: number; at: number; note: Note };
+		const marks: Mark[] = [];
+		for (const block of this.blocks) {
+			marks.push({ seq: block.opened, at: block.start, open: block });
+			if (block.end !== undefined && block.closed !== undefined) {
+				marks.push({ seq: block.closed, at: block.end, close: block });
 			}
-			if (pos < end) {
-				items.push(this.movesBetween(pos, end));
-			}
-			return { name: block.name, items, ...countTurns(this.moves.slice(block.start, end)) };
-		};
+		}
+		for (const note of this.notes) {
+			marks.push({ seq: note.seq, at: note.at, note });
+		}
+		marks.sort((a, b) => a.seq - b.seq);
 
 		const result: HistoryBlock[] = [];
-		for (let block = blocks[next]; block !== undefined; block = blocks[next]) {
-			next++;
-			result.push(build(block));
+		const open: { block: MoveBlock; items: HistoryItem[] }[] = [];
+		let pos = 0;
+
+		// Moves up to a position go in the innermost open block.
+		const flush = (to: number): void => {
+			if (to > pos) {
+				open[open.length - 1]?.items.push(this.movesBetween(pos, to));
+				pos = to;
+			}
+		};
+
+		// Close the innermost open block.  Empty blocks are left out.
+		const pop = (): void => {
+			const top = open.pop();
+			if (top === undefined || top.items.length === 0) return;
+			const { block, items } = top;
+			const end = block.end ?? this.moves.length;
+			const built = { name: block.name, items, ...countTurns(this.moves.slice(block.start, end)) };
+			(open[open.length - 1]?.items ?? result).push(built);
+		};
+
+		for (const mark of marks) {
+			flush(mark.at);
+			if ('open' in mark) {
+				open.push({ block: mark.open, items: [] });
+			} else if ('close' in mark) {
+				// Closing a block closes any still open inside it.
+				if (open.some((o) => o.block === mark.close)) {
+					while (open[open.length - 1]?.block !== mark.close) pop();
+					pop();
+				}
+			} else {
+				const { note, text } = mark.note;
+				open[open.length - 1]?.items.push({ note, text });
+			}
 		}
+		flush(this.moves.length);
+		while (open.length > 0) pop();
 		return result;
 	}
 }
