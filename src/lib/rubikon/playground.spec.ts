@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { MoveList, type HistoryItem } from '../cube/move-list';
+import { applyMoves, formatMoves, parseMoves, permutationOf } from '../cube/moves';
+import { Permutation } from '../cube/permutation';
 import { formatTaggedMoves } from './moves';
-import { ProgramError, evaluateMovesLine, evaluateProgram, playEvents } from './playground';
+import {
+	ProgramError,
+	evaluateMovesLine,
+	evaluateProgram,
+	playEvents,
+	runProgram
+} from './playground';
+import { RunRecorder } from './record';
 
 const read = (name: string): string =>
 	readFileSync(new URL(`../../../rubikon/${name}.rbk`, import.meta.url), 'utf8');
@@ -35,8 +45,8 @@ describe('evaluateProgram', () => {
 		expect(insertRight?.path).toEqual(['main']);
 		expect(formatTaggedMoves(insertRight?.moves ?? [])).toBe("U R U' R' U' F' U F");
 		// Imports and algo lets can be played.
-		expect(scope.has('sune')).toBe(true);
-		expect(scope.has('topCross')).toBe(true);
+		expect(scope.get('sune')?.kind).toBe('moves');
+		expect(scope.get('topCross')?.kind).toBe('moves');
 	});
 
 	it('imports from the library', () => {
@@ -95,5 +105,106 @@ describe('playEvents', () => {
 		const events = playEvents('sexy', evaluateMovesLine("R U'", new Map()), loc);
 		expect(events.map((e) => e.kind)).toEqual(['enter', 'move', 'move', 'leave']);
 		expect(events[0]).toMatchObject({ kind: 'enter', name: 'sexy' });
+	});
+});
+
+// The notes and block titles in a history, in order, nested blocks
+// flattened: "{The Basic Modern Solution", "[trace: …]", …
+function outline(items: HistoryItem[]): string[] {
+	return items.flatMap((item) =>
+		Array.isArray(item)
+			? []
+			: 'note' in item
+				? [`[${item.note}: ${item.text}]`]
+				: [`{${item.name}`, ...outline(item.items)]
+	);
+}
+
+// Run a program's main on a cube, recording it; returns the move list.
+function record(source: string, state: Permutation, library = find): MoveList {
+	const list = new MoveList();
+	const recorder = new RunRecorder(list);
+	try {
+		runProgram(evaluateProgram(source, library), state, recorder.listener);
+	} finally {
+		recorder.finish();
+	}
+	return list;
+}
+
+describe('runProgram', () => {
+	it('says whether a program has a main', () => {
+		expect(evaluateProgram(read('basic'), find).hasMain).toBe(true);
+		expect(evaluateProgram(read('cfop'), find).hasMain).toBe(false);
+	});
+
+	it('runs main with the library modules it imports, solving a scramble', () => {
+		const start = permutationOf(parseMoves("R U F' D2 L B' U2 R' F D' L2 B"));
+		const list = record(read('basic'), start);
+		expect(applyMoves(start, list.moves).isIdentity()).toBe(true);
+		const [root] = list.history();
+		expect(outline(root?.items ?? [])).toEqual(
+			expect.arrayContaining(['{The Basic Modern Solution', '{First Face', '{Bottom Edges'])
+		);
+	});
+
+	it('runs a program that imports basic, which imports cfop', () => {
+		const start = permutationOf(parseMoves("F R' U2 B D"));
+		const list = record('import basic\nalgo main { do basic.main }', start);
+		expect(applyMoves(start, list.moves).isIdentity()).toBe(true);
+	});
+
+	it('brings trace lines and bypassed algos to the history', () => {
+		const list = record(
+			'algo main {\n  trace("start {cube}")\n  algo "Nothing to do" goal solved(df) { do R }\n  do U\n}',
+			new Permutation()
+		);
+		expect(outline(list.history()[0]?.items ?? [])).toEqual([
+			'{main',
+			'[trace: start ()]',
+			'[bypass: Nothing to do: skipped, its goal already holds]'
+		]);
+		expect(formatMoves(list.moves)).toBe('U');
+	});
+
+	it('reports runtime errors at their line and column', () => {
+		const error = errorOf(() =>
+			runProgram(evaluateProgram('algo main {\n  do R\n  do nope\n}', find), new Permutation())
+		);
+		expect([error.message, error.where]).toEqual(['Unknown name: nope', '3:6']);
+		const noMain = errorOf(() => runProgram(evaluateProgram('let t = R', find), new Permutation()));
+		expect(noMain.message).toBe('No algo main to run');
+	});
+
+	it('reports runtime errors in an imported module, in that module', () => {
+		const library = (name: string): string | undefined =>
+			({ lib: 'let fine = R\n\nalgo broken {\n  do fine\n  do missing\n}' })[name];
+		const error = errorOf(() =>
+			runProgram(
+				evaluateProgram('import lib\nalgo main { do lib.broken }', library),
+				new Permutation()
+			)
+		);
+		expect([error.module, error.where, error.message]).toEqual([
+			'lib',
+			'lib 5:6',
+			'Unknown name: missing'
+		]);
+	});
+
+	it('stops a program that runs forever', () => {
+		const error = errorOf(() =>
+			runProgram(
+				evaluateProgram(
+					'algo main {\n  until not solved(cube) max 1000000000 { do M2 M2 }\n}',
+					find
+				),
+				new Permutation(),
+				undefined,
+				{ maxMoves: 100, maxSteps: 1000 }
+			)
+		);
+		expect(error.message).toMatch(/Too many/);
+		expect(error.line).not.toBeNull();
 	});
 });

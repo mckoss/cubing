@@ -3,7 +3,7 @@
 // CubePlayer.svelte shows it; MoveHistory.svelte shows its history.
 
 import { Permutation } from './permutation';
-import { applyMoves } from './moves';
+import { applyMoves, randomScramble } from './moves';
 import type { Cube, Move, MoveName } from './types';
 import { MoveList } from './move-list';
 import { CubeView, type Speed } from './view';
@@ -146,6 +146,12 @@ export class Player {
 			...(this.turning ? [this.turning] : []),
 			...this.moveList.pending
 		]);
+	}
+
+	// Start the history again with a random scramble.
+	scramble(): void {
+		this.clearHistory();
+		this.play(randomScramble(), 'Scramble');
 	}
 
 	move(name: MoveName, counterclockwise: boolean): void {

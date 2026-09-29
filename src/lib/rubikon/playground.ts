@@ -1,19 +1,15 @@
-// What the playground runs, until the runtime (PLAN.md, milestone 4) can
-// run a whole program: a program's lets, and a line of moves played
-// against them.  Each run is a list of events (events.ts), the same stream
-// the runtime will produce, so the page records it with record.ts.
+// What the playground runs: a program's `algo main` (with the runtime,
+// runtime.ts), or one of its lets, or a line of moves played against them.
+// Each run is a stream of events (events.ts), which the page records with
+// record.ts.
 
+import type { Permutation } from '../cube/permutation';
 import type { Algo, Expr, Loc, RubikonFile } from './ast';
-import type { RunEvent } from './events';
-import {
-	RubikonEvalError,
-	evaluateLets,
-	evaluateModule,
-	evaluateMoves,
-	type Env,
-	type Moves
-} from './moves';
-import { RubikonSyntaxError, parseRubikon } from './parse';
+import type { RunEvent, RunListener } from './events';
+import { evaluateMoves, type Moves } from './moves';
+import { parseRubikon } from './parse';
+import { evaluateLets, evaluateModule, runMain, type RunOptions, type RunResult } from './runtime';
+import { RubikonError, type Env, type Value } from './values';
 
 // An error to show, with where it is: in the program (module null), or in
 // a module it imports.
@@ -35,16 +31,33 @@ export class ProgramError extends Error {
 	}
 }
 
-// A parse or evaluation error as a ProgramError; other errors are bugs, and
-// are thrown again.
-function programError(e: unknown, module: string | null): ProgramError {
+// Which module each node's loc belongs to (the imported modules' locs;
+// the program's own aren't in it).
+type Owners = WeakMap<Loc, string>;
+
+// A Rubikon error (parse, evaluation, or runtime) as a ProgramError, in
+// the module whose syntax tree has its loc, else in `module`.  Other errors
+// are bugs, and are thrown again.
+function programError(e: unknown, module: string | null, owners?: Owners): ProgramError {
 	if (e instanceof ProgramError) return e;
-	if (e instanceof RubikonSyntaxError || e instanceof RubikonEvalError) {
+	if (e instanceof RubikonError) {
 		// The message starts with the place; it's shown separately.
 		const message = e.message.replace(/^\d+:\d+: /, '');
-		return new ProgramError(message, e.line, e.column, module);
+		return new ProgramError(message, e.line, e.column, owners?.get(e.loc) ?? module);
 	}
 	throw e;
+}
+
+// Note every loc in a syntax tree as the module's.
+function claimLocs(value: unknown, module: string, owners: Owners): void {
+	if (Array.isArray(value)) {
+		for (const item of value) claimLocs(item, module, owners);
+	} else if (typeof value === 'object' && value !== null) {
+		for (const [key, v] of Object.entries(value)) {
+			if (key === 'loc' && isLoc(v)) owners.set(v, module);
+			else claimLocs(v, module, owners);
+		}
+	}
 }
 
 export interface LetEntry {
@@ -57,17 +70,22 @@ export interface LetEntry {
 
 export interface EvaluatedProgram {
 	file: RubikonFile;
-	// Every let that could be evaluated, in the order written.
+	// The library programs it imports (directly or not), parsed, by name.
+	modules: ReadonlyMap<string, RubikonFile>;
+	// Whether it has an `algo main` to run.
+	hasMain: boolean;
+	// Every let of moves that could be evaluated, in the order written.
 	lets: LetEntry[];
 	// The names a line of moves can use: imports, the top-level lets, and
 	// the lets inside algos (first one wins if two algos use a name).
-	scope: Map<string, Moves>;
+	scope: Env;
+	owners: Owners;
 }
 
 // Finds an imported module's source by its name (from the library).
 export type FindModule = (name: string) => string | undefined;
 
-// Parse and evaluate a program's lets, with its imports.
+// Parse and evaluate a program's definitions, with its imports.
 export function evaluateProgram(source: string, findModule: FindModule): EvaluatedProgram {
 	let file: RubikonFile;
 	try {
@@ -75,64 +93,74 @@ export function evaluateProgram(source: string, findModule: FindModule): Evaluat
 	} catch (e) {
 		throw programError(e, null);
 	}
-	const modules = importsOf(file, findModule, [], new Map());
+	const modules = new Map<string, RubikonFile>();
+	const owners: Owners = new WeakMap();
+	const imported = importsOf(file, findModule, [], new Map(), modules, owners);
 	let module;
 	try {
-		module = evaluateModule(file, modules);
+		module = evaluateModule(file, imported);
 	} catch (e) {
-		throw programError(e, null);
+		throw programError(e, null, owners);
 	}
 	const lets: LetEntry[] = [];
 	for (const def of file.defs) {
 		if (def.kind === 'let') {
-			const moves = module.scope.get(def.name);
-			if (moves !== undefined) lets.push({ name: def.name, path: [], loc: def.loc, moves });
+			const value = module.scope.get(def.name);
+			if (value?.kind === 'moves') {
+				lets.push({ name: def.name, path: [], loc: def.loc, moves: value.moves });
+			}
 		}
 	}
-	const scope = new Map(module.scope);
 	for (const def of file.defs) {
-		if (def.kind === 'algo') algoLets(def, module.scope, [], lets);
+		if (def.kind === 'algo') algoLets(def, module.scope, [], lets, owners);
 	}
+	const algoScope = new Map<string, Value>();
 	for (const entry of lets) {
-		if (!scope.has(entry.name)) scope.set(entry.name, entry.moves);
+		if (!algoScope.has(entry.name))
+			algoScope.set(entry.name, { kind: 'moves', moves: entry.moves });
 	}
-	return { file, lets, scope };
+	const scope: Env = { get: (key) => module.scope.get(key) ?? algoScope.get(key) };
+	const main = module.scope.own().get('main');
+	return { file, modules, hasMain: main?.kind === 'algo', lets, scope, owners };
 }
 
-// The lets in an algo's body and the algos nested in it.  An algo with
-// parameters is skipped: its lets may use them, which only the runtime
+// The lets of moves in an algo's body and the algos nested in it.  An algo
+// with parameters is skipped: its lets may use them, which only a run
 // knows.
-function algoLets(algo: Algo, env: Env, path: string[], out: LetEntry[]): void {
+function algoLets(algo: Algo, env: Env, path: string[], out: LetEntry[], owners: Owners): void {
 	if (algo.params !== null && algo.params.length > 0) return;
 	const inside = [...path, algo.name ?? algo.description ?? 'algo'];
-	let scope: Map<string, Moves>;
+	let scope;
 	try {
 		scope = evaluateLets(algo.body, env);
 	} catch (e) {
-		throw programError(e, null);
+		throw programError(e, null, owners);
 	}
 	for (const statement of algo.body) {
 		if (statement.kind === 'let') {
-			const moves = scope.get(statement.name);
-			if (moves !== undefined) {
-				out.push({ name: statement.name, path: inside, loc: statement.loc, moves });
+			const value = scope.get(statement.name);
+			if (value?.kind === 'moves') {
+				out.push({ name: statement.name, path: inside, loc: statement.loc, moves: value.moves });
 			}
 		}
 	}
 	for (const statement of algo.body) {
-		if (statement.kind === 'algo') algoLets(statement, scope, inside, out);
+		if (statement.kind === 'algo') algoLets(statement, scope, inside, out, owners);
 	}
 }
 
-// Each imported module's exports, by name, evaluated from the library.
-// `importing` is the chain of modules being imported, to catch a circle.
+// Each imported module's exports, by name, evaluated from the library;
+// each module is parsed once, into `parsed`.  `importing` is the chain of
+// modules being imported, to catch a circle.
 function importsOf(
 	file: RubikonFile,
 	findModule: FindModule,
 	importing: string[],
-	cache: Map<string, Env>
-): Map<string, Env> {
-	const modules = new Map<string, Env>();
+	cache: Map<string, ReadonlyMap<string, Value>>,
+	parsed: Map<string, RubikonFile>,
+	owners: Owners
+): Map<string, ReadonlyMap<string, Value>> {
+	const modules = new Map<string, ReadonlyMap<string, Value>>();
 	for (const imp of file.imports) {
 		const where = importing.at(-1) ?? null;
 		if (importing.includes(imp.module)) {
@@ -155,23 +183,45 @@ function importsOf(
 				);
 			}
 			const chain = [...importing, imp.module];
-			let imported: RubikonFile;
+			let module: RubikonFile;
 			try {
-				imported = parseRubikon(source);
+				module = parseRubikon(source);
 			} catch (e) {
 				throw programError(e, imp.module);
 			}
-			const inner = importsOf(imported, findModule, chain, cache);
+			claimLocs(module, imp.module, owners);
+			parsed.set(imp.module, module);
+			const inner = importsOf(module, findModule, chain, cache, parsed, owners);
 			try {
-				exports = evaluateModule(imported, inner).exports;
+				exports = evaluateModule(module, inner).exports;
 			} catch (e) {
-				throw programError(e, imp.module);
+				throw programError(e, imp.module, owners);
 			}
 			cache.set(imp.module, exports);
 		}
 		modules.set(imp.module, exports);
 	}
 	return modules;
+}
+
+// A run's limits in the page, so a program that loops can't hang it.  (A
+// run is synchronous; the Basic method on a scramble takes a moment.)
+export const RUN_LIMITS: Required<RunOptions> = { maxMoves: 10_000, maxSteps: 1_000_000 };
+
+// Run a program's `algo main` on a cube, with the modules it imports.
+// Events go to the listener as they happen (so a run that fails part way
+// still shows what it did).
+export function runProgram(
+	program: EvaluatedProgram,
+	state: Permutation,
+	listener?: RunListener,
+	options: RunOptions = RUN_LIMITS
+): RunResult {
+	try {
+		return runMain(program.file, state, listener, program.modules, options);
+	} catch (e) {
+		throw programError(e, null, program.owners);
+	}
 }
 
 // The words put before a line of moves to parse it as a let.

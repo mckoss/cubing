@@ -1,39 +1,19 @@
 // Turn a run's events (events.ts) into the move history and the moves the
 // cube plays: the one place that reads the stream, whether it comes from
-// the runtime or, for now, from the playground playing moves.
+// the runtime running a program or from the playground playing a let.
 //
 // An algo becomes a block in the history (MoveList.openBlock), a bypassed
 // algo and a trace() line become notes between the moves, and a move is
 // added to the list (from which the page animates it).  A whole cube turn
 // that isn't shown changes the frame: it isn't played, and the moves after
-// it are renamed to the faces they turn on the cube as it's held.
+// it are renamed to the faces they turn on the cube as it's held (as the
+// runtime's physicalMoves() does).
 
 import { Permutation } from '../cube/permutation';
-import { MOVE_NAMES, isRotation, perm } from '../cube/moves';
-import type { Move, Turns } from '../cube/types';
+import { isRotation, perm } from '../cube/moves';
 import type { MoveBlock, MoveList } from '../cube/move-list';
 import type { RunEvent } from './events';
-
-const TURNS: readonly Turns[] = [1, 2, 3];
-
-// Every move, with how it moves the places (whole cube turns included).
-const MOVES: readonly { move: Move; perm: Permutation }[] = MOVE_NAMES.flatMap((name) =>
-	TURNS.map((turns) => ({ move: { name, turns }, perm: perm(name, turns) }))
-);
-
-// The move that turns the same layer as `move` does in a frame (the whole
-// cube turns made so far, not shown, as one permutation).
-export function renameMove(move: Move, frame: Permutation): Move {
-	if (frame.isIdentity()) {
-		return move;
-	}
-	const target = frame.compose(perm(move.name, move.turns)).compose(frame.inverse());
-	const found = MOVES.find((m) => m.perm.equals(target));
-	if (found === undefined) {
-		throw new Error(`No move turns like ${move.name} in this frame`);
-	}
-	return found.move;
-}
+import { renameMove } from './runtime';
 
 // A block's title: the algo's description, else its name.
 function title(event: { name: string | null; description: string | null }): string {
@@ -58,7 +38,7 @@ export class RunRecorder {
 				if (isRotation(move.name) && !visible) {
 					this.frame = this.frame.compose(perm(move.name, move.turns));
 				} else {
-					this.moveList.add([renameMove(move, this.frame)]);
+					this.moveList.add([renameMove(this.frame, move)]);
 				}
 				break;
 			}

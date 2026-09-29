@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { formatMoves, permutationOf } from '$lib/cube/moves';
-	import type { Face, Move, MoveName } from '$lib/cube/types';
+	import type { Move, MoveName } from '$lib/cube/types';
 	import { CATALOG, type CatalogEntry } from '$lib/cube/catalog';
 	import { SOLVERS } from '$lib/cube/solvers';
 	import { SEQUENCES } from '$lib/cube/beginner';
@@ -14,28 +14,6 @@
 	const player = new Player();
 	let solverName: string = $state(SOLVERS[0]?.name ?? '');
 	let error: string = $state('');
-
-	// Scramble with 25 random face turns, never the same face twice in a row
-	// (as in 2003).
-	function scramble(): void {
-		const faces: readonly Face[] = ['L', 'R', 'D', 'U', 'B', 'F'];
-		const moves: Move[] = [];
-		let last = -1;
-		for (let i = 0; i < 25; i++) {
-			let face: number;
-			do {
-				face = Math.floor(Math.random() * 6);
-			} while (face === last);
-			last = face;
-			const name = faces[face];
-			if (name === undefined) {
-				throw new Error(`No face ${face}`);
-			}
-			moves.push({ name, turns: Math.random() < 0.5 ? 3 : 1 });
-		}
-		player.clearHistory();
-		player.play(moves, 'Scramble');
-	}
 
 	function solve(): void {
 		const solver = SOLVERS.find((s) => s.name === solverName);
@@ -189,7 +167,9 @@
 	<section class="stage">
 		<CubePlayer {player} stepLabel="Step through solutions">
 			{#snippet actions()}
-				<button class="primary" onclick={scramble} data-testid="scramble">Scramble</button>
+				<button class="primary" onclick={(): void => player.scramble()} data-testid="scramble"
+					>Scramble</button
+				>
 				<div class="solve">
 					<button class="primary" onclick={solve} data-testid="solve">Solve</button>
 					{#if SOLVERS.length > 1}

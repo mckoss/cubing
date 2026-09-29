@@ -11,9 +11,12 @@ import {
 import { Permutation } from '../cube/permutation';
 import type { Move } from '../cube/types';
 import type { RunEvent } from './events';
-import { RunRecorder, applyEvents, renameMove } from './record';
+import { RunRecorder, applyEvents } from './record';
+import { parseRubikon } from './parse';
+import { physicalMoves, renameMove, runMain } from './runtime';
 
 const loc = { line: 1, column: 1 };
+const SOLVED = new Permutation();
 
 // Move events for moves in standard notation; whole cube turns are frame
 // changes unless shown.
@@ -150,6 +153,30 @@ describe('applyEvents', () => {
 		expect(formatMoves(list.moves)).toBe("z' B");
 	});
 
+	it("agrees with the runtime's physicalMoves on a run", () => {
+		for (const [body, shown] of [
+			['do y show(x) R', "z' B"],
+			["do y R U y' F show(z) R", 'B U F z R'],
+			["do x show(y) z R U show(z')", null]
+		] as const) {
+			const list = new MoveList();
+			const recorder = new RunRecorder(list);
+			const { events, state } = runMain(
+				parseRubikon(`algo main { ${body} }`),
+				SOLVED,
+				recorder.listener
+			);
+			recorder.finish();
+			expect(formatMoves(list.moves), body).toBe(formatMoves(physicalMoves(events)));
+			if (shown !== null) expect(formatMoves(list.moves), body).toBe(shown);
+			// The cube as shown, turned by the frame changes, is the cube as held.
+			const hidden = events.flatMap((e) =>
+				e.kind === 'move' && !e.move.visible ? [e.move.move] : []
+			);
+			expect(permutationOf([...list.moves, ...hidden]).equals(state), body).toBe(true);
+		}
+	});
+
 	it('records a stream one event at a time', () => {
 		const list = new MoveList();
 		const recorder = new RunRecorder(list);
@@ -159,11 +186,11 @@ describe('applyEvents', () => {
 	});
 });
 
-describe('renameMove', () => {
+describe("the runtime's renameMove", () => {
 	const R: Move = { name: 'R', turns: 1 };
 
 	it('leaves moves alone in the starting frame', () => {
-		expect(renameMove(R, new Permutation())).toEqual(R);
+		expect(renameMove(new Permutation(), R)).toEqual(R);
 	});
 
 	it('renames every move in every frame to the move it is', () => {
@@ -177,7 +204,7 @@ describe('renameMove', () => {
 						const move: Move = { name, turns: t };
 						// Turning the cube, making the move, and turning it back.
 						const expected = permutationOf([a, b, move, ...invertMoves([a, b])]);
-						expect(permutationOf([renameMove(move, frame)]).equals(expected)).toBe(true);
+						expect(permutationOf([renameMove(frame, move)]).equals(expected)).toBe(true);
 					}
 				}
 			}

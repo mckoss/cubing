@@ -24,11 +24,61 @@ test('starts with the examples, and runs one', async ({ page }) => {
 	await expect(programName(page)).toHaveValue('basic');
 	await expect(page.getByTestId('position')).toHaveText('1 of 2');
 	await page.getByTestId('run').click();
-	// basic's last let (twistCorner), inside its main algo.
 	await expect(page.getByTestId('lets')).toContainText(/main ›\s*insertRight/);
+	await expect(page.getByTestId('run-what')).toHaveValue('main');
+	// Run from solved: basic's main has nothing to do.
+	await expect(history(page)).toContainText(
+		'The Basic Modern Solution: skipped, its goal already holds'
+	);
+	await expect(page.getByTestId('status')).toHaveText('Ran main.');
+	await expect(page.getByTestId('solved')).toBeVisible();
+
+	// Or play one of its lets.
+	await page.getByTestId('run-what').selectOption({ label: 'the last let' });
+	await page.getByTestId('run').click();
 	await expect(history(page)).toContainText('twistCorner');
 	await expect(page.getByTestId('solved')).toBeHidden();
 	expect(errors).toEqual([]);
+});
+
+test("solves a scramble with basic's main", async ({ page }) => {
+	// Playing a solution takes a while, even at the fastest speed.
+	test.setTimeout(180_000);
+	const errors = await open(page);
+	await page.getByTestId('scramble').click();
+	await expect(history(page)).toContainText('Scramble');
+	await expect(page.getByLabel('From solved')).not.toBeChecked();
+	await expect(page.getByTestId('solved')).toBeHidden();
+	await page.getByTestId('run').click();
+	await expect(page.getByTestId('status')).toHaveText('Ran main.');
+	for (const stage of ['The Basic Modern Solution', 'First Face', 'Bottom Edges', 'Middle']) {
+		await expect(history(page).locator(`[data-block="${stage}"]`).first()).toBeVisible();
+	}
+	await expect(page.getByTestId('solved')).toBeVisible({ timeout: 170_000 });
+	expect(errors).toEqual([]);
+});
+
+test('shows trace lines, unless Show trace is off', async ({ page }) => {
+	await open(page);
+	await page.getByTestId('new').click();
+	await source(page).fill('algo main {\n  do R\n  trace("after R: {cube}")\n  do R\'\n}\n');
+	await page.getByTestId('run').click();
+	const line = history(page).locator('[data-note="trace"]');
+	await expect(line).toHaveText(/^after R: \(/);
+	await page.getByTestId('show-trace').uncheck();
+	await expect(line).toBeHidden();
+	await page.getByTestId('show-trace').check();
+	await expect(line).toBeVisible();
+});
+
+test('shows runtime errors at their line', async ({ page }) => {
+	await open(page);
+	await page.getByTestId('new').click();
+	await source(page).fill('algo main {\n  do R\n  do nope\n}\n');
+	await page.getByTestId('run').click();
+	await expect(page.getByTestId('error')).toContainText('3:6');
+	await expect(page.getByTestId('error')).toContainText('Unknown name: nope');
+	await expect(page.locator('.error-line')).toHaveText('3');
 });
 
 test('plays a let, and moves typed in', async ({ page }) => {

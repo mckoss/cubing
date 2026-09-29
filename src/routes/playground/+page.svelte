@@ -5,8 +5,9 @@
 	import { Player } from '$lib/cube/player.svelte';
 	import CubePlayer from '$lib/components/CubePlayer.svelte';
 	import MoveHistory from '$lib/components/MoveHistory.svelte';
+	import { Permutation } from '$lib/cube/permutation';
 	import { formatTaggedMoves } from '$lib/rubikon/moves';
-	import { applyEvents } from '$lib/rubikon/record';
+	import { RunRecorder, applyEvents } from '$lib/rubikon/record';
 	import type { RunEvent } from '$lib/rubikon/events';
 	import { Library, browserStorage, type Program } from '$lib/rubikon/library';
 	import {
@@ -14,6 +15,7 @@
 		evaluateMovesLine,
 		evaluateProgram,
 		playEvents,
+		runProgram,
 		type EvaluatedProgram,
 		type LetEntry
 	} from '$lib/rubikon/playground';
@@ -56,8 +58,17 @@
 	let program: EvaluatedProgram | undefined = $state();
 	let error: ProgramError | undefined = $state();
 	let status = $state('');
-	// Which let Run plays (by index in program.lets); -1 for the last.
-	let runLet = $state(-1);
+	// What Run runs, as chosen: 'main', 'last' (the last let), or a let's
+	// index in program.lets; null for the default (main if there is one).
+	let runChoice: string | null = $state(null);
+	const runWhat = $derived.by((): string => {
+		if (program === undefined) return runChoice ?? 'main';
+		const valid =
+			runChoice === 'last' ||
+			(runChoice === 'main' && program.hasMain) ||
+			(runChoice !== null && runChoice !== 'main' && Number(runChoice) < program.lets.length);
+		return valid && runChoice !== null ? runChoice : program.hasMain ? 'main' : 'last';
+	});
 	let playLine = $state('');
 	let playError: ProgramError | undefined = $state();
 	let showTrace = $state(true);
@@ -86,7 +97,6 @@
 		try {
 			program = evaluateProgram(source, findModule);
 			error = undefined;
-			if (runLet >= program.lets.length) runLet = -1;
 		} catch (e) {
 			program = undefined;
 			error = showError(e);
@@ -95,7 +105,7 @@
 		return program;
 	}
 
-	// Record a run's events on the player, and play them.
+	// Record events on the player, and play them.
 	function run(events: RunEvent[]): void {
 		if (fromSolved) {
 			player.reset();
@@ -110,18 +120,48 @@
 		status = `Played ${entry.name}: ${entry.moves.length} moves.`;
 	}
 
-	// Run: evaluate the program, and play the chosen let (the last one, if
-	// none was chosen).  With the runtime, this will run the program.
-	function runProgram(): void {
+	// Run the program's algo main on the cube (solved, or as it is), showing
+	// the moves, algos, and trace lines in the history as they come.
+	function runMain(evaluated: EvaluatedProgram): void {
+		const start = fromSolved ? new Permutation() : player.finalPerm();
+		if (fromSolved) player.reset();
+		player.startSolution();
+		const recorder = new RunRecorder(player.moveList);
+		try {
+			runProgram(evaluated, start, recorder.listener);
+			// The history counts the moves.
+			status = 'Ran main.';
+		} catch (e) {
+			error = showError(e);
+			void jumpTo(error);
+		} finally {
+			recorder.finish();
+			player.changed();
+		}
+	}
+
+	// Run: evaluate the program, and run its main, or play the chosen let
+	// (the last one, if none was chosen).
+	function runChosen(): void {
 		status = '';
 		const evaluated = evaluate();
 		if (evaluated === undefined) return;
-		const entry = evaluated.lets.at(runLet);
+		if (runWhat === 'main' && evaluated.hasMain) {
+			runMain(evaluated);
+			return;
+		}
+		const entry = evaluated.lets.at(runWhat === 'last' ? -1 : Number(runWhat));
 		if (entry === undefined) {
-			status = 'Nothing to play yet: add a let, or type moves below.';
+			status = 'Nothing to run yet: add an algo main or a let, or type moves below.';
 			return;
 		}
 		play(entry);
+	}
+
+	// A scramble to solve: Run then plays on from it.
+	function scramble(): void {
+		fromSolved = false;
+		player.scramble();
 	}
 
 	function playTyped(ev: SubmitEvent): void {
@@ -174,7 +214,7 @@
 	function editorKeydown(ev: KeyboardEvent): void {
 		if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) {
 			ev.preventDefault();
-			runProgram();
+			runChosen();
 		} else if (ev.key === 'Tab' && !ev.shiftKey) {
 			// Indent with two spaces, as the examples do.
 			ev.preventDefault();
@@ -209,7 +249,7 @@
 		library.lastOpen = p.name;
 		program = undefined;
 		error = undefined;
-		runLet = -1;
+		runChoice = null;
 		status = '';
 		changedLibrary();
 		void tick().then(() => {
@@ -257,7 +297,7 @@
 		source = '';
 		program = undefined;
 		error = undefined;
-		runLet = -1;
+		runChoice = null;
 		status = '';
 		library.lastOpen = null;
 		changedLibrary();
@@ -385,12 +425,20 @@
 		</div>
 
 		<div class="run-bar">
-			<button class="primary" onclick={runProgram} title="Ctrl+Enter" data-testid="run">Run</button>
-			{#if program && program.lets.length > 0}
-				<select bind:value={runLet} aria-label="Let to play" data-testid="run-let">
-					<option value={-1}>the last let</option>
+			<button class="primary" onclick={runChosen} title="Ctrl+Enter" data-testid="run">Run</button>
+			{#if program && (program.hasMain || program.lets.length > 0)}
+				<select
+					value={runWhat}
+					onchange={(ev): void => {
+						runChoice = ev.currentTarget.value;
+					}}
+					aria-label="What to run"
+					data-testid="run-what"
+				>
+					{#if program.hasMain}<option value="main">main</option>{/if}
+					{#if program.lets.length > 0}<option value="last">the last let</option>{/if}
 					{#each program.lets as entry, i (i)}
-						<option value={i}>{letLabel(entry)}</option>
+						<option value={String(i)}>{letLabel(entry)}</option>
 					{/each}
 				</select>
 			{/if}
@@ -435,14 +483,18 @@
 			</details>
 		{/if}
 		<p class="note">
-			Run evaluates the program and plays a let; the rest (<code>do</code>, algos, searches) waits
-			for the runtime. Imports come from the library, by name.
+			Run runs the program's <code>algo main</code> on the cube (or plays a let). Imports come from the
+			library, by name.
 		</p>
 	</section>
 
 	<div class="side">
 		<section class="player">
-			<CubePlayer {player} />
+			<CubePlayer {player}>
+				{#snippet actions()}
+					<button onclick={scramble} data-testid="scramble">Scramble</button>
+				{/snippet}
+			</CubePlayer>
 			<form class="play-line" onsubmit={playTyped}>
 				<input
 					bind:this={playInput}

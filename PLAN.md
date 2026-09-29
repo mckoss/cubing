@@ -120,8 +120,9 @@ place, inside the current algo's block between its moves; with no page,
 the stream prints to the console. The page and the playground get a
 "Show trace" checkbox that shows or hides these lines (the moves and algo
 blocks stay). The format string rule (`{expr}`, `{{`, `}}`), the printer
-for every value kind, and the event are done; the page, the checkbox, and
-printing to the console are left.
+for every value kind, and the event are done, and the playground shows
+the lines with its "Show trace" checkbox; the main page and printing to
+the console are left.
 
 ### 5. Modules
 
@@ -152,27 +153,36 @@ as soon as milestone 2 works (play a `let` or `do`), and grows with the
 runtime.
 
 Done (`src/routes/playground/`): the page, with the player and history
-shared with the main page (`Player`, `CubePlayer`, `MoveHistory`); a
-code window with line numbers; parse and evaluation errors shown with
-line:column, the line marked and selected; Run evaluates the lets (top
-level and inside algos without parameters) and plays one; a line of
-moves (`sune`, `F<R U>`) plays against the program's names; imports come
-from the library by name. The library (`library.ts`) saves, lists, pages
-through, opens, renames, and deletes programs, remembers the last one
-open, starts with copies of `cfop.rbk` and `basic.rbk`, and works in
-memory when local storage is unavailable. Every run goes through one
-adapter (`record.ts`): run events become history blocks (enter/leave),
-notes (bypass, trace, with a "Show trace" checkbox), and moves, with
-whole cube turns that aren't shown renamed away. Decided: a history
-block's title is the algo's description if it has one, else its name
-(`algo lift(p) "Lift a piece to the top"` shows as "Lift a piece to the
-top").
+shared with the main page (`Player`, `CubePlayer`, `MoveHistory`, and a
+Scramble button from `Player.scramble()`); a code window with line
+numbers; parse, evaluation, and runtime errors shown with line:column,
+the line marked and selected, and an error in an imported module shown
+with the module's name (`cfop 12:5`: each error keeps its syntax tree
+`loc`, which says whose tree it's in). Run runs `algo main` with the
+runtime (`runMain`, with each imported library program parsed and passed
+as a module) on a solved cube ("From solved") or the cube as it is
+(Scramble unchecks "From solved"); the history shows the algo blocks,
+bypass notes, and trace lines as the run makes them, through
+`RunRecorder`. A run is limited (10,000 moves, 1,000,000 steps) so a
+program that loops stops with an error; it's synchronous (`basic` on a
+scramble takes a moment). Without a main, or when chosen from the Run
+menu (main, the last let, or any let), Run plays a let: the lets are
+evaluated with the runtime's `evaluateModule`/`evaluateLets` (top level
+and inside algos without parameters). A line of moves (`sune`, `F<R U>`)
+plays against the program's names; imports come from the library by
+name. The library (`library.ts`) saves, lists, pages through, opens,
+renames, and deletes programs, remembers the last one open, starts with
+copies of `cfop.rbk` and `basic.rbk`, and works in memory when local
+storage is unavailable. Every run goes through one adapter
+(`record.ts`): run events become history blocks (enter/leave), notes
+(bypass, trace, with a "Show trace" checkbox), and moves, with whole cube
+turns that aren't shown renamed away by the runtime's `renameMove` (so
+the history agrees with `physicalMoves()`). Decided: a history block's
+title is the algo's description if it has one, else its name (`algo
+lift(p) "Lift a piece to the top"` shows as "Lift a piece to the top").
 
-Waits on the runtime (4): running `do`, algos, `main`, and whole methods;
-runtime errors; trace and bypass lines from a real run (the adapter and
-history already show them). When it lands, Run hands the runtime's
-events to `applyEvents` (or its listener to `RunRecorder`) instead of
-`playEvents`.
+Left: running a long program without blocking the page (in a worker, or
+in slices).
 
 ### 9. On the page
 
