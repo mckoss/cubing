@@ -151,9 +151,9 @@ algo main "The Basic Modern Solution" goal solved(cube) {
   algo "Twist Corners" goal solved(urf ufl ulb ubr) {
     each U {                                        # turn the top, not the cube
       match {
-        case rfu is /u__/ -> do twistCorner         # top color facing right
-        case fur is /u__/ -> do twistCornerBack     # top color facing front
-        case urf is /u__/ -> ()                     # already right
+        case urf is /u__/ -> ()                     # top color up: already right
+        case urf is /_u_/ -> do twistCorner         # top color facing right
+        case urf is /__u/ -> do twistCornerBack     # top color facing front
       }
     }
   }
