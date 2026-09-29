@@ -1,6 +1,7 @@
 # basic.rbk — the Basic Modern Solution, as in Mike's notes, in Rubikon.
 #
-# A draft for review: nothing runs this yet (see LANGUAGE.md).
+# The runtime runs it (src/lib/rubikon/runtime.ts): runtime.spec.ts solves
+# random scrambles with it.
 #
 # All names are relative to the cube as it's held.  Whole cube turns
 # (x y z) only change the frame: they make no moves of their own, and the
