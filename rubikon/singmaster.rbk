@@ -6,7 +6,7 @@
 # A search that finds nothing is an error unless `else` names another
 # search to try.
 
-solution singmaster for cube3 {
+algo singmaster "David Singmaster's solution (1981)" goal solved(cube) {
 
   # The sequences, written to show how they work: w<p> is w p w' (p set up
   # with w, then put back), commutator(a, b) is a b a' b'.  Under each is
@@ -53,7 +53,7 @@ solution singmaster for cube3 {
   let twistCornerBack   = twistCorner'
                         # (urf)- (df dl rf) (dfr)- (dlf)+ (dbl)+
 
-  stage "Solve U Edges" goal solved(uf ur ub ul) {
+  algo "Solve U Edges" goal solved(uf ur ub ul) {
     each y {
       search D* as t {
         case df is /uf/ -> do t F2
@@ -68,7 +68,7 @@ solution singmaster for cube3 {
     }
   }
 
-  stage "Solve U Corners" goal solved(urf ufl ulb ubr) {
+  algo "Solve U Corners" goal solved(urf ufl ulb ubr) {
     each y {
       search D* as t {
         case rdf is /urf/ -> do t commutator(D, F)
@@ -84,7 +84,7 @@ solution singmaster for cube3 {
 
   show z2                                    # turn the cube over (a visible turn)
 
-  stage "Solve Middle Edges" goal solved(fr fl br bl) {
+  algo "Solve Middle Edges" goal solved(fr fl br bl) {
     each y {
       if not solved(rf) {                    # stuck in the middle: lift it out
         search E* as t {
@@ -99,7 +99,7 @@ solution singmaster for cube3 {
     }
   }
 
-  stage "Orient D Edges" goal face U [_u_ / uuu / _u_] {   # the new top
+  algo "Orient D Edges" goal face U [_u_ / uuu / _u_] {   # the new top
     search y* as t {
       case face U [_!u_ / uuu   / _!u_] -> do t flipLeft
       case face U [_!u_ / !uuu  / _u_ ] -> do t flipFront          # front and right
@@ -107,7 +107,7 @@ solution singmaster for cube3 {
     }
   }
 
-  stage "Place D Edges" goal solved(uf ur ub ul) {
+  algo "Place D Edges" goal solved(uf ur ub ul) {
     search y* U* as t {                      # cycles of the top edges
       case cube has (uf ur ub)      -> do t cycleEdges
       case cube has (uf ub ur)      -> do t cycleEdgesBack
@@ -116,7 +116,7 @@ solution singmaster for cube3 {
     }
   }
 
-  stage "Place D Corners" goal placed(urf ufl ulb ubr) {
+  algo "Place D Corners" goal placed(urf ufl ulb ubr) {
     search y* as t {                         # positions only, twists ignored
       case positions(cube) has (ufl ubr ulb)       -> do t cycleCorners
       case positions(cube) has (ufl ulb ubr)       -> do t cycleCornersBack
@@ -125,7 +125,7 @@ solution singmaster for cube3 {
     }
   }
 
-  stage "Orient D Corners" goal solved(cube) {
+  algo "Orient D Corners" goal solved(urf ufl ulb ubr) {
     each U {
       match {
         case rfu is /u__/ -> do twistCornerBack      # counterclockwise
