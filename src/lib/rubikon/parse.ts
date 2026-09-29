@@ -4,17 +4,13 @@ import { generate, type Parser } from 'peggy';
 import grammar from './rubikon.peggy?raw';
 import { isLocation } from '../cube/types';
 import type { RubikonFile } from './ast';
+import { RubikonError } from './values';
 
 // A parse error, with where it happened (1-based).
-export class RubikonSyntaxError extends Error {
-	readonly line: number;
-	readonly column: number;
-
+export class RubikonSyntaxError extends RubikonError {
 	constructor(message: string, line: number, column: number) {
-		super(`${line}:${column}: ${message}`);
+		super(message, { line, column });
 		this.name = 'RubikonSyntaxError';
-		this.line = line;
-		this.column = column;
 	}
 }
 
