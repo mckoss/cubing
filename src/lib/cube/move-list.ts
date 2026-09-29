@@ -46,8 +46,9 @@ function isInverse(a: Move | undefined, b: Move): boolean {
 
 // Count the turns in a sequence of quarter turns, as the 2003 simulator
 // did: a repeated quarter turn is a half turn, and counts once.  Turning the
-// whole cube (x, y, z) doesn't count.
-function countTurns(moves: Move[]): { faceTurns: number; quarterTurns: number } {
+// whole cube (x, y, z) doesn't count.  (The history's counts; Cube Racing
+// counts a solve's moves the same way.)
+export function countTurns(moves: Move[]): { faceTurns: number; quarterTurns: number } {
 	let faceTurns = 0;
 	let quarterTurns = 0;
 	let prev: Move | undefined;

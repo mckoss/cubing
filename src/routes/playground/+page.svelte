@@ -22,6 +22,22 @@
 		type EvaluatedProgram,
 		type LetEntry
 	} from '$lib/rubikon/playground';
+	import {
+		RACE_COUNT,
+		TYPESCRIPT_SOLVERS,
+		isTypeScriptSolverId,
+		raceScramble,
+		type RaceResult,
+		type Racer
+	} from '$lib/rubikon/racing';
+	import {
+		BUILT_IN_RACES,
+		RaceLog,
+		canLoadCubes,
+		raceKey,
+		startRace,
+		type RunningRace
+	} from '$lib/rubikon/races';
 	import cfopSource from '../../../rubikon/cfop.rbk?raw';
 	import basicSource from '../../../rubikon/basic.rbk?raw';
 
@@ -361,6 +377,171 @@
 	function pathLabel(path: string[]): string {
 		return path.join(' › ');
 	}
+
+	// --- Cube Racing ---
+
+	// How many cubes a race has: 500, or fewer with `?raceCount=20` in the
+	// URL (for tests).
+	const raceCount = ((): number => {
+		const asked = Number(new URLSearchParams(window.location.search).get('raceCount'));
+		return Number.isInteger(asked) && asked > 0 ? Math.min(asked, RACE_COUNT) : RACE_COUNT;
+	})();
+
+	const raceLog = new RaceLog(browserStorage());
+	let myRaces: RaceResult[] = $state(raceLog.list());
+	const allRaces = $derived([...myRaces, ...BUILT_IN_RACES]);
+
+	// Whether a program has an algo main to race (a quick look: a race of
+	// one that doesn't says so).
+	function hasMain(text: string): boolean {
+		return /^\s*algo\s+main\b/m.test(text);
+	}
+
+	// What can race: the program being edited ('open'), the library's other
+	// programs with an algo main ('lib:' and a name), and the TypeScript
+	// solvers ('ts:' and an id).
+	const raceOptions = $derived.by((): { value: string; label: string }[] => {
+		const options: { value: string; label: string }[] = [];
+		if (hasMain(source)) {
+			options.push({
+				value: 'open',
+				label: `${name.trim() || 'untitled'}${dirty ? ' (edited)' : ''}`
+			});
+		}
+		for (const p of programs) {
+			if (p.name !== openName && p.name !== name.trim() && hasMain(p.source)) {
+				options.push({ value: `lib:${p.name}`, label: p.name });
+			}
+		}
+		for (const [id, solver] of Object.entries(TYPESCRIPT_SOLVERS)) {
+			options.push({ value: `ts:${id}`, label: solver.name });
+		}
+		return options;
+	});
+	let raceChoice: string | null = $state(null);
+	const raceWhat = $derived(
+		raceOptions.some((o) => o.value === raceChoice)
+			? (raceChoice ?? 'open')
+			: (raceOptions[0]?.value ?? 'ts:basic')
+	);
+	let raceSeed: number | null = $state(1);
+	let racing: RunningRace | null = $state(null);
+	let raceProgress = $state(0);
+	let raceStatus = $state('');
+	let raceError = $state('');
+	// The row whose histogram is shown, and the row whose unsolved cubes
+	// are listed (by raceKey).
+	let selectedRace: string | null = $state(null);
+	let failuresOf: string | null = $state(null);
+	const shownRace = $derived(allRaces.find((r) => raceKey(r) === selectedRace) ?? allRaces[0]);
+	const failedRace = $derived(allRaces.find((r) => raceKey(r) === failuresOf));
+
+	let playerSection: HTMLElement;
+
+	// The racer for the choice: a program with the library's programs to
+	// import (the one being edited as it is now, as Run imports it).
+	function racerFor(choice: string): Racer | undefined {
+		const modules: Record<string, string> = {};
+		for (const p of library.list()) modules[p.name] = p.source;
+		if (name.trim() !== '') modules[name.trim()] = source;
+		if (choice === 'open') {
+			return { kind: 'rubikon', name: name.trim() || 'untitled', source, modules };
+		}
+		if (choice.startsWith('lib:')) {
+			const saved = library.get(choice.slice(4));
+			return saved && { kind: 'rubikon', name: saved.name, source: saved.source, modules };
+		}
+		const id = choice.slice(3);
+		return isTypeScriptSolverId(id) ? { kind: 'typescript', id } : undefined;
+	}
+
+	function startRacing(): void {
+		raceStatus = '';
+		raceError = '';
+		const seed = raceSeed;
+		if (seed === null || !Number.isInteger(seed) || Math.abs(seed) > 2 ** 31 - 1) {
+			raceError = 'The seed is a whole number (up to 2147483647).';
+			return;
+		}
+		const racer = racerFor(raceWhat);
+		if (racer === undefined) return;
+		raceProgress = 0;
+		racing = startRace(
+			{ racer, seed, count: raceCount },
+			{
+				progress: (done): void => {
+					raceProgress = done;
+				},
+				done: (result): void => {
+					racing = null;
+					raceLog.add(result);
+					myRaces = raceLog.list();
+					selectedRace = raceKey(result);
+					const unsolved = result.stats.count - result.stats.solved;
+					raceStatus =
+						`Raced ${result.name}: ${result.stats.solved} of ${result.stats.count} solved` +
+						(unsolved > 0 ? `, ${unsolved} not.` : '.') +
+						(raceLog.persisted ? '' : " (This browser won't keep it.)");
+				},
+				error: (message): void => {
+					racing = null;
+					raceError = message;
+				}
+			}
+		);
+	}
+
+	function cancelRace(): void {
+		racing?.cancel();
+		racing = null;
+		raceStatus = 'Race cancelled.';
+	}
+
+	function clearRaces(): void {
+		if (!confirm('Clear your race results?')) return;
+		raceLog.clear();
+		myRaces = raceLog.list();
+		raceStatus = 'Cleared your race results.';
+	}
+
+	// Put a race's cube on the page, scrambled, to run the program on it.
+	function loadCube(result: RaceResult, index: number): void {
+		player.reset();
+		player.play(raceScramble(result.seed, index), `Race cube ${index + 1} (seed ${result.seed})`);
+		status = `Loaded cube ${index + 1} of seed ${result.seed}: Run to watch ${result.name} on it.`;
+		playerSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
+
+	function seconds(ms: number): string {
+		return ms < 10_000 ? `${(ms / 1000).toFixed(1)} s` : `${Math.round(ms / 1000)} s`;
+	}
+
+	function day(iso: string): string {
+		return new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' });
+	}
+
+	function stat(value: number | null): string {
+		return value === null ? '–' : String(value);
+	}
+
+	// A histogram's bars: how many cubes took each few moves (bins of
+	// `width`), from the fewest moves to the most.
+	function bars(histogram: [number, number][], width = 5): { from: number; cubes: number }[] {
+		if (histogram.length === 0) return [];
+		const first = Math.floor((histogram[0]?.[0] ?? 0) / width) * width;
+		const last = histogram.at(-1)?.[0] ?? first;
+		const result = Array.from({ length: Math.floor((last - first) / width) + 1 }, (_, i) => ({
+			from: first + i * width,
+			cubes: 0
+		}));
+		for (const [moves, cubes] of histogram) {
+			const bar = result[Math.floor((moves - first) / width)];
+			if (bar !== undefined) bar.cubes += cubes;
+		}
+		return result;
+	}
+	const shownBars = $derived(bars(shownRace?.stats.histogram ?? []));
+	const tallest = $derived(Math.max(1, ...shownBars.map((b) => b.cubes)));
 </script>
 
 <svelte:window onkeydown={(ev): void => player.keydown(ev)} />
@@ -472,12 +653,13 @@
 			Run (under the cube, or Ctrl+Enter here) runs the program's <code>algo main</code> on the cube
 			as it is, or another algo without parameters by itself, or plays a named sequence (a
 			<code>let</code>), as chosen next to it; Reset first to start from solved. Imports come from
-			the library, by name.
+			the library, by name. Cube Racing, at the bottom of the page, races a program's
+			<code>algo main</code> on 500 scrambles and keeps its numbers.
 		</p>
 	</section>
 
 	<div class="side">
-		<section class="player">
+		<section class="player" bind:this={playerSection}>
 			<CubePlayer {player}>
 				{#snippet actions()}
 					<button onclick={(): void => player.scramble()} data-testid="scramble">Scramble</button>
@@ -590,6 +772,183 @@
 					</li>
 				{/each}
 			</ul>
+		{/if}
+	</section>
+
+	<section class="card racing" data-testid="racing">
+		<h2>Cube Racing</h2>
+		<p class="note">
+			A race runs a solver on {raceCount} random scrambles made from a seed (the same seed makes the same
+			cubes), and counts the moves each solve takes, as the move history does. Your results are kept in
+			this browser; the built-in ones come with the site.
+		</p>
+		<div class="race-bar">
+			<select
+				value={raceWhat}
+				onchange={(ev): void => {
+					raceChoice = ev.currentTarget.value;
+				}}
+				aria-label="What to race"
+				disabled={racing !== null}
+				data-testid="race-what"
+			>
+				{#each raceOptions as option (option.value)}
+					<option value={option.value}>{option.label}</option>
+				{/each}
+			</select>
+			<label class="seed"
+				>Seed <input
+					type="number"
+					step="1"
+					bind:value={raceSeed}
+					disabled={racing !== null}
+					data-testid="race-seed"
+				/></label
+			>
+			{#if racing}
+				<button onclick={cancelRace} data-testid="race-cancel">Cancel</button>
+				<span class="race-progress" data-testid="race-progress">
+					<progress max={raceCount} value={raceProgress}></progress>
+					{raceProgress} of {raceCount}
+				</span>
+			{:else}
+				<button class="primary" onclick={startRacing} data-testid="race">Race</button>
+			{/if}
+			{#if myRaces.length > 0}
+				<button
+					class="clear"
+					onclick={clearRaces}
+					disabled={racing !== null}
+					data-testid="race-clear">Clear mine</button
+				>
+			{/if}
+		</div>
+		{#if raceError}<p class="error" role="alert" data-testid="race-error">{raceError}</p>{/if}
+		{#if raceStatus}<p class="status" data-testid="race-status">{raceStatus}</p>{/if}
+
+		<div class="race-table">
+			<table data-testid="race-results">
+				<thead>
+					<tr>
+						<th scope="col">Solver</th>
+						<th scope="col">Seed</th>
+						<th scope="col" class="num">Best</th>
+						<th scope="col" class="num">Worst</th>
+						<th scope="col" class="num">Average</th>
+						<th scope="col" class="num">Median</th>
+						<th scope="col" class="num">Unsolved</th>
+						<th scope="col" class="num">Time</th>
+						<th scope="col">Date</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each allRaces as result (raceKey(result))}
+						{@const key = raceKey(result)}
+						{@const unsolved = result.stats.count - result.stats.solved}
+						<tr
+							class:selected={shownRace !== undefined && raceKey(shownRace) === key}
+							data-testid={result.builtIn ? 'race-built-in' : 'race-mine'}
+						>
+							<th scope="row">
+								<button
+									class="race-name"
+									onclick={(): void => {
+										selectedRace = key;
+									}}
+									title="Show its histogram">{result.name}</button
+								>
+								{#if result.builtIn}<span class="tag">built-in</span>{/if}
+								{#if result.hash !== null}<span class="hash" title="Hash of the program's source"
+										>#{result.hash}</span
+									>{/if}
+								{#if result.stats.count !== RACE_COUNT}<span class="hash"
+										>{result.stats.count} cubes</span
+									>{/if}
+							</th>
+							<td>{result.seed}</td>
+							<td class="num">{stat(result.stats.best)}</td>
+							<td class="num">{stat(result.stats.worst)}</td>
+							<td class="num">{stat(result.stats.mean)}</td>
+							<td class="num">{stat(result.stats.median)}</td>
+							<td class="num">
+								{#if unsolved === 0}
+									<span class="none">0</span>
+								{:else}
+									<button
+										class="unsolved"
+										aria-expanded={failuresOf === key}
+										title="List the cubes it didn't solve"
+										onclick={(): void => {
+											failuresOf = failuresOf === key ? null : key;
+										}}
+										data-testid="race-unsolved">{unsolved} {failuresOf === key ? '▾' : '▸'}</button
+									>
+								{/if}
+							</td>
+							<td class="num">{seconds(result.ms)}</td>
+							<td class="date">{day(result.date)}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+
+		{#if failedRace !== undefined}
+			<div class="failures" data-testid="race-failures">
+				<h3>
+					<span>Unsolved: <strong>{failedRace.name}</strong>, seed {failedRace.seed}</span>
+					<button
+						class="close"
+						onclick={(): void => {
+							failuresOf = null;
+						}}
+						aria-label="Close the list">×</button
+					>
+				</h3>
+				<ul>
+					{#each failedRace.stats.failures as failure (failure.index)}
+						<li>
+							<span class="cube">Cube {failure.index + 1}</span>
+							<span class="reason">{failure.reason}</span>
+							{#if canLoadCubes(failedRace)}
+								<button
+									onclick={(): void => loadCube(failedRace, failure.index)}
+									data-testid="load-cube">Load cube</button
+								>
+							{/if}
+						</li>
+					{/each}
+				</ul>
+			</div>
+		{/if}
+
+		{#if shownRace !== undefined}
+			<figure class="histogram" data-testid="race-histogram">
+				<figcaption>
+					Moves to solve: <strong>{shownRace.name}</strong>, seed {shownRace.seed}
+					{#if shownRace.stats.meanQuarterTurns !== null}
+						<span class="meta">· average {shownRace.stats.meanQuarterTurns} quarter turns</span>
+					{/if}
+				</figcaption>
+				{#if shownBars.length === 0}
+					<p class="note">No cube was solved.</p>
+				{:else}
+					<div class="bars" role="img" aria-label="Histogram of moves to solve">
+						{#each shownBars as bar (bar.from)}
+							<div
+								class="bar"
+								style:height="{(bar.cubes / tallest) * 100}%"
+								title="{bar.from}–{bar.from + 4} moves: {bar.cubes} cubes"
+							></div>
+						{/each}
+					</div>
+					<div class="axis">
+						<span>{shownBars[0]?.from}</span>
+						<span>moves</span>
+						<span>{(shownBars.at(-1)?.from ?? 0) + 4}</span>
+					</div>
+				{/if}
+			</figure>
 		{/if}
 	</section>
 </div>
@@ -909,6 +1268,248 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.35rem;
+	}
+
+	.racing {
+		margin-top: 1.25rem;
+	}
+
+	.race-bar {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		align-items: center;
+		margin: 0.75rem 0;
+	}
+
+	.race-bar select {
+		max-width: 100%;
+		min-width: 0;
+	}
+
+	.seed {
+		display: inline-flex;
+		gap: 0.35rem;
+		align-items: center;
+		color: var(--muted);
+		font-size: 0.9rem;
+	}
+
+	.seed input {
+		width: 7rem;
+	}
+
+	.race-progress {
+		display: inline-flex;
+		gap: 0.5rem;
+		align-items: center;
+		color: var(--muted);
+		font-size: 0.85rem;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.race-bar .clear {
+		margin-left: auto;
+		padding: 0.3rem 0.7rem;
+		font-size: 0.85rem;
+	}
+
+	/* The table scrolls sideways in its own box on a narrow screen. */
+	.race-table {
+		overflow-x: auto;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+	}
+
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.875rem;
+	}
+
+	th,
+	td {
+		padding: 0.4rem 0.6rem;
+		text-align: left;
+		white-space: nowrap;
+		border-bottom: 1px solid var(--border);
+	}
+
+	thead th {
+		color: var(--muted);
+		font-weight: 600;
+		font-size: 0.8rem;
+		background: var(--bg);
+	}
+
+	tbody th {
+		font-weight: 400;
+	}
+
+	/* The solver stays in view while the numbers scroll sideways. */
+	th:first-child {
+		position: sticky;
+		left: 0;
+		background: var(--surface);
+	}
+
+	thead th:first-child {
+		background: var(--bg);
+	}
+
+	tr.selected > * {
+		background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+	}
+
+	@media (max-width: 600px) {
+		tbody th {
+			min-width: 8rem;
+			max-width: 10rem;
+			white-space: normal;
+		}
+	}
+
+	.num {
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.race-name {
+		padding: 0;
+		border: none;
+		background: none;
+		color: var(--accent);
+		font-weight: 600;
+		text-align: left;
+	}
+
+	.race-name:hover {
+		text-decoration: underline;
+	}
+
+	.tag,
+	.hash {
+		margin-left: 0.4rem;
+		color: var(--muted);
+		font-size: 0.75rem;
+	}
+
+	.tag {
+		padding: 0.05rem 0.4rem;
+		border: 1px solid var(--border);
+		border-radius: 999px;
+	}
+
+	.hash {
+		font-family: var(--mono);
+	}
+
+	.none,
+	.date {
+		color: var(--muted);
+	}
+
+	.unsolved {
+		padding: 0.05rem 0.5rem;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: #fff;
+		background: #c62828;
+		border-color: #c62828;
+	}
+
+	.failures {
+		margin-top: 0.75rem;
+		padding: 0.5rem 0.75rem;
+		border: 1px solid #c62828;
+		border-radius: 8px;
+	}
+
+	h3 {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+		margin: 0 0 0.25rem;
+		font-size: 0.9rem;
+		font-weight: 400;
+	}
+
+	.failures .close {
+		margin-left: auto;
+		padding: 0 0.5rem;
+		font-size: 1rem;
+		line-height: 1.4;
+	}
+
+	.failures ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		max-height: 16rem;
+		overflow-y: auto;
+	}
+
+	.failures li {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 0.75rem;
+		align-items: center;
+		padding: 0.25rem 0;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.failures li:last-child {
+		border-bottom: none;
+	}
+
+	.failures .cube {
+		font-weight: 600;
+	}
+
+	.failures .reason {
+		flex: 1 1 12rem;
+		color: #c62828;
+		font-family: var(--mono);
+		font-size: 0.8rem;
+		overflow-wrap: anywhere;
+	}
+
+	.failures button {
+		padding: 0.15rem 0.6rem;
+		font-size: 0.8rem;
+	}
+
+	.histogram {
+		margin: 1rem 0 0;
+	}
+
+	figcaption {
+		font-size: 0.9rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.bars {
+		display: flex;
+		align-items: flex-end;
+		gap: 2px;
+		height: 7rem;
+		padding-bottom: 1px;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.bar {
+		flex: 1 1 0;
+		min-width: 0;
+		background: var(--accent);
+		border-radius: 2px 2px 0 0;
+	}
+
+	.axis {
+		display: flex;
+		justify-content: space-between;
+		color: var(--muted);
+		font-size: 0.75rem;
+		font-variant-numeric: tabular-nums;
 	}
 
 	footer {

@@ -263,3 +263,80 @@ test('the simulator links to the playground', async ({ page }) => {
 	await page.getByRole('link', { name: 'Rubikon Playground' }).click();
 	await expect(page).toHaveTitle('Rubikon Playground');
 });
+
+test('Cube Racing shows the built-in benchmarks', async ({ page }) => {
+	const errors = await open(page);
+	const racing = page.getByTestId('racing');
+	await expect(racing.getByRole('heading', { name: 'Cube Racing' })).toBeVisible();
+	const builtIn = racing.getByTestId('race-built-in');
+	await expect(builtIn).toHaveCount(3);
+	await expect(builtIn.nth(0)).toContainText('basic');
+	await expect(builtIn.nth(1)).toContainText('Basic Modern Solution (TypeScript)');
+	await expect(builtIn.nth(2)).toContainText('Singmaster (TypeScript)');
+	await expect(racing.getByTestId('race-histogram')).toContainText('basic');
+	// The open program races by default.
+	await expect(racing.getByTestId('race-what')).toHaveValue('open');
+	expect(errors).toEqual([]);
+});
+
+test('races a program, and shows the cubes it could not solve', async ({ page }) => {
+	const errors: string[] = [];
+	page.on('pageerror', (e): void => {
+		errors.push(e.message);
+	});
+	page.on('dialog', (dialog) => void dialog.accept());
+	// A short race (10 cubes), for tests.
+	await page.goto('./playground?instant&raceCount=10');
+	const racing = page.getByTestId('racing');
+
+	// basic solves them all.
+	await racing.getByTestId('race').click();
+	await expect(racing.getByTestId('race-status')).toHaveText('Raced basic: 10 of 10 solved.', {
+		timeout: 30_000
+	});
+	const mine = racing.getByTestId('race-mine');
+	await expect(mine).toHaveCount(1);
+	await expect(mine).toContainText('10 cubes');
+	await expect(mine.getByTestId('race-unsolved')).toHaveCount(0);
+
+	// A program that does nothing solves none.
+	await page.getByTestId('new').click();
+	await source(page).fill('algo main goal solved(cube) {\n  do ()\n}\n');
+	await racing.getByTestId('race-seed').fill('7');
+	await racing.getByTestId('race').click();
+	await expect(racing.getByTestId('race-status')).toHaveText(
+		'Raced untitled: 0 of 10 solved, 10 not.'
+	);
+	await expect(mine).toHaveCount(2);
+	const unsolved = mine.first().getByTestId('race-unsolved');
+	await expect(unsolved).toHaveText(/^10/);
+	await unsolved.click();
+	const failures = racing.getByTestId('race-failures');
+	await expect(failures.locator('li')).toHaveCount(10);
+	await expect(failures.locator('li').first()).toContainText('Goal not reached: main');
+
+	// Load a cube it failed on, and run the program on it.
+	await failures.getByTestId('load-cube').nth(2).click();
+	await expect(history(page)).toContainText('Race cube 3 (seed 7)');
+	await expect(page.getByTestId('solved')).toBeHidden();
+	await page.getByTestId('run').click();
+	await expect(page.getByTestId('error')).toContainText('Goal not reached: main');
+
+	// The results are kept, and can be cleared.
+	await page.reload();
+	await expect(mine).toHaveCount(2);
+	await racing.getByTestId('race-clear').click();
+	await expect(mine).toHaveCount(0);
+	await expect(racing.getByTestId('race-built-in')).toHaveCount(3);
+	expect(errors).toEqual([]);
+});
+
+test('a race can be cancelled', async ({ page }) => {
+	await open(page);
+	const racing = page.getByTestId('racing');
+	await racing.getByTestId('race').click();
+	await expect(racing.getByTestId('race-progress')).toBeVisible();
+	await racing.getByTestId('race-cancel').click();
+	await expect(racing.getByTestId('race-status')).toHaveText('Race cancelled.');
+	await expect(racing.getByTestId('race-mine')).toHaveCount(0);
+});

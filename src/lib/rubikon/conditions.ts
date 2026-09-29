@@ -72,6 +72,13 @@ function spellFrom(loc: Location, face: string): Location {
 	throw new Error(`${loc} has no ${face} sticker`);
 }
 
+// Whether a cube is solved however it's held (what solved(cube) asks):
+// every piece is home, relative to the centers.
+export function isSolved(state: Permutation): boolean {
+	const view = new CubeView(state);
+	return PIECES.every((piece) => view.isHome(piece, false));
+}
+
 // A cube state, with the questions conditions ask of it.
 class CubeView {
 	private readonly from: Permutation;
@@ -266,10 +273,7 @@ class Evaluator {
 	private solved(call: Call): boolean {
 		const value = this.value(this.onlyArg(call));
 		const perm = asPermutation(value);
-		if (perm !== undefined) {
-			const view = new CubeView(perm);
-			return PIECES.every((piece) => view.isHome(piece, false));
-		}
+		if (perm !== undefined) return isSolved(perm);
 		return this.placesOf(value, call).every((place) => this.cube.isHome(place, false));
 	}
 
