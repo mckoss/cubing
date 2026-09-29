@@ -51,7 +51,7 @@ function describeHistory(blocks: HistoryBlock[]): unknown[] {
 		faceTurns: b.faceTurns,
 		quarterTurns: b.quarterTurns,
 		items: b.items.map((item) =>
-			Array.isArray(item) ? formatMoves(item) : describeHistory([item])[0]
+			Array.isArray(item) ? formatMoves(item) : 'note' in item ? item : describeHistory([item])[0]
 		)
 	}));
 }

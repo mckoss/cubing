@@ -13,12 +13,16 @@ import type { Moves } from './moves';
 export class RubikonError extends Error {
 	readonly line: number;
 	readonly column: number;
+	// The loc it was made with: the syntax tree's own, for an error at a
+	// node (so a caller holding several files can tell which one it's in).
+	readonly loc: Loc;
 
 	constructor(message: string, loc: Loc) {
 		super(`${loc.line}:${loc.column}: ${message}`);
 		this.name = 'RubikonError';
 		this.line = loc.line;
 		this.column = loc.column;
+		this.loc = loc;
 	}
 }
 

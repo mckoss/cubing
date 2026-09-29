@@ -120,8 +120,9 @@ place, inside the current algo's block between its moves; with no page,
 the stream prints to the console. The page and the playground get a
 "Show trace" checkbox that shows or hides these lines (the moves and algo
 blocks stay). The format string rule (`{expr}`, `{{`, `}}`), the printer
-for every value kind, and the event are done; the page, the checkbox, and
-printing to the console are left.
+for every value kind, and the event are done, and the playground shows
+the lines with its "Show trace" checkbox; the main page and printing to
+the console are left.
 
 ### 5. Modules
 
@@ -159,6 +160,38 @@ saved by name in the browser (local storage), and the library can be
 listed, paged through, opened, edited, renamed, and deleted. It can start
 as soon as milestone 2 works (play a `let` or `do`), and grows with the
 runtime.
+
+Done (`src/routes/playground/`): the page, with the player and history
+shared with the main page (`Player`, `CubePlayer`, `MoveHistory`, and a
+Scramble button from `Player.scramble()`); a code window with line
+numbers; parse, evaluation, and runtime errors shown with line:column,
+the line marked and selected, and an error in an imported module shown
+with the module's name (`cfop 12:5`: each error keeps its syntax tree
+`loc`, which says whose tree it's in). Run runs `algo main` with the
+runtime (`runMain`, with each imported library program parsed and passed
+as a module) on a solved cube ("From solved") or the cube as it is
+(Scramble unchecks "From solved"); the history shows the algo blocks,
+bypass notes, and trace lines as the run makes them, through
+`RunRecorder`. A run is limited (10,000 moves, 1,000,000 steps) so a
+program that loops stops with an error; it's synchronous (`basic` on a
+scramble takes a moment). Without a main, or when chosen from the Run
+menu (main, the last let, or any let), Run plays a let: the lets are
+evaluated with the runtime's `evaluateModule`/`evaluateLets` (top level
+and inside algos without parameters). A line of moves (`sune`, `F<R U>`)
+plays against the program's names; imports come from the library by
+name. The library (`library.ts`) saves, lists, pages through, opens,
+renames, and deletes programs, remembers the last one open, starts with
+copies of `cfop.rbk` and `basic.rbk`, and works in memory when local
+storage is unavailable. Every run goes through one adapter
+(`record.ts`): run events become history blocks (enter/leave), notes
+(bypass, trace, with a "Show trace" checkbox), and moves, with whole cube
+turns that aren't shown renamed away by the runtime's `renameMove` (so
+the history agrees with `physicalMoves()`). Decided: a history block's
+title is the algo's description if it has one, else its name (`algo
+lift(p) "Lift a piece to the top"` shows as "Lift a piece to the top").
+
+Left: running a long program without blocking the page (in a worker, or
+in slices).
 
 ### 9. On the page
 
@@ -224,6 +257,20 @@ should change:
   each have their own `Env` (names to moves; names to patterns and
   places). The runtime needs one environment holding values of every
   type.
+- **Lets inside algos.** The playground lists and plays the lets inside
+  algos (as `main › insertRight`), and lets a line of moves use them, but
+  in the language they're only in scope inside their algo. Lets in an
+  algo with parameters are skipped, since they may use the parameters.
+- **Hidden whole cube turns and the history.** The history shows moves
+  as played on the cube as it's held, so after a hidden `y` the program's
+  `R` is recorded as `B`; the history no longer reads like the source.
+  Showing both (as written, and as played) may be wanted.
+- **Where imports come from** in the browser: the playground finds
+  `import cfop` by a library program's name, so a program's name is its
+  module name, and renaming it breaks its importers.
+- **Where to start a run.** The playground offers "From solved" (reset
+  before each run) or playing on from the current cube; a program has no
+  way to say what state it expects (a scramble, a setup).
 - **`until` is tested before each pass** (so it may run none), and running
   out of passes with the condition still false is an error. The spec
   leaves both open.

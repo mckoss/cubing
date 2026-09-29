@@ -220,3 +220,17 @@ export function reduceMoves(moves: Move[]): Move[] {
 	}
 	return result;
 }
+
+// A scramble: random quarter turns of the faces, never the same face twice
+// in a row (as in 2003).  `random` gives numbers in [0, 1).
+export function randomScramble(length = 25, random: () => number = Math.random): Move[] {
+	const moves: Move[] = [];
+	let last: Face | undefined;
+	while (moves.length < length) {
+		const name = FACES[Math.floor(random() * FACES.length)];
+		if (name === undefined || name === last) continue;
+		last = name;
+		moves.push({ name, turns: random() < 0.5 ? 3 : 1 });
+	}
+	return moves;
+}
