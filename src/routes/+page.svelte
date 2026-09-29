@@ -7,6 +7,7 @@
 	import { SEQUENCES } from '$lib/cube/beginner';
 	import { Player } from '$lib/cube/player.svelte';
 	import CubePlayer from '$lib/components/CubePlayer.svelte';
+	import CurrentPermutation from '$lib/components/CurrentPermutation.svelte';
 	import MoveHistory from '$lib/components/MoveHistory.svelte';
 	import TopCrossSteps from '$lib/components/TopCrossSteps.svelte';
 	import CaseDiagram, { type Case } from '$lib/components/CaseDiagram.svelte';
@@ -205,12 +206,7 @@
 			</div>
 		</section>
 
-		<section class="card">
-			<h2>Current Permutation</h2>
-			<p class="perm" data-testid="permutation">
-				{player.solved ? 'Solved' : player.perm.toString()}
-			</p>
-		</section>
+		<CurrentPermutation {player} />
 
 		<MoveHistory {player} />
 	</aside>
@@ -423,13 +419,6 @@
 	.pair button:last-child {
 		border-radius: 0 8px 8px 0;
 		margin-left: -1px;
-	}
-
-	.perm {
-		margin: 0;
-		font-family: var(--mono);
-		font-size: 0.9rem;
-		overflow-wrap: anywhere;
 	}
 
 	kbd {

@@ -3,6 +3,7 @@ import { Permutation } from './permutation';
 import {
 	alg,
 	appendMove,
+	countOf,
 	formatMoves,
 	invertMoves,
 	parseMoves,
@@ -56,6 +57,11 @@ describe('moves', () => {
 	it('parses and formats standard notation', () => {
 		expect(formatMoves(parseMoves("R U2 R' x y' M2'"))).toBe("R U2 R' x y' M2");
 		expect(() => parseMoves('Q')).toThrow();
+	});
+
+	it('counts moves for a label, one or many', () => {
+		expect([0, 1, 2].map((n) => countOf(n, 'move'))).toEqual(['0 moves', '1 move', '2 moves']);
+		expect(countOf(1, 'quarter turn')).toBe('1 quarter turn');
 	});
 
 	it('has the right order for every move', () => {

@@ -120,7 +120,7 @@ test('each sequence shows the case it solves', async ({ page }) => {
 	}
 });
 
-test('step through a solution by move and by stage', async ({ page }) => {
+test('step through a solution by move and by algo', async ({ page }) => {
 	test.setTimeout(SOLVE_TIMEOUT);
 	await open(page);
 	for (const key of ['r', 'u', 'f', 'Shift+L']) {
@@ -138,11 +138,27 @@ test('step through a solution by move and by stage', async ({ page }) => {
 	await page.waitForTimeout(500);
 	await expect(permutation(page)).toHaveText(before);
 
+	// The history shows the solution's moves, all dimmed until played.
+	const solution = history(page).locator('[data-block="David Singmaster Solution"]');
+	const ahead = solution.locator('.move.ahead');
+	const count = await ahead.count();
+	expect(count).toBeGreaterThan(2);
+	await expect(solution.locator('[aria-current]')).toHaveCount(0);
+
 	await page.getByTestId('next-move').click();
 	await expect(permutation(page)).not.toHaveText(before);
 	await expect(stage).toContainText('Solve U Edges: move 2 of');
+	// The move just played is marked, in its block, and no longer dimmed.
+	const current = solution.locator('[aria-current="step"]');
+	await expect(current).toHaveText(await solution.locator('.move').first().innerText());
+	await expect(ahead).toHaveCount(count - 1);
+	await expect(solution.locator('[data-block="Solve U Edges"].current')).toBeVisible();
 
-	await page.getByTestId('next-stage').click();
+	await page.getByTestId('next-move').click();
+	await expect(ahead).toHaveCount(count - 2);
+	await expect(current).toHaveText(await solution.locator('.move').nth(1).innerText());
+
+	await page.getByTestId('next-algo').click();
 	await expect(stage).toContainText('Solve U Corners: move 1 of');
 
 	await page.getByTestId('play-pause').click();

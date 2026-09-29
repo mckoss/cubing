@@ -65,7 +65,7 @@
 			>{player.paused ? 'Play' : 'Pause'}</button
 		>
 		<button onclick={(): void => player.nextMove()} data-testid="next-move">Next move</button>
-		<button onclick={(): void => player.nextStage()} data-testid="next-stage">Next stage</button>
+		<button onclick={(): void => player.nextAlgo()} data-testid="next-algo">Next algo</button>
 		{#if player.stage}
 			<span class="stage" data-testid="stage"
 				>{player.stage.name}: move {player.stage.move} of {player.stage.of}</span

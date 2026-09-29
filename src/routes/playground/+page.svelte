@@ -4,8 +4,8 @@
 	import { resolve } from '$app/paths';
 	import { Player } from '$lib/cube/player.svelte';
 	import CubePlayer from '$lib/components/CubePlayer.svelte';
+	import CurrentPermutation from '$lib/components/CurrentPermutation.svelte';
 	import MoveHistory from '$lib/components/MoveHistory.svelte';
-	import { Permutation } from '$lib/cube/permutation';
 	import { formatTaggedMoves } from '$lib/rubikon/moves';
 	import { RunRecorder, applyEvents } from '$lib/rubikon/record';
 	import type { RunEvent } from '$lib/rubikon/events';
@@ -15,7 +15,9 @@
 		evaluateMovesLine,
 		evaluateProgram,
 		playEvents,
+		runAlgo,
 		runProgram,
+		type AlgoEntry,
 		type EvaluatedProgram,
 		type LetEntry
 	} from '$lib/rubikon/playground';
@@ -58,21 +60,25 @@
 	let program: EvaluatedProgram | undefined = $state();
 	let error: ProgramError | undefined = $state();
 	let status = $state('');
-	// What Run runs, as chosen: 'main', 'last' (the last let), or a let's
-	// index in program.lets; null for the default (main if there is one).
+	// What Run runs, as chosen: 'main', another algo ('algo:' and its index
+	// in program.algos), a named sequence ('let:' and its index in
+	// program.lets), or 'last' (the last one); null for the default: main,
+	// else the first algo, else the last named sequence.
 	let runChoice: string | null = $state(null);
 	const runWhat = $derived.by((): string => {
 		if (program === undefined) return runChoice ?? 'main';
+		const [kind, at] = (runChoice ?? '').split(':');
 		const valid =
 			runChoice === 'last' ||
 			(runChoice === 'main' && program.hasMain) ||
-			(runChoice !== null && runChoice !== 'main' && Number(runChoice) < program.lets.length);
-		return valid && runChoice !== null ? runChoice : program.hasMain ? 'main' : 'last';
+			(kind === 'algo' && Number(at) < program.algos.length) ||
+			(kind === 'let' && Number(at) < program.lets.length);
+		if (valid && runChoice !== null) return runChoice;
+		return program.hasMain ? 'main' : program.algos.length > 0 ? 'algo:0' : 'last';
 	});
 	let playLine = $state('');
 	let playError: ProgramError | undefined = $state();
 	let showTrace = $state(true);
-	let fromSolved = $state(true);
 
 	let textarea: HTMLTextAreaElement;
 	let gutter: HTMLElement;
@@ -107,9 +113,6 @@
 
 	// Record events on the player, and play them.
 	function run(events: RunEvent[]): void {
-		if (fromSolved) {
-			player.reset();
-		}
 		player.startSolution();
 		applyEvents(events, player.moveList);
 		player.changed();
@@ -121,16 +124,20 @@
 		status = `Played ${entry.name}.`;
 	}
 
-	// Run the program's algo main on the cube (solved, or as it is), showing
-	// the moves, algos, and trace lines in the history as they come.
-	function runMain(evaluated: EvaluatedProgram): void {
-		const start = fromSolved ? new Permutation() : player.finalPerm();
-		if (fromSolved) player.reset();
+	// Run the program's algo main, or another algo by itself, on the cube as
+	// it is, showing the moves, algos, and trace lines in the history as
+	// they come.
+	function runMain(evaluated: EvaluatedProgram, algo?: AlgoEntry): void {
+		const start = player.finalPerm();
 		player.startSolution();
 		const recorder = new RunRecorder(player.moveList);
 		try {
-			runProgram(evaluated, start, recorder.listener);
-			status = 'Ran main.';
+			if (algo === undefined) {
+				runProgram(evaluated, start, recorder.listener);
+			} else {
+				runAlgo(evaluated, algo, start, recorder.listener);
+			}
+			status = `Ran ${algo === undefined ? 'main' : pathLabel(algo.path)}.`;
 		} catch (e) {
 			error = showError(e);
 			void jumpTo(error);
@@ -140,28 +147,27 @@
 		}
 	}
 
-	// Run: evaluate the program, and run its main, or play the chosen let
-	// (the last one, if none was chosen).
+	// Run: evaluate the program, and run what's chosen (see runWhat).
 	function runChosen(): void {
 		status = '';
 		const evaluated = evaluate();
 		if (evaluated === undefined) return;
+		const [kind, at] = runWhat.split(':');
 		if (runWhat === 'main' && evaluated.hasMain) {
 			runMain(evaluated);
 			return;
 		}
-		const entry = evaluated.lets.at(runWhat === 'last' ? -1 : Number(runWhat));
+		const algo = kind === 'algo' ? evaluated.algos[Number(at)] : undefined;
+		if (algo !== undefined) {
+			runMain(evaluated, algo);
+			return;
+		}
+		const entry = evaluated.lets.at(kind === 'let' ? Number(at) : -1);
 		if (entry === undefined) {
-			status = 'Nothing to run yet: add an algo main or a let, or type moves below.';
+			status = 'Nothing to run yet: add an algo or a named sequence (a let), or type moves below.';
 			return;
 		}
 		play(entry);
-	}
-
-	// A scramble to solve: Run then plays on from it.
-	function scramble(): void {
-		fromSolved = false;
-		player.scramble();
 	}
 
 	function playTyped(ev: SubmitEvent): void {
@@ -351,8 +357,8 @@
 		return new Date(time).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 	}
 
-	function letLabel(entry: LetEntry): string {
-		return [...entry.path, entry.name].join(' › ');
+	function pathLabel(path: string[]): string {
+		return path.join(' › ');
 	}
 </script>
 
@@ -424,27 +430,6 @@
 				data-testid="source"></textarea>
 		</div>
 
-		<div class="run-bar">
-			<button class="primary" onclick={runChosen} title="Ctrl+Enter" data-testid="run">Run</button>
-			{#if program && (program.hasMain || program.lets.length > 0)}
-				<select
-					value={runWhat}
-					onchange={(ev): void => {
-						runChoice = ev.currentTarget.value;
-					}}
-					aria-label="What to run"
-					data-testid="run-what"
-				>
-					{#if program.hasMain}<option value="main">main</option>{/if}
-					{#if program.lets.length > 0}<option value="last">the last let</option>{/if}
-					{#each program.lets as entry, i (i)}
-						<option value={String(i)}>{letLabel(entry)}</option>
-					{/each}
-				</select>
-			{/if}
-			<label class="check"><input type="checkbox" bind:checked={fromSolved} /> From solved</label>
-		</div>
-
 		{#if error}
 			<p class="error" role="alert" data-testid="error">
 				{#if error.line !== null}
@@ -461,9 +446,9 @@
 
 		{#if program}
 			<details class="lets" open>
-				<summary>Lets ({program.lets.length})</summary>
+				<summary>Named Sequences ({program.lets.length})</summary>
 				{#if program.lets.length === 0}
-					<p class="note">No lets to play.</p>
+					<p class="note">No named sequences (lets) to play.</p>
 				{/if}
 				<ul data-testid="lets">
 					{#each program.lets as entry, i (i)}
@@ -483,8 +468,10 @@
 			</details>
 		{/if}
 		<p class="note">
-			Run runs the program's <code>algo main</code> on the cube (or plays a let). Imports come from the
-			library, by name.
+			Run (under the cube, or Ctrl+Enter here) runs the program's <code>algo main</code> on the cube
+			as it is, or another algo without parameters by itself, or plays a named sequence (a
+			<code>let</code>), as chosen next to it; Reset first to start from solved. Imports come from
+			the library, by name.
 		</p>
 	</section>
 
@@ -492,7 +479,41 @@
 		<section class="player">
 			<CubePlayer {player}>
 				{#snippet actions()}
-					<button onclick={scramble} data-testid="scramble">Scramble</button>
+					<button onclick={(): void => player.scramble()} data-testid="scramble">Scramble</button>
+					<button class="primary" onclick={runChosen} title="Ctrl+Enter" data-testid="run"
+						>Run</button
+					>
+					{#if program && (program.algos.length > 0 || program.lets.length > 0)}
+						<select
+							class="run-what"
+							value={runWhat}
+							onchange={(ev): void => {
+								runChoice = ev.currentTarget.value;
+							}}
+							aria-label="What to run"
+							data-testid="run-what"
+						>
+							{#if program.algos.length > 0}
+								<optgroup label="Algos">
+									{#each program.algos as algo, i (i)}
+										<option
+											value={algo.path.length === 1 && algo.def.name === 'main'
+												? 'main'
+												: `algo:${i}`}>{pathLabel(algo.path)}</option
+										>
+									{/each}
+								</optgroup>
+							{/if}
+							{#if program.lets.length > 0}
+								<optgroup label="Named Sequences">
+									<option value="last">the last sequence</option>
+									{#each program.lets as entry, i (i)}
+										<option value="let:{i}">{pathLabel([...entry.path, entry.name])}</option>
+									{/each}
+								</optgroup>
+							{/if}
+						</select>
+					{/if}
 				{/snippet}
 			</CubePlayer>
 			<form class="play-line" onsubmit={playTyped}>
@@ -514,6 +535,8 @@
 				</p>
 			{/if}
 		</section>
+
+		<CurrentPermutation {player} />
 
 		<MoveHistory {player} {showTrace}>
 			{#snippet controls()}
@@ -613,14 +636,18 @@
 		}
 	}
 
+	/* A sequence's label can be long: keep the toolbar within the screen. */
+	.run-what {
+		max-width: 14rem;
+	}
+
 	.side {
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
 	}
 
-	.file-bar,
-	.run-bar {
+	.file-bar {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.5rem;
