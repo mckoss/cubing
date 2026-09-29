@@ -39,11 +39,12 @@ function isMoveKey(key: string): key is MoveKey {
 	return Object.hasOwn(KEYS, key);
 }
 
-// With `?instant` in the URL (for tests), moves are made at once instead
-// of turning, one frame per quarter turn at best. Everything else (the
-// history, stepping, pausing) works as usual.
-function instantMoves(): boolean {
-	return new URLSearchParams(window.location.search).has('instant');
+// Whether a flag is in the URL: `?instant` (for tests) makes moves at once
+// instead of turning, one frame per quarter turn at best, with everything
+// else (the history, stepping, pausing) as usual; `?shadow` (for the
+// icons) gives the cube a shadow.
+function urlFlag(name: string): boolean {
+	return new URLSearchParams(window.location.search).has(name);
 }
 
 export class Player {
@@ -121,7 +122,7 @@ export class Player {
 	// Show the cube on a canvas; returns a function to stop.
 	attach(canvas: HTMLCanvasElement): () => void {
 		try {
-			this.view = new CubeView(canvas, 3, instantMoves());
+			this.view = new CubeView(canvas, 3, urlFlag('instant'), urlFlag('shadow'));
 		} catch (e) {
 			// Without WebGL, moves still work; they just aren't drawn.
 			console.warn(e);
