@@ -776,7 +776,9 @@ used anywhere a statement can, including in a `fun`. The runtime sends it
 as a `trace` event (the text and its source line) in the same stream as
 the moves and the algo events, so every view of a run shows it in order:
 the page's history, the playground, and a run with no page (a test or
-the command line), which prints the stream to the console.
+the command line), which prints the stream to the console. The page and
+the playground have a checkbox to show or hide `trace` lines; hidden,
+the history shows only the moves and the algo entries.
 
 ## 9. Algos
 

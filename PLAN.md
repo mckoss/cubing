@@ -89,7 +89,9 @@ counts and "next stage" stepping.
 **`trace("…")` (low priority, for debugging).** One more event in the
 same stream: the formatted text and its line. The history shows it in
 place, inside the current algo's block between its moves; with no page,
-the stream prints to the console. Parsing needs a format string rule
+the stream prints to the console. The page and the playground get a
+"Show trace" checkbox that shows or hides these lines (the moves and algo
+blocks stay). Parsing needs a format string rule
 (`{expr}`, `{{`, `}}`) and a printer for every value kind.
 
 ### 5. Modules
