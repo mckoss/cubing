@@ -136,6 +136,15 @@ circular imports, the unused-import warning. `basic.rbk` imports
 Basic solver: both solve the same 1000 scrambles; compare move counts.
 A golden test of the Rubikon output (separate from the 2003 one).
 
+**Conformance (done):** `conformance.spec.ts` runs both on 500 scrambles
+and compares their moves stage by stage, as they turn the cube as shown
+(whole cube turns become frame changes, and the moves after them are
+renamed; turns of one face in a row are merged). They are identical: every
+stage, every scramble. So the move counts are the same too; the earlier
+"125.9 vs 129.6" came from counting, not from the solvers: the move history
+doesn't merge turns separated by a `y`, and the TypeScript solver makes
+more `y` turns in its list.
+
 ### 7. Checker
 
 Types and kinds (Pattern ⊃ Cubie ⊃ Edge/Corner; Location kinds), typed
