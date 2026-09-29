@@ -57,11 +57,15 @@ jobs:
           path: playwright-report
           retention-days: 7
 
-  # Deploy to GitHub Pages (mckoss.com/cubing) once the checks pass on main
-  # (the end to end tests passed on the pull request).
+  # Deploy to GitHub Pages (mckoss.com/cubing) once the checks pass on main.
+  # It waits for e2e when that runs (a manual run), but not when it's
+  # skipped (a push to main, whose pull request already passed it).
   build:
-    needs: check
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: [check, e2e]
+    if: >-
+      always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' &&
+      needs.check.result == 'success' &&
+      (needs.e2e.result == 'success' || needs.e2e.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
