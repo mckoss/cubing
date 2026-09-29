@@ -254,7 +254,9 @@ sequence, though, is a sequence, and it does the mirror image of the
 original's job: Basic's `insertLeft` is `reflect(insertRight, M)`, and
 `cycleCornersBack` is `reflect(cycleCorners, M)`. Where the mirror image of
 a job is the same job done backwards, the inverse is the simpler relation:
-`twistCornerBack` is `twistCorner'`.
+the counterclockwise twist is written `twistCorner'` where it's used, with
+no name of its own. Named twists and cycles go forward (clockwise); `'`
+gives the other way.
 
 `location(/df/) is /df/` is always true: it names the place with the facing
 that matches.

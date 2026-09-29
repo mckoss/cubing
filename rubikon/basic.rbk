@@ -60,12 +60,11 @@ algo main "The Basic Modern Solution" goal solved(cube) {
   let cycleCornersBack = reflect(cycleCorners, M)
                        # (urf bul bru)
 
-  # Twist the front right top corner (a third of a turn) using the
-  # commutator of R' and D'; it scrambles the bottom as it goes, but once
-  # every top corner is twisted the bottom's twists add up to nothing.
-  let twistCorner      = (commutator(R', D'))2
-                       # (urf)- (dr fr db) (dfr)- (dbl)+ (drb)+
-  let twistCornerBack  = twistCorner'
+  # Twist the front right top corner a third of a turn clockwise (its
+  # inverse, twistCorner', twists it back) using the commutator of D' and
+  # R'; it scrambles the bottom as it goes, but once every top corner is
+  # twisted the bottom's twists add up to nothing.
+  let twistCorner      = (commutator(D', R'))2
                        # (urf)+ (dr db fr) (dfr)+ (dbl)- (drb)-
 
   algo "First Face" goal solved(layer(D)) {
@@ -152,8 +151,8 @@ algo main "The Basic Modern Solution" goal solved(cube) {
     each U {                                        # turn the top, not the cube
       match {
         case urf is /u__/ -> ()                     # top color up: already right
-        case urf is /_u_/ -> do twistCorner         # top color facing right
-        case urf is /__u/ -> do twistCornerBack     # top color facing front
+        case urf is /_u_/ -> do twistCorner'        # facing right: counterclockwise
+        case urf is /__u/ -> do twistCorner         # facing front: clockwise
       }
     }
   }
