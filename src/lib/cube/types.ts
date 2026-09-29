@@ -128,8 +128,22 @@ type CheckAlg<
 
 export const FACE_LETTERS: readonly FaceLetter[] = ['u', 'd', 'f', 'b', 'l', 'r'];
 
-const EDGES = ['uf', 'ur', 'ub', 'ul', 'df', 'dr', 'db', 'dl', 'fr', 'fl', 'br', 'bl'] as const;
-const CORNERS = ['ufl', 'ulb', 'ubr', 'urf', 'dlf', 'dfr', 'drb', 'dbl'] as const;
+// Every edge and corner, by its home spelling.
+export const EDGES = [
+	'uf',
+	'ur',
+	'ub',
+	'ul',
+	'df',
+	'dr',
+	'db',
+	'dl',
+	'fr',
+	'fl',
+	'br',
+	'bl'
+] as const;
+export const CORNERS = ['ufl', 'ulb', 'ubr', 'urf', 'dlf', 'dfr', 'drb', 'dbl'] as const;
 
 // The first letter moved to the end: the same place, from the next sticker.
 export function rotateName<T extends Location>(name: T): T {

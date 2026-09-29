@@ -12,8 +12,9 @@
 
 import { Permutation } from '../cube/permutation';
 import {
+	CORNERS,
+	EDGES,
 	FACE_LETTERS,
-	LOCATIONS,
 	isLocation,
 	rotateName,
 	type FaceLetter,
@@ -53,15 +54,8 @@ export class RubikonConditionError extends Error {
 	}
 }
 
-// Every piece, by its home spelling (the first of its names in LOCATIONS):
-// 'u', 'uf', 'ufl', ...
-const PIECES: readonly Location[] = LOCATIONS.filter(
-	(loc, i) => LOCATIONS.findIndex((other) => sameLetters(loc, other)) === i
-);
-
-function sameLetters(a: string, b: string): boolean {
-	return a.length === b.length && [...a].every((c) => b.includes(c));
-}
+// Every piece, by its home spelling: 'u', 'uf', 'ufl', ...
+const PIECES: readonly Location[] = [...FACE_LETTERS, ...EDGES, ...CORNERS];
 
 function isFaceLetter(face: string): face is FaceLetter {
 	return FACE_LETTERS.some((f) => f === face);
@@ -70,13 +64,14 @@ function isFaceLetter(face: string): face is FaceLetter {
 // The name rotated to start from the given face: spellFrom('urf', 'r') is
 // 'rfu'.
 function spellFrom(loc: Location, face: string): Location {
+	let name = loc;
 	for (let i = 0; i < loc.length; i++) {
-		if (loc.charAt(0) === face) {
-			return loc;
+		if (name.charAt(0) === face) {
+			return name;
 		}
-		loc = rotateName(loc);
+		name = rotateName(name);
 	}
-	return loc;
+	throw new Error(`${loc} has no ${face} sticker`);
 }
 
 // A cube state, with the questions conditions ask of it.
@@ -200,7 +195,7 @@ class Evaluator {
 			case 'test':
 				return this.test(cond.value);
 			case 'equals':
-				return this.equals(this.value(cond.left), this.value(cond.right));
+				return this.equals(this.value(cond.left), this.value(cond.right), cond.loc);
 			case 'has':
 				throw new RubikonConditionError(
 					'Not yet: `has` (how several cycles combine is an open question)',
@@ -265,7 +260,7 @@ class Evaluator {
 	private solved(call: Call): boolean {
 		const [arg] = call.args;
 		if (call.args.length === 1 && arg !== undefined && this.isCube(arg)) {
-			return LOCATIONS.every((loc) => this.cube.isHome(loc, false));
+			return PIECES.every((piece) => this.cube.isHome(piece, false));
 		}
 		return this.places(call).every((place) => this.cube.isHome(place, false));
 	}
@@ -279,12 +274,13 @@ class Evaluator {
 		);
 	}
 
-	// The places a call's arguments name: places, layers, or a mix.
+	// The places a call's one argument names: places, layers, or a mix.
 	private places(call: Call): Location[] {
-		if (call.args.length !== 1) {
-			throw new RubikonConditionError(`${call.name}() takes places`, call.loc);
+		const [arg] = call.args;
+		if (call.args.length !== 1 || arg === undefined) {
+			throw new RubikonConditionError(`${call.name}() takes one list of places`, call.loc);
 		}
-		return call.args.flatMap((arg) => this.placesOf(arg));
+		return this.placesOf(arg);
 	}
 
 	private placesOf(expr: Expr): Location[] {
@@ -323,21 +319,19 @@ class Evaluator {
 				}
 				return { kind: 'location', name: expr.name };
 			case 'pattern':
-				for (const cell of expr.cells) {
-					if (cell.kind !== 'any' && !isFaceLetter(cell.face)) {
-						throw new RubikonConditionError(`Not a face: ${cell.face}`, expr.loc);
-					}
-				}
+				// The parser has checked the faces.
 				return { kind: 'pattern', cells: expr.cells, anyRotation: expr.anyRotation };
 			case 'name': {
 				const bound = this.env(expr);
 				if (bound !== undefined) {
+					checkBound(bound, expr);
 					return bound;
 				}
 				if (this.isCube(expr)) {
 					return { kind: 'permutation', perm: this.cube.state };
 				}
-				throw new RubikonConditionError(`Unknown name: ${expr.name}`, expr.loc);
+				const qualified = expr.module === null ? expr.name : `${expr.module}.${expr.name}`;
+				throw new RubikonConditionError(`Unknown name: ${qualified}`, expr.loc);
 			}
 			case 'cycle':
 				return {
@@ -381,8 +375,9 @@ class Evaluator {
 	}
 
 	// `==`: same place and facing, same pattern (a cubie with its
-	// orientation), or same permutation.
-	private equals(a: Value, b: Value): boolean {
+	// orientation; with /r, the same up to rotation), or same permutation.
+	// Values of different kinds are an error.
+	private equals(a: Value, b: Value, loc: Loc): boolean {
 		if (a.kind === 'location' && b.kind === 'location') {
 			return a.name === b.name;
 		}
@@ -390,13 +385,35 @@ class Evaluator {
 			return a.perm.equals(b.perm);
 		}
 		if (a.kind === 'pattern' && b.kind === 'pattern') {
-			return (
-				a.anyRotation === b.anyRotation &&
-				a.cells.length === b.cells.length &&
-				a.cells.every((cell, i) => sameCell(cell, b.cells[i]))
-			);
+			if (a.anyRotation !== b.anyRotation || a.cells.length !== b.cells.length) {
+				return false;
+			}
+			const rotations = a.anyRotation ? a.cells.length : 1;
+			for (let k = 0; k < rotations; k++) {
+				const rotated = [...a.cells.slice(k), ...a.cells.slice(0, k)];
+				if (rotated.every((cell, i) => sameCell(cell, b.cells[i]))) {
+					return true;
+				}
+			}
+			return false;
 		}
-		return false;
+		throw new RubikonConditionError(`Can't compare a ${a.kind} with a ${b.kind}`, loc);
+	}
+}
+
+// A value bound in the environment, checked as the parser checks literals.
+function checkBound(value: Value, name: Name): void {
+	if (value.kind === 'pattern') {
+		for (const cell of value.cells) {
+			if (cell.kind !== 'any' && !isFaceLetter(cell.face)) {
+				throw new RubikonConditionError(
+					`${name.name} is bound to a pattern with a bad face: ${cell.face}`,
+					name.loc
+				);
+			}
+		}
+	} else if (value.kind === 'location' && !isLocation(value.name)) {
+		throw new RubikonConditionError(`${name.name} is bound to a bad place`, name.loc);
 	}
 }
 

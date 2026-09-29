@@ -145,7 +145,9 @@ should change:
   which is right, but a stage like "place the centers" can't be written
   as a condition on centers (they're always "solved").
 - **`layer()` of a slice** (`layer(M)`) isn't specified; the evaluator
-  takes it to be the slice's centers and edges.
+  takes it to be the slice's centers and edges. So after `M`,
+  `solved(layer(M))` is true (the slice reads as solved, relative to the
+  centers that moved with it) while `solved(cube)` is false.
 - **Face pictures** have a reading order only for U.
 - **Two environments.** The moves evaluator and the condition evaluator
   each have their own `Env` (names to moves; names to patterns and

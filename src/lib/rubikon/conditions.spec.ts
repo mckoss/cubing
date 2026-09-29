@@ -132,6 +132,16 @@ describe('is', () => {
 		const run = (): boolean => check('uf is q', SOLVED);
 		expect(run).toThrow(RubikonConditionError);
 		expect(run).toThrow(/^1:17: Unknown name: q/);
+		expect(() => check('uf is cfop.q', SOLVED)).toThrow(/Unknown name: cfop\.q/);
+	});
+
+	it('checks bound patterns, with the position of the name', () => {
+		const env = envOf({
+			p: { kind: 'pattern', cells: [{ kind: 'color', face: 'q' }], anyRotation: false }
+		});
+		const run = (): boolean => check('u is p', SOLVED, env);
+		expect(run).toThrow(RubikonConditionError);
+		expect(run).toThrow(/^1:16: p is bound to a pattern with a bad face: q/);
 	});
 });
 
@@ -304,7 +314,22 @@ describe('==', () => {
 		expect(check('/df/ == /fd/', SOLVED)).toBe(false);
 		expect(check('cube == ()', SOLVED)).toBe(true);
 		expect(check('cube == (uf ul ub ur) (ufl ulb ubr urf)', after('U'))).toBe(true);
-		expect(check('cube == (urf)+', after("D' R' D R D' R' D R"))).toBe(false);
+		// twistCorner twists urf, but it also moves D pieces, so the state
+		// is more than (urf)+.
+		const twist = after("D' R' D R D' R' D R");
+		expect(check('cube == (urf)+', twist)).toBe(false);
+		expect(check(`cube == ${twist.toString()}`, twist)).toBe(true);
+		expect(check('/df/r == /fd/r', SOLVED)).toBe(true);
+		expect(check('/df/ == /df/r', SOLVED)).toBe(false);
+		expect(check('/urf/r == /fur/r', SOLVED)).toBe(true);
+		expect(check('/u__/r == /__u/r', SOLVED)).toBe(true);
+	});
+
+	it('refuses to compare values of different kinds', () => {
+		expect(() => check('uf == /uf/', SOLVED)).toThrow(RubikonConditionError);
+		expect(() => check('uf == ()', SOLVED)).toThrow(
+			/^1:11: Can't compare a location with a permutation/
+		);
 	});
 
 	it('leaves moves to the moves evaluator', () => {
