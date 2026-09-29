@@ -126,8 +126,8 @@ in the letter order of the place it's tested against:
 | `!u` | anything but u |
 
 - **`is`** tests the piece in a place: `uf is /u_/` (the top color faces up
-  at uf); `rfu is /u__/` (reading the urf corner from its r sticker, that
-  sticker is the top color: yellow faces right).
+  at uf); `urf is /_u_/` (reading the urf corner u, r, f: its r sticker is
+  the top color, so yellow faces right).
 - **A pattern with no wildcards names a piece and its orientation**, by
   its colors: `/df/` is the down-front edge, read d first. So
   - `uf is /df/`: the df piece is at uf, with its d sticker up;
@@ -592,9 +592,10 @@ or the move list.
   with `and` still depend on order.
 - **Names change** with whole cube turns and slices. Intended, but
   surprising; to follow one physical piece, take `cubie(x)` first.
-- **Patterns read in the place's letter order,** so some tests read
-  backwards at first: `rfu is /u__/` means "yellow faces right" (reading
-  the urf corner from its r sticker).
+- **Patterns read in the place's letter order,** so the same test can be
+  written from any spelling of the place: `rfu is /u__/` and `urf is /_u_/`
+  both mean "yellow faces right". Writing tests on one corner from one
+  spelling (`urf`) and moving the `u` in the pattern reads more clearly.
 - **`<` and `>` are taken by conjugates,** so comparisons of numbers
   (`order(p) < 6`), if ever needed, will need words (`less than`) rather
   than symbols.
@@ -677,7 +678,7 @@ Notes:
   TypeScript cube. A compiler could check those comments, or they could
   become assertions.
 - Basic's Twist Corners is simpler than the TypeScript: a pattern on colors
-  (`rfu is /u__/`) instead of finding which corner is at the front right.
+  (`urf is /_u_/`) instead of finding which corner is at the front right.
 - Basic's first-face case places could be derived from the sequences
   (`inverse(F2)(df)` is `uf`) and checked by the compiler.
 - `cube has (…)` in Singmaster reads the cube's permutation: `cube has
