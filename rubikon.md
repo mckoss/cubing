@@ -752,7 +752,11 @@ the condition.
 
 ### `trace`
 
-`trace("…")` prints a line to the console, for debugging. It's a
+`trace("…")` adds a line to the run's **execution trace**: the move
+history, grouped by algo, that the page shows. The line appears where it
+happened, between the moves before and after it, inside the block of the
+algo that ran it, alongside the algo's own entries (entered, bypassed
+because its goal held). It's mainly for debugging. The text is a
 **format string**: each `{expr}` is replaced by the value of the
 expression, printed the way the engine prints it: moves in standard
 notation, a permutation (and `cube`) in cycle notation, a place by its
@@ -769,9 +773,10 @@ trace("after {t}: cube is {cube}, uf is {uf}, cross {solved(df dr db dl)}")
 `trace` doesn't move the cube, doesn't count as a move, and doesn't
 affect goals, so a method solves the same with or without it. It may be
 used anywhere a statement can, including in a `fun`. The runtime sends it
-as a `trace` event with the text and its line; the default listener
-writes it to the console, and the playground can show it beside the
-moves.
+as a `trace` event (the text and its source line) in the same stream as
+the moves and the algo events, so every view of a run shows it in order:
+the page's history, the playground, and a run with no page (a test or
+the command line), which prints the stream to the console.
 
 ## 9. Algos
 
