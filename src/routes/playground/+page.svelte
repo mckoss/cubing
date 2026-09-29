@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { VERSION } from '$lib/version';
 	import { tick } from 'svelte';
 	import { beforeNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -367,7 +368,7 @@
 </svelte:head>
 
 <header>
-	<h1>Rubikon Playground</h1>
+	<h1>Rubikon Playground <small class="version" data-testid="version">v{VERSION}</small></h1>
 	<p class="byline">
 		Type Rubikon and watch it play on the cube. · <a href={resolve('/')}>Rubik's Cube Simulator</a>
 	</p>
@@ -572,7 +573,7 @@
 
 <footer>
 	<a href={resolve('/')}>Rubik's Cube Simulator</a> ·
-	<a href="https://github.com/mckoss/cubing/blob/main/LANGUAGE.md">About Rubikon</a>
+	<a href="https://github.com/mckoss/cubing/blob/main/rubikon.md">About Rubikon</a>
 </footer>
 
 <style>

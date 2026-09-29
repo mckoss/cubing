@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { VERSION } from '$lib/version';
 	import { resolve } from '$app/paths';
 	import { formatMoves, permutationOf } from '$lib/cube/moves';
 	import type { Move, MoveName } from '$lib/cube/types';
@@ -156,7 +157,7 @@
 </svelte:head>
 
 <header>
-	<h1>Rubik's Cube Simulator</h1>
+	<h1>Rubik's Cube Simulator <small class="version" data-testid="version">v{VERSION}</small></h1>
 	<p class="byline">
 		by <a href="https://mckoss.com">Mike Koss</a> · 2003, rebuilt in 2026 ·
 		<a href={resolve('/playground')}>Rubikon Playground</a>
