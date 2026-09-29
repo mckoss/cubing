@@ -6,7 +6,7 @@
 # A search that finds nothing is an error unless `else` names another
 # search to try.
 
-algo singmaster "David Singmaster's solution (1981)" goal solved(cube) {
+algo main "David Singmaster's solution (1981)" goal solved(cube) {
 
   # The sequences, written to show how they work: w<p> is w p w' (p set up
   # with w, then put back), commutator(a, b) is a b a' b'.  Under each is

@@ -9,7 +9,7 @@
 
 from cfop import sexy, sune          # well-known sequences (cfop.rbk)
 
-algo basic "The Basic Modern Solution" goal solved(cube) {
+algo main "The Basic Modern Solution" goal solved(cube) {
 
   # The sequences from the notes, written to show how they work, each with
   # the permutation it makes (in cycle notation) under it.

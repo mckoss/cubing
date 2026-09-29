@@ -327,7 +327,7 @@ Location         uf  fu  urf  u
 
 | Construct                                | Meaning                                                                                                                                                                                                                                            |
 | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `algo basic "…" goal solved(cube) { … }` | an algo: a name, a description, and a goal, each optional (see Algos)                                                                                                                                                                              |
+| `algo main "…" goal solved(cube) { … }`  | an algo: a name, a description, and a goal, each optional; `main` runs when the file runs (see Algos)                                                                                                                                              |
 | `algo "Middle" goal … { … }`             | an algo inside another: a stage of it                                                                                                                                                                                                              |
 | `let name = …`                           | single assignment                                                                                                                                                                                                                                  |
 | `do R U R'`                              | play moves (the only thing that changes the cube)                                                                                                                                                                                                  |
@@ -397,7 +397,7 @@ All are optional (parameters need a name). A method is an algo, and its stages a
 inside it:
 
 ```
-algo basic "The Basic Modern Solution" goal solved(cube) {
+algo main "The Basic Modern Solution" goal solved(cube) {
   algo "First Face" goal solved(layer(D)) {
     algo "Bottom Edges" goal solved(df dr db dl) { … }
     algo "Bottom Corners" goal solved(dfr drb dbl dlf) { … }
@@ -437,9 +437,21 @@ algo lift(p: Pattern) "Lift a piece to the top" {
 do lift(/df/r)
 ```
 
-An algo without parameters (a stage) runs where it's written. Only `do`
-moves the cube, whether it plays a sequence or runs an algo; a `fun` never
-does.
+An algo without parameters inside another (a stage) runs where it's
+written. Only `do` moves the cube, whether it plays a sequence or runs an
+algo; a `fun` never does.
+
+**Running a file runs its `main`.** Algos at a file's top level are
+definitions: they run only when called. `algo main` is the one that runs
+when the file itself is run (the page lists each file with a `main` as a
+method, by its description). A file without one, like `cfop.rbk`, is a
+library. Importing a file never runs anything, and another file can run a
+method as a step of its own:
+
+```
+import basic
+do basic.main
+```
 
 **Every algo's goal is an assertable invariant** for the part of the
 method it covers:
@@ -479,8 +491,8 @@ method it covers:
 ### Modules and imports
 
 A file is a module, named by its file name: `cfop.rbk` is `cfop`. A module
-holds definitions at its top level (`let`, `fun`, and named `algo`s); the
-`let` and `fun` definitions can be imported. [`rubikon/cfop.rbk`](rubikon/cfop.rbk) holds well-known
+holds definitions at its top level (`let`, `fun`, and `algo`), and any of
+them can be imported: `from cfop import sune`, `do basic.main`. [`rubikon/cfop.rbk`](rubikon/cfop.rbk) holds well-known
 sequences (Sune, the sexy move, the PLLs), with where each was published.
 
 As in Python, there's never a mystery about where a name comes from:
@@ -563,7 +575,7 @@ or the move list.
 17. **Modules:** Is there a standard library, found without being next to
     the importing file? (`cfop` is the obvious first member.) Should a
     module or algo declare its puzzle (the old `solution basic for cube3`)?
-    Can a named algo be imported, or run from another (`do middle`)? Should provenance be data (a
+    Should provenance be data (a
     `source "…"` clause the page can show) rather than a comment? And `.`
     now marks a module's names, so question 16's `uf.1` for places would
     need another mark.
@@ -606,6 +618,7 @@ or the move list.
 | `Sequence` as a type name                                                                          | A sequence of what? `Moves` says it                                                                                                                               |
 | `show z2` as a statement                                                                           | A visible turn couldn't be part of a `Moves` value; `show(x)` tags one turn, and `do` plays it                                                                    |
 | `Rotation` as the type of `x y z`                                                                  | They reorient the cube; `Orient` says so, and "rotation" is already a pattern's `r`                                                                               |
+| A file's top-level algo running when the file runs, or a top-level `do`                            | Implicit, and a top-level `do` would run on import; `algo main` names the entry point, and `do basic.main` runs it                                                |
 | The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations)                                | Replaced everywhere by standard notation                                                                                                                          |
 | Upper case piece names (`URF`)                                                                     | Reads as moves U R F; Singmaster used lower case                                                                                                                  |
 | Corner names in either winding (`ufr` as well as `urf`)                                            | Six spellings per corner; clockwise only gives exactly three, one per sticker                                                                                     |
