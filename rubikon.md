@@ -84,7 +84,8 @@ case df is p -> do F2   case fr is p -> do R<U>     # two cases on one line
 ```
 
 Items in a sequence are written with spaces between them: `R U R' U'`,
-never `RUR'U'`. After a move a space is required (`R'U` and `R2U` are
+never `RUR'U'`. A move must be followed by a space or a character that
+can't be part of a word (`R<U>` and `(R U)` are fine; `R'U` and `R2U` are
 errors); after `'`, `)`, or `>` the grammar doesn't insist
 (`sune'sexy` parses as `sune' sexy`), but write one. A few places must
 have **no** space:
@@ -200,7 +201,7 @@ repeat count straight after `)` (`(R U)3`), and the bound of an `until`
 | `==`    | equality                                                                                                                |
 | `,`     | between arguments, parameters, and imported names                                                                       |
 | `.`     | a name from a module: `cfop.sune`                                                                                       |
-| `:`     | a type: `p: Pattern`, a function's result `fun f(…): Int`                                                               |
+| `:`     | a type: `p: Pattern`, a function's result `fun count(…): Int`                                                           |
 | `" "`   | a string                                                                                                                |
 
 ## 3. Places and pieces
@@ -235,8 +236,9 @@ This is what lets `each y { … }` write a rule once for all four sides.
 ### Relative colors
 
 A color is named by the face it belongs on: `u` is the color of the
-center now on top. There are no color names in rules. (A color scheme is
-only for display; it is not part of a Rubikon file.)
+center now on top. There are no color names in rules. A color scheme
+(`colors { u: yellow, … }`) is for display only; the design puts it in the
+file, but the grammar doesn't read it yet (see section 13).
 
 ### Patterns
 
@@ -438,10 +440,12 @@ let twistCorner = (commutator(D', R'))2
 gives the inverse: `commutator(b, a)` is `commutator(a, b)'`.
 
 `reflect(p, M)` is p seen in a mirror through the plane of the M slice
-(between L and R): the faces on either side swap, and every turn goes the
-other way, because a mirror reverses clockwise. `R` becomes `L'`, and `U`
-becomes `U'`, so `reflect(U R U', M)` is `U' L' U`. `E` mirrors U and D,
-and `S` mirrors F and B. For a permutation written as cycles, each place
+(between L and R): the faces on either side swap, and turns go the other
+way, because a mirror reverses clockwise. `R` becomes `L'`, and `U`
+becomes `U'`, so `reflect(U R U', M)` is `U' L' U`. The exceptions are the
+turns about the axis through the mirror, which are unchanged: under `M`,
+`x` and `M` stay as they are. `E` mirrors U and D (`y` and `E` unchanged),
+and `S` mirrors F and B (`z` and `S` unchanged). For a permutation written as cycles, each place
 is mirrored and corner names are respelled clockwise (the mirror of `urf`
 reads `ufl`), which also swaps each corner cycle's `+` and `-`.
 
@@ -630,7 +634,7 @@ rest of that body, including in the algos nested inside it.
 ### `fun` and `return`
 
 ```
-fun name(p1: T1, p2: T2): Result {
+fun name(first: TypeA, second: TypeB): Result {
   …
   return value
 }
@@ -899,9 +903,10 @@ The predefined name `cube` is the current cube state, a `Permutation`.
 ## 12. Grammar summary
 
 A compact summary of [`rubikon.peggy`](src/lib/rubikon/rubikon.peggy).
-`_` is optional whitespace and comments; juxtaposed items in `Term`,
-`Paren`, `Move`, `Pattern`, `Call`, and `Type` have **no** whitespace
-between them. `A?` is optional, `A*` zero or more, `A+` one or more.
+`_` is optional whitespace and comments. There is **no** whitespace
+before `(` in a call or parameter list, before `<`, `*`, a repeat count,
+or a cycle's `+`/`-`, or inside a move or a pattern; brackets may have
+spaces inside them. `A?` is optional, `A*` zero or more, `A+` one or more.
 
 ```ebnf
 File        = _ Import* TopDef*
@@ -971,6 +976,8 @@ comparison.
 These are open in [LANGUAGE.md](LANGUAGE.md) and are not part of the
 language yet:
 
+- **Color schemes:** `colors { u: yellow, … }` for display (settled in
+  the design; not in the grammar yet).
 - **Two composition orders** (open question 2): whether `p(q)` stays
   alongside `p q`, or is limited or dropped.
 - **Face pictures** (open questions 7 and 12): a picture without
