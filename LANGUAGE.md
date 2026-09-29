@@ -50,7 +50,7 @@ assert solved(c basic(c))
 | `U D L R F B`, `M E S`, `x y z`, `Rw` … | Moves, in standard (WCA) notation: capitals; `'` and `2` are part of the move (`R'`, `U2`); wide turns are `Rw`, never lower case |
 | `urf`, `uf`, `u`                        | Locations: lower case face letters                                                                                                |
 | `/u__/`, `/df/`, `/u_/r`                | Patterns (see below)                                                                                                              |
-| `Pattern`, `Sequence`, `Int` …          | Types: capitalized words longer than a move; all are keywords (see Types)                                                         |
+| `Pattern`, `Moves`, `Int` …             | Types: capitalized words longer than a move; all are keywords (see Types)                                                         |
 | other lower case words                  | Variables and keywords (`x`, `y`, `z` are reserved: they're moves)                                                                |
 
 - Items are separated by spaces, moves included (`R U R' U'`, not `RUR'U'`).
@@ -74,18 +74,18 @@ Every special character and its uses:
 | `_`      | in a pattern or picture: any sticker                                                             |
 | `!`      | in a pattern or picture: any sticker but, `!u`                                                   |
 | `{ }`    | a block: `algo "…" goal … { … }`, `each y { … }`                                                 |
-| `->`     | a case and what to do, `case … -> do R U R'`; a function's result type, `fun f(…) -> Sequence`   |
+| `->`     | a case and what to do: `case … -> do R U R'`                                                     |
 | `=` `==` | `let` binding; equality                                                                          |
 | `,`      | separates arguments, `commutator(R, U)`, and imported names, `from cfop import sexy, sune`       |
 | `.`      | a name from a module: `cfop.sune`                                                                |
-| `:`      | a type, `p: Pattern`; in `all c in …: …`                                                         |
+| `:`      | a type: `p: Pattern`, a function's result `fun f(…): Int`; in `all c in …: …`                    |
 | `" "`    | a string: an algo's description, captions                                                        |
 
-Keywords so far: `algo goal let fun do show each match search
+Keywords so far: `algo goal let fun return do show each match search
 as case otherwise else until max if not and or in is all has face import
 from`.
 Types are keywords too: `Location EdgeLocation CornerLocation
-CenterLocation Pattern Cubie Edge Corner Center Permutation Sequence Face
+CenterLocation Pattern Cubie Edge Corner Center Permutation Moves Face
 Slice Set Int Bool`.
 
 ### Locations
@@ -214,20 +214,20 @@ in the letter order of the place it's tested against:
 
 ### Functions
 
-| Signature                                          | Meaning                                                                                |
-| -------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `order(p: Permutation) -> Int`                     | the order of p                                                                         |
-| `inverse(p: Sequence) -> Sequence`                 | `p'` (for a Permutation, a Permutation)                                                |
-| `legal(p: Permutation) -> Bool`                    | whether some sequence of moves makes p (flip parity, twist sum, permutation parity)    |
-| `commutator(a: Sequence, b: Sequence) -> Sequence` | `a b a' b'` (cubers' order): `commutator(R, U)` is `R U R' U'`                         |
-| `reflect(p: Sequence, s: Slice) -> Sequence`       | p seen in a mirror through the slice's plane: `reflect(U R U', M)` is `U' L' U`        |
-| `solved(x: Location…) -> Bool`                     | each place holds its own piece the right way round (`x is /x/`)                        |
-| `solved(c: Permutation) -> Bool`                   | the cube is solved, however it's held: `solved(cube)`                                  |
-| `placed(x: Location…) -> Bool`                     | each place holds its own piece, however twisted (`x is /x/r`)                          |
-| `layer(f: Face) -> Set(Location)`                  | the places of a layer, home spellings (`d df dr db dl dfr drb dbl dlf`)                |
-| `location(p: Pattern) -> Location`                 | where the piece matching a complete pattern is, facing so that it matches              |
-| `location(c: Cubie) -> Location`                   | where that piece is, spelled so its orientation matches: `uf is location(c)` reads `c` |
-| `cubie(x: Location) -> Cubie`                      | the physical piece in place x now (to follow through turns)                            |
+| Signature                               | Meaning                                                                                |
+| --------------------------------------- | -------------------------------------------------------------------------------------- |
+| `order(p: Permutation): Int`            | the order of p                                                                         |
+| `inverse(p: Moves): Moves`              | `p'` (for a Permutation, a Permutation)                                                |
+| `legal(p: Permutation): Bool`           | whether some sequence of moves makes p (flip parity, twist sum, permutation parity)    |
+| `commutator(a: Moves, b: Moves): Moves` | `a b a' b'` (cubers' order): `commutator(R, U)` is `R U R' U'`                         |
+| `reflect(p: Moves, s: Slice): Moves`    | p seen in a mirror through the slice's plane: `reflect(U R U', M)` is `U' L' U`        |
+| `solved(x: Location…): Bool`            | each place holds its own piece the right way round (`x is /x/`)                        |
+| `solved(c: Permutation): Bool`          | the cube is solved, however it's held: `solved(cube)`                                  |
+| `placed(x: Location…): Bool`            | each place holds its own piece, however twisted (`x is /x/r`)                          |
+| `layer(f: Face): Set(Location)`         | the places of a layer, home spellings (`d df dr db dl dfr drb dbl dlf`)                |
+| `location(p: Pattern): Location`        | where the piece matching a complete pattern is, facing so that it matches              |
+| `location(c: Cubie): Location`          | where that piece is, spelled so its orientation matches: `uf is location(c)` reads `c` |
+| `cubie(x: Location): Cubie`             | the physical piece in place x now (to follow through turns)                            |
 
 `Location…` takes any number of places, and a `Set(Location)` counts as
 its members: `solved(df dr db dl)`, `solved(layer(D))`.
@@ -262,17 +262,17 @@ that matches.
 
 Types are keywords, written with a capital letter:
 
-| Type            | Values                                                                                                                           |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `Location`      | a place, with facing: `uf`, `fu`, `urf`; its kinds are `EdgeLocation`, `CornerLocation`, `CenterLocation`                        |
-| `Pattern`       | `/df/`, `/u__/`, `/ulb/r`                                                                                                        |
-| `Cubie`         | one piece with an orientation: a complete pattern (`/df/`, `/fd/`), or from `cubie(x)`; its kinds are `Edge`, `Corner`, `Center` |
-| `Permutation`   | cycles, `(uf ur ub)`; a cube state is one (`cube`)                                                                               |
-| `Sequence`      | a permutation that remembers its moves, so it can be played (any sequence can be used as a permutation, not the reverse)         |
-| `Face`          | `U D F B L R`, as in `layer(D)`                                                                                                  |
-| `Slice`         | `M E S`, as in `reflect(p, M)`                                                                                                   |
-| `Set(Location)` | several places: `layer(D)`                                                                                                       |
-| `Int`, `Bool`   | numbers and truth values; a condition (`uf is /df/`, a face picture) is a Bool                                                   |
+| Type            | Values                                                                                                                                                    |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Location`      | a place, with facing: `uf`, `fu`, `urf`; its kinds are `EdgeLocation`, `CornerLocation`, `CenterLocation`                                                 |
+| `Pattern`       | `/df/`, `/u__/`, `/ulb/r`                                                                                                                                 |
+| `Cubie`         | one piece with an orientation: a complete pattern (`/df/`, `/fd/`), or from `cubie(x)`; its kinds are `Edge`, `Corner`, `Center`                          |
+| `Permutation`   | cycles, `(uf ur ub)`; a cube state is one (`cube`)                                                                                                        |
+| `Moves`         | a sequence of moves, `R U R' U'`: a permutation that remembers its moves, so it can be played (any `Moves` can be used as a permutation, not the reverse) |
+| `Face`          | `U D F B L R`, as in `layer(D)`                                                                                                                           |
+| `Slice`         | `M E S`, as in `reflect(p, M)`                                                                                                                            |
+| `Set(Location)` | several places: `layer(D)`                                                                                                                                |
+| `Int`, `Bool`   | numbers and truth values; a condition (`uf is /df/`, a face picture) is a Bool                                                                            |
 
 The kinds form a hierarchy; a value of a type can be used wherever its
 parent is expected:
@@ -290,13 +290,15 @@ Location         uf  fu  urf  u
 └── CenterLocation   u
 ```
 
-- **Every function states its types:** each parameter and the result.
-  `fun lift(p: Pattern) -> Sequence { … }`. The compiler checks every call
+- **Every function states its types:** each parameter and the result;
+  an algo, each parameter.
+  `fun f(p: Pattern): Int { … }`, `algo lift(p: Pattern) { … }`. The
+  compiler checks every call
   and every use of the result.
 - Where a `Face` or `Slice` is expected, a move letter names the face or
   slice, not the turn: `layer(D)`, `reflect(p, M)`.
-- A `let` may state its type (`let t: Sequence = …`) but needn't: it's the
-  type of what it's given. A search's `as t` is a Sequence.
+- A `let` may state its type (`let t: Moves = …`) but needn't: it's the
+  type of what it's given. A search's `as t` is of type `Moves`.
 - A **Pattern** is read relative to the centers: after `y`, `/fr/` is the
   piece that now belongs at the front right.
 - A **Cubie** is a piece with an orientation. Written as a pattern
@@ -321,21 +323,22 @@ Location         uf  fu  urf  u
 
 ### Structure and control
 
-| Construct                                | Meaning                                                                                                                                                                                                                                |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `algo basic "…" goal solved(cube) { … }` | an algo: a name, a description, and a goal, each optional (see Algos)                                                                                                                                                                  |
-| `algo "Middle" goal … { … }`             | an algo inside another: a stage of it                                                                                                                                                                                                  |
-| `let name = …`                           | single assignment                                                                                                                                                                                                                      |
-| `do R U R'`                              | play moves (the only thing that changes the cube)                                                                                                                                                                                      |
-| `each y { … }`                           | the block 4 times, always, turning y after each: "for every side". With a whole cube turn it makes no moves of its own; with a face turn (`each U`) it really turns between passes. (Unlike `search`, which stops at the first match.) |
-| `match { case … -> … }`                  | first true case wins; its cases are conditions (`case br is /fr/r -> …`), and there's no subject to compare. With no `otherwise`, nothing matching is an error, as in `search`. `-> ()` means "nothing to do"                          |
-| `search U* as t { case … }`              | try the cases with zero turns, then after each further turn (see Searches); the turns found are named `t` and are made only where written: `do t F2`                                                                                   |
-| `… else search D* as t { … }`            | if the first search finds nothing, try another                                                                                                                                                                                         |
-| `show z2`                                | a visible whole cube turn (see Whole cube turns)                                                                                                                                                                                       |
-| `otherwise -> …`                         | when nothing matches                                                                                                                                                                                                                   |
-| `until <cond> max n { … }`               | retry a block; `until goal max n` repeats until the algo's goal holds                                                                                                                                                                  |
-| `if <cond> { … }`                        | plain condition                                                                                                                                                                                                                        |
-| `fun name(p: Type) -> Type { … }`        | a helper: its body is a block, and its value is the block's last expression (a sequence, for `do`)                                                                                                                                     |
+| Construct                                | Meaning                                                                                                                                                                                                                                            |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `algo basic "…" goal solved(cube) { … }` | an algo: a name, a description, and a goal, each optional (see Algos)                                                                                                                                                                              |
+| `algo "Middle" goal … { … }`             | an algo inside another: a stage of it                                                                                                                                                                                                              |
+| `let name = …`                           | single assignment                                                                                                                                                                                                                                  |
+| `do R U R'`                              | play moves (the only thing that changes the cube)                                                                                                                                                                                                  |
+| `each y { … }`                           | the block 4 times, always, turning y after each: "for every side". With a whole cube turn it makes no moves of its own; with a face turn (`each U`) it really turns between passes. (Unlike `search`, which stops at the first match.)             |
+| `match { case … -> … }`                  | the first true case does its action (`case br is /fr/r -> do y<insertRight>`); cases are conditions, with no subject. With no `otherwise`, nothing matching is an error, as in `search`. `-> ()` means "nothing to do"; cases never produce values |
+| `search U* as t { case … }`              | try the cases with zero turns, then after each further turn (see Searches); the turns found are named `t` and are made only where written: `do t F2`                                                                                               |
+| `… else search D* as t { … }`            | if the first search finds nothing, try another                                                                                                                                                                                                     |
+| `show z2`                                | a visible whole cube turn (see Whole cube turns)                                                                                                                                                                                                   |
+| `otherwise -> …`                         | when nothing matches                                                                                                                                                                                                                               |
+| `until <cond> max n { … }`               | retry a block; `until goal max n` repeats until the algo's goal holds                                                                                                                                                                              |
+| `if <cond> { … }`                        | plain condition                                                                                                                                                                                                                                    |
+| `fun name(p: Type): Type { … return … }` | a pure helper: computes a value, never moves the cube; `return` gives its result                                                                                                                                                                   |
+| `algo name(p: Type) "…" { … }`           | an algo with parameters: defined here, run where another algo calls it (`do lift(/df/r)`)                                                                                                                                                          |
 
 ### Searches
 
@@ -377,10 +380,10 @@ search U* as t {
 An algo is a named, described part of a method, with its goal:
 
 ```
-algo [name] ["Description"] [goal predicate] { … }
+algo [name[(parameters)]] ["Description"] [goal predicate] { … }
 ```
 
-All three are optional. A method is an algo, and its stages are algos
+All are optional (parameters need a name). A method is an algo, and its stages are algos
 inside it:
 
 ```
@@ -406,6 +409,27 @@ move sequence accomplishes what.
 - **Names:** a name (`basic`) lets the algo be referred to: by tests, in
   the trace, and perhaps by other files (open question 17). The
   description is what the page shows; without one, the name is shown.
+
+**Algos with parameters are like macros.** An algo with a parameter list
+is defined where it's written, not run there; it runs where another algo
+calls it with `do`, as if its body were written at the call. The trace
+shows the call as its own step, with its description:
+
+```
+algo lift(p: Pattern) "Lift a piece to the top" {
+  match {
+    case df is p -> do F2           case fr is p -> do R<U>
+    …
+    otherwise    -> ()               # already in the top layer
+  }
+}
+…
+do lift(/df/r)
+```
+
+An algo without parameters (a stage) runs where it's written. Only `do`
+moves the cube, whether it plays a sequence or runs an algo; a `fun` never
+does.
 
 **Every algo's goal is an assertable invariant** for the part of the
 method it covers:
@@ -557,50 +581,53 @@ or the move list.
 
 ## Discarded
 
-| Idea                                                                                        | Why                                                                                                                                                               |
-| ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `conjugate(a, b)` as a function                                                             | Which argument is the wrapper has to be remembered, and nesting gets hard to read; `F<R U>` shows it                                                              |
-| An infix conjugate (`p^w`, `p @ w`, `p ~ w`)                                                | Without brackets, it's unclear how much of `R U ~ F` is wrapped; `^` reads as a power                                                                             |
-| `from cfop import *`                                                                        | A bare name could come from anywhere; names are listed, or written qualified (`cfop.sune`)                                                                        |
-| Well-known sequences built in (always defined)                                              | Where a name comes from would be a mystery; they're a module, imported by name                                                                                    |
-| `solution basic for cube3 { … }` and `stage "…" goal … { … }`                               | One construct for both: `algo [name] ["Description"] [goal …] { … }`, nested for stages                                                                           |
-| `slot(x)` and `match slot(x) { case df -> … }`                                              | Asking which place holds a piece is a pattern test, `df is /df/r`; `match` takes only conditions                                                                  |
-| `fn name(p) = …`                                                                            | A body on several lines reads badly after `=`, so a function's body is a block; and the keyword is `fun`, because this is supposed to be fun: `fun name(p) { … }` |
-| Functions without types (`fun lift(p) { … }`)                                               | Every parameter and result is typed, so the compiler can check each call                                                                                          |
-| The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations)                         | Replaced everywhere by standard notation                                                                                                                          |
-| Upper case piece names (`URF`)                                                              | Reads as moves U R F; Singmaster used lower case                                                                                                                  |
-| Corner names in either winding (`ufr` as well as `urf`)                                     | Six spellings per corner; clockwise only gives exactly three, one per sticker                                                                                     |
-| Bare names as cubies, `@urf` for locations                                                  | Permutations move places, so places get the plain names; a cubie is a complete pattern, `/urf/`                                                                   |
-| `home(c)` (or `target(c)`, `c.home`)                                                        | Not needed: a complete pattern's letters are its home                                                                                                             |
-| `&c` / `*loc` (address and dereference)                                                     | `*&df == df` would be true only when df is home, unlike a pointer; `cubie(x)` and `location(p)` say it plainly                                                    |
-| `loc.cubie`, `c.home` (properties)                                                          | Plain functions instead; no new syntax                                                                                                                            |
-| `=~` for matching                                                                           | Looks like "not equal"; `is` reads as English                                                                                                                     |
-| `==` comparing a place with a piece                                                         | `==` would mean two things; `is` looks inside a place, `==` never does                                                                                            |
-| Bare patterns (`u_`, `u__`)                                                                 | Hard to tell from names; `/…/` marks them                                                                                                                         |
-| `~=` (same piece, any twist)                                                                | Now the `r` flag: `ubr is /ulb/r`                                                                                                                                 |
-| Face pictures in braces with spaced cells (`face U { _ u _ / … }`)                          | Brackets with `/` between rows read as a two-dimensional pattern: `face U [_u_/uuu/_u_]`                                                                          |
-| Lists of places in brackets (`[uf ur ub ul] is [...]`)                                      | Brackets are for face pictures; functions take several places: `solved(uf ur ub ul)`                                                                              |
-| "Solved" meaning the identity (`c m == ()`)                                                 | Any way of holding a solved cube counts                                                                                                                           |
-| Cubies named by color (`$ybo`), `#` as their mark                                           | `#` is for comments; names relative to the centers make rules work on every side                                                                                  |
-| Permanent names (a letter always means one color)                                           | The meaning of `u` would split after `x`; rules must follow the cube as held                                                                                      |
-| `where(c)`                                                                                  | Sounds like a loop; now `location(p)`                                                                                                                             |
-| `solvable(p)`                                                                               | Sounds like it returns moves; now `legal(p)` (a yes/no check)                                                                                                     |
-| `sticker(x)`                                                                                | Replaced by patterns: `uf is /u_/`                                                                                                                                |
-| `skip if <cond>`                                                                            | An algo's goal: an algo whose goal already holds is skipped                                                                                                       |
-| `around y`                                                                                  | Renamed `each y` (open)                                                                                                                                           |
-| `search U { … }`, `using U match`, `using y, U match`, `find /uf/ by U as t { at uf -> … }` | One construct: `search U* as t { case uf is /uf/ -> … }`                                                                                                          |
-| Search turns made implicitly (before a case's moves)                                        | Explicit is better: `do t F2`                                                                                                                                     |
-| `turns` / `turns'` (an unnamed search)                                                      | Every search names its turns: `as t`                                                                                                                              |
-| Searching in turn order (`E*` ≠ `E'*`)                                                      | Shortest first, so the direction doesn't matter                                                                                                                   |
-| Whole cube turns as moves in the solution                                                   | They change the frame; `show` for a visible turn                                                                                                                  |
-| `*` for composition                                                                         | Suggests order doesn't matter; side by side is used (`*` appears only as a suffix on a search generator, `U*`)                                                    |
-| Sequences in brackets with commas `[R, U, F]`                                               | Reads as the commutator `[R, U]`, and arrays with commas imply a different order convention                                                                       |
-| Commutator brackets `[A, B]`, `[A: B]`; GAP's `Comm(a, b)`, `a^b`                           | Brackets are face pictures, and GAP's definitions run the other way from cubers'; named functions say which is meant                                              |
-| Powers: `p^3`, `p^-1` (and `p3`, `(…)x3`, `p*3`)                                            | `(p)3`, as cubers write it, and `'` for the inverse                                                                                                               |
-| GAP's `i^p` for "where i goes"                                                              | Function notation `p(uf)` chosen                                                                                                                                  |
-| `<Identity>`                                                                                | `()`                                                                                                                                                              |
-| Moves without spaces (`RUR'U'`)                                                             | Spaces everywhere, one rule                                                                                                                                       |
-| A `Notation` string type in the code                                                        | Sequences are `Move[]`; text only at the edges; `alg("…")` checked at compile time                                                                                |
+| Idea                                                                                               | Why                                                                                                                                                               |
+| -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `conjugate(a, b)` as a function                                                                    | Which argument is the wrapper has to be remembered, and nesting gets hard to read; `F<R U>` shows it                                                              |
+| An infix conjugate (`p^w`, `p @ w`, `p ~ w`)                                                       | Without brackets, it's unclear how much of `R U ~ F` is wrapped; `^` reads as a power                                                                             |
+| `from cfop import *`                                                                               | A bare name could come from anywhere; names are listed, or written qualified (`cfop.sune`)                                                                        |
+| Well-known sequences built in (always defined)                                                     | Where a name comes from would be a mystery; they're a module, imported by name                                                                                    |
+| `solution basic for cube3 { … }` and `stage "…" goal … { … }`                                      | One construct for both: `algo [name] ["Description"] [goal …] { … }`, nested for stages                                                                           |
+| `slot(x)` and `match slot(x) { case df -> … }`                                                     | Asking which place holds a piece is a pattern test, `df is /df/r`; `match` takes only conditions                                                                  |
+| `fn name(p) = …`                                                                                   | A body on several lines reads badly after `=`, so a function's body is a block; and the keyword is `fun`, because this is supposed to be fun: `fun name(p) { … }` |
+| Functions without types (`fun lift(p) { … }`)                                                      | Every parameter and result is typed, so the compiler can check each call                                                                                          |
+| `fun f(p: T) -> T`                                                                                 | `->` is the case arrow; a result type is written like a parameter's, `fun f(p: T): T`                                                                             |
+| Functions whose value is their last expression, cases that produce values (`case fr is p -> R<U>`) | `match` would mean two things; actions are algos (`-> do …`), and a `fun` says `return`                                                                           |
+| `Sequence` as a type name                                                                          | A sequence of what? `Moves` says it                                                                                                                               |
+| The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations)                                | Replaced everywhere by standard notation                                                                                                                          |
+| Upper case piece names (`URF`)                                                                     | Reads as moves U R F; Singmaster used lower case                                                                                                                  |
+| Corner names in either winding (`ufr` as well as `urf`)                                            | Six spellings per corner; clockwise only gives exactly three, one per sticker                                                                                     |
+| Bare names as cubies, `@urf` for locations                                                         | Permutations move places, so places get the plain names; a cubie is a complete pattern, `/urf/`                                                                   |
+| `home(c)` (or `target(c)`, `c.home`)                                                               | Not needed: a complete pattern's letters are its home                                                                                                             |
+| `&c` / `*loc` (address and dereference)                                                            | `*&df == df` would be true only when df is home, unlike a pointer; `cubie(x)` and `location(p)` say it plainly                                                    |
+| `loc.cubie`, `c.home` (properties)                                                                 | Plain functions instead; no new syntax                                                                                                                            |
+| `=~` for matching                                                                                  | Looks like "not equal"; `is` reads as English                                                                                                                     |
+| `==` comparing a place with a piece                                                                | `==` would mean two things; `is` looks inside a place, `==` never does                                                                                            |
+| Bare patterns (`u_`, `u__`)                                                                        | Hard to tell from names; `/…/` marks them                                                                                                                         |
+| `~=` (same piece, any twist)                                                                       | Now the `r` flag: `ubr is /ulb/r`                                                                                                                                 |
+| Face pictures in braces with spaced cells (`face U { _ u _ / … }`)                                 | Brackets with `/` between rows read as a two-dimensional pattern: `face U [_u_/uuu/_u_]`                                                                          |
+| Lists of places in brackets (`[uf ur ub ul] is [...]`)                                             | Brackets are for face pictures; functions take several places: `solved(uf ur ub ul)`                                                                              |
+| "Solved" meaning the identity (`c m == ()`)                                                        | Any way of holding a solved cube counts                                                                                                                           |
+| Cubies named by color (`$ybo`), `#` as their mark                                                  | `#` is for comments; names relative to the centers make rules work on every side                                                                                  |
+| Permanent names (a letter always means one color)                                                  | The meaning of `u` would split after `x`; rules must follow the cube as held                                                                                      |
+| `where(c)`                                                                                         | Sounds like a loop; now `location(p)`                                                                                                                             |
+| `solvable(p)`                                                                                      | Sounds like it returns moves; now `legal(p)` (a yes/no check)                                                                                                     |
+| `sticker(x)`                                                                                       | Replaced by patterns: `uf is /u_/`                                                                                                                                |
+| `skip if <cond>`                                                                                   | An algo's goal: an algo whose goal already holds is skipped                                                                                                       |
+| `around y`                                                                                         | Renamed `each y` (open)                                                                                                                                           |
+| `search U { … }`, `using U match`, `using y, U match`, `find /uf/ by U as t { at uf -> … }`        | One construct: `search U* as t { case uf is /uf/ -> … }`                                                                                                          |
+| Search turns made implicitly (before a case's moves)                                               | Explicit is better: `do t F2`                                                                                                                                     |
+| `turns` / `turns'` (an unnamed search)                                                             | Every search names its turns: `as t`                                                                                                                              |
+| Searching in turn order (`E*` ≠ `E'*`)                                                             | Shortest first, so the direction doesn't matter                                                                                                                   |
+| Whole cube turns as moves in the solution                                                          | They change the frame; `show` for a visible turn                                                                                                                  |
+| `*` for composition                                                                                | Suggests order doesn't matter; side by side is used (`*` appears only as a suffix on a search generator, `U*`)                                                    |
+| Sequences in brackets with commas `[R, U, F]`                                                      | Reads as the commutator `[R, U]`, and arrays with commas imply a different order convention                                                                       |
+| Commutator brackets `[A, B]`, `[A: B]`; GAP's `Comm(a, b)`, `a^b`                                  | Brackets are face pictures, and GAP's definitions run the other way from cubers'; named functions say which is meant                                              |
+| Powers: `p^3`, `p^-1` (and `p3`, `(…)x3`, `p*3`)                                                   | `(p)3`, as cubers write it, and `'` for the inverse                                                                                                               |
+| GAP's `i^p` for "where i goes"                                                                     | Function notation `p(uf)` chosen                                                                                                                                  |
+| `<Identity>`                                                                                       | `()`                                                                                                                                                              |
+| Moves without spaces (`RUR'U'`)                                                                    | Spaces everywhere, one rule                                                                                                                                       |
+| A `Notation` string type in the code                                                               | Sequences are `Move[]`; text only at the edges; `alg("…")` checked at compile time                                                                                |
 
 ## How the current solvers would be written
 
