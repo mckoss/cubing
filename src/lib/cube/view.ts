@@ -100,9 +100,11 @@ export class CubeView {
 	private resizeObserver: ResizeObserver;
 	private disposables: { dispose(): void }[] = [];
 
+	// Instant: moves (and flips) happen at once, without turning, for tests.
 	constructor(
 		private canvas: HTMLCanvasElement,
-		private size = 3
+		private size = 3,
+		private instant = false
 	) {
 		this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -165,6 +167,12 @@ export class CubeView {
 			this.turningGroup.attach(cubie.cubie);
 		}
 
+		if (this.instant) {
+			this.turningGroup.rotateOnWorldAxis(AXES[cubieMove.axis], angle);
+			this.settle(cubies, cubieMove);
+			return Promise.resolve();
+		}
+
 		return new Promise((resolve) => {
 			this.turning = {
 				axis: AXES[cubieMove.axis],
@@ -179,7 +187,9 @@ export class CubeView {
 
 	// Turn the view of the cube upside down (not a move).
 	flip(): void {
-		if (this.flipRemaining === 0) {
+		if (this.instant) {
+			this.root.rotateOnWorldAxis(AXES.x, Math.PI);
+		} else if (this.flipRemaining === 0) {
 			this.flipRemaining = Math.PI;
 		}
 	}
@@ -237,14 +247,20 @@ export class CubeView {
 			return;
 		}
 		const { cubies, move, done } = this.turning;
+		this.settle(cubies, move);
+		this.turning = undefined;
+		done();
+	}
+
+	// Put the cubies turned by a move (in the turning group, turned all the
+	// way) back in the cube, in their new places.
+	private settle(cubies: CubieModel<THREE.Group>[], move: ModelTurn): void {
 		rotateCubies(cubies, move.axis, move.turns, this.size);
 		for (const cubie of cubies) {
 			this.cube.attach(cubie.cubie);
 			this.snap(cubie);
 		}
 		this.turningGroup.rotation.set(0, 0, 0);
-		this.turning = undefined;
-		done();
 	}
 
 	// Remove any rounding errors: put the cubie exactly in its place, turned

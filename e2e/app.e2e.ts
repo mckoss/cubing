@@ -1,12 +1,14 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 // Open the app at the fastest speed; returns the page errors seen.
-async function open(page: Page): Promise<string[]> {
+// Instant makes moves at once instead of turning them (one frame per
+// quarter turn, slow with software WebGL), for tests that play a lot.
+async function open(page: Page, { instant = false } = {}): Promise<string[]> {
 	const errors: string[] = [];
 	page.on('pageerror', (e): void => {
 		errors.push(e.message);
 	});
-	await page.goto('./');
+	await page.goto(instant ? './?instant' : './');
 	await page.getByRole('button', { name: 'Fastest' }).click();
 	return errors;
 }
@@ -56,13 +58,11 @@ test('slice moves and whole cube turns', async ({ page }) => {
 	await expect(permutation(page)).toHaveText('Solved');
 });
 
-// Solving animates about 200 moves, one per frame at Fastest; software
-// WebGL in a headless browser can be slow.
-const SOLVE_TIMEOUT = 180_000;
+// Solving plays about 200 moves: instantly, but give it time.
+const SOLVE_TIMEOUT = 20_000;
 
 test('scramble, then solve with the Singmaster solver', async ({ page }) => {
-	test.setTimeout(SOLVE_TIMEOUT);
-	const errors = await open(page);
+	const errors = await open(page, { instant: true });
 	await page.getByTestId('scramble').click();
 	await expect(history(page)).toContainText('Scramble');
 	await expect(page.getByTestId('solved')).toBeHidden();
@@ -75,8 +75,7 @@ test('scramble, then solve with the Singmaster solver', async ({ page }) => {
 });
 
 test('solve with the Basic Modern Solution', async ({ page }) => {
-	test.setTimeout(SOLVE_TIMEOUT);
-	const errors = await open(page);
+	const errors = await open(page, { instant: true });
 	await page.getByTestId('scramble').click();
 	await page.getByLabel('Solver').selectOption('Basic Modern Solution');
 	await page.getByTestId('solve').click();
@@ -121,8 +120,7 @@ test('each sequence shows the case it solves', async ({ page }) => {
 });
 
 test('step through a solution by move and by algo', async ({ page }) => {
-	test.setTimeout(SOLVE_TIMEOUT);
-	await open(page);
+	await open(page, { instant: true });
 	for (const key of ['r', 'u', 'f', 'Shift+L']) {
 		await page.keyboard.press(key);
 	}
@@ -166,8 +164,7 @@ test('step through a solution by move and by algo', async ({ page }) => {
 });
 
 test('solves after slice moves', async ({ page }) => {
-	test.setTimeout(SOLVE_TIMEOUT);
-	await open(page);
+	await open(page, { instant: true });
 	for (const key of ['m', 'r', 'e', 'Shift+S', 'u']) {
 		await page.keyboard.press(key);
 	}
