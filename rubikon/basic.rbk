@@ -4,7 +4,7 @@
 #
 # All names are relative to the cube as it's held.  Whole cube turns
 # (x y z) only change the frame: they make no moves of their own, and the
-# moves after them come out renamed.  (`show y` would make a visible turn;
+# moves after them come out renamed.  (`show(y)` would make a visible turn;
 # this method doesn't need one.)
 
 from cfop import sexy, sune          # well-known sequences (cfop.rbk)

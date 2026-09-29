@@ -83,9 +83,10 @@ let niklas       = R U' L' U R' U' L
 # case, left out here.
 #   https://www.speedsolving.com/wiki/index.php/PLL
 
-# A-perm (Aa): the wiki's x R' U R' D2 R U' R' D2 R2 x', without the
-# whole cube turns.
-let aPerm        = R'<commutator(F, R'<B2>)>
+# A-perm (Aa), as the wiki gives it, with its whole cube turns shown (a
+# person turns the cube for it).  Without them it's R'<commutator(F,
+# R'<B2>)>, the same permutation.
+let aPerm        = show(x) R' U R' D2 R U' R' D2 R2 show(x')
                  # (urf ulb ubr)
 
 # U-perms (Ua, and its inverse Ub).

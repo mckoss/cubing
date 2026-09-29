@@ -82,7 +82,7 @@ algo singmaster "David Singmaster's solution (1981)" goal solved(cube) {
     }
   }
 
-  show z2                                    # turn the cube over (a visible turn)
+  do show(z2)                                # turn the cube over (a visible turn)
 
   algo "Solve Middle Edges" goal solved(fr fl br bl) {
     each y {
