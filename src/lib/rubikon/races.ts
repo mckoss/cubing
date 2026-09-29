@@ -124,7 +124,6 @@ export function isRaceResult(value: unknown): value is RaceResult {
 		(typeof r.hash === 'string' || r.hash === null) &&
 		Number.isInteger(r.seed) &&
 		typeof r.generator === 'number' &&
-		typeof r.ms === 'number' &&
 		typeof r.date === 'string' &&
 		!Number.isNaN(Date.parse(r.date)) &&
 		(r.stopped === undefined || typeof r.stopped === 'string') &&
