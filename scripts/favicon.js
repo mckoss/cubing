@@ -1,17 +1,38 @@
 // Make the site's icons from its own 3D cube: the solved cube seen from its
 // usual corner (three faces), on black.
 //
-//   npm run build && npm run preview -- --port 4173 &
-//   node scripts/favicon.js
+//   npm run build:favicon
 //
-// Writes static/favicon.png (32px), static/favicon-192.png, and
-// static/apple-touch-icon.png (180px).  Set PLAYWRIGHT_CHROMIUM_EXECUTABLE to
-// use a preinstalled Chromium.
+// That builds the site, then this script serves it (vite preview), shoots
+// the cube with Playwright, and writes static/favicon.png (32px),
+// static/favicon-192.png, and static/apple-touch-icon.png (180px).  Set
+// PLAYWRIGHT_CHROMIUM_EXECUTABLE to use a preinstalled Chromium.
 
 import { chromium } from '@playwright/test';
 import sharp from 'sharp';
+import { spawn } from 'node:child_process';
 
-const url = process.env.CUBING_URL ?? 'http://localhost:4173/cubing/';
+const port = 4174;
+const url = `http://localhost:${port}/cubing/`;
+
+// Serve the build, and wait until it answers.
+const server = spawn('npx', ['vite', 'preview', '--port', String(port), '--strictPort'], {
+	stdio: 'ignore',
+	detached: true
+});
+server.unref();
+for (let tries = 0; ; tries++) {
+	try {
+		await fetch(url);
+		break;
+	} catch (e) {
+		if (tries > 60) {
+			process.kill(-server.pid);
+			throw e;
+		}
+		await new Promise((resolve) => setTimeout(resolve, 500));
+	}
+}
 
 const browser = await chromium.launch({
 	executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined,
@@ -32,6 +53,7 @@ await page.addStyleTag({
 await page.waitForTimeout(1000);
 const shot = await page.locator('canvas').first().screenshot({ omitBackground: true });
 await browser.close();
+process.kill(-server.pid);
 
 // Trim to the cube, square it with a margin, and put it on black.
 const cube = await sharp(shot).trim().png().toBuffer();
