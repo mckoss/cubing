@@ -6,7 +6,7 @@
 		type HistoryBlock,
 		type Playhead
 	} from '$lib/cube/move-list';
-	import { formatMove } from '$lib/cube/moves';
+	import { countOf, formatMove } from '$lib/cube/moves';
 	import Self from './HistoryBlock.svelte';
 
 	// showTrace: whether to show Rubikon trace() lines.  head: where
@@ -28,8 +28,8 @@
 
 	const count = $derived(
 		block.quarterTurns === block.faceTurns
-			? `${block.faceTurns} moves`
-			: `${block.faceTurns} moves · ${block.quarterTurns} quarter turns`
+			? countOf(block.faceTurns, 'move')
+			: `${countOf(block.faceTurns, 'move')} · ${countOf(block.quarterTurns, 'quarter turn')}`
 	);
 </script>
 

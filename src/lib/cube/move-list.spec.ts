@@ -197,6 +197,18 @@ describe('the history in step with playback', () => {
 		expect(moves.map((m) => moveState(m, head(list.played)))).toEqual(['played', 'current']);
 	});
 
+	it('lists the moves shown, as the history shows them', () => {
+		const list = example();
+		list.add(parseMoves('F'));
+		list.note('trace', 'wall');
+		list.add(parseMoves('F'));
+		const [root] = list.history();
+		expect(spans(list.shownMoves())).toEqual(spans(movesOf(root?.items ?? [])));
+		// Not combined across a block's end or a note.
+		expect(spans(list.shownMoves().slice(-3))).toEqual(['F@6-7', 'F@7-8', 'F@8-9']);
+		expect(spans(new MoveList().shownMoves())).toEqual([]);
+	});
+
 	it('marks a block with only a note once the moves before it are done', () => {
 		const list = new MoveList();
 		list.add(parseMoves('R'));

@@ -8,6 +8,7 @@
 	// move is out of view, and starts again when they scroll it back into
 	// view, or when moves are added or playback is started or stepped.
 	import { tick, type Snippet } from 'svelte';
+	import { countOf } from '$lib/cube/moves';
 	import type { Player } from '$lib/cube/player.svelte';
 	import HistoryBlock from './HistoryBlock.svelte';
 
@@ -72,6 +73,8 @@
 		void player.playhead;
 		void player.history;
 		void tick().then(() => {
+			// (Unless the history has gone from the page meanwhile.)
+			if (!scroller?.isConnected) return;
 			const el = currentMove();
 			if (!following || !el) return;
 			if (offBy(el, 48) === 0) return;
@@ -93,7 +96,9 @@
 <section class="card history">
 	<h2>
 		History
-		{#if player.pendingCount > 0}<span class="pending">{player.pendingCount} to go</span>{/if}
+		{#if player.movesToGo > 0}<span class="pending" data-testid="to-go"
+				>{countOf(player.movesToGo, 'move')} to go</span
+			>{/if}
 		{#if controls}<span class="controls">{@render controls()}</span>{/if}
 	</h2>
 	<div class="scroller" data-testid="history" bind:this={scroller} onscroll={onScroll}>

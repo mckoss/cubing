@@ -182,6 +182,11 @@ export function formatMoves(moves: Move[]): string {
 	return moves.map(formatMove).join(' ');
 }
 
+// A count of things, for a label: "1 move", "2 moves".
+export function countOf(count: number, thing: string): string {
+	return `${count} ${thing}${count === 1 ? '' : 's'}`;
+}
+
 // Add a move to a list, combining it with the last move if they turn the
 // same face.  (The 2003 simulator combined "f" and "F", and "ff" + "f".)
 export function appendMove(moves: Move[], move: Move): Move[] {

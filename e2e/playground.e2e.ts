@@ -94,6 +94,10 @@ test('marks the move playing in the history, and stops at each algo', async ({ p
 	await expect(moves).toHaveText(['R', 'F2', 'U']);
 	await expect(history(page).locator('.move.ahead')).toHaveCount(3);
 	await expect(note).toHaveClass(/\bahead\b/);
+	// Counted as the history shows them (F2 is one move), in the singular
+	// for one.
+	await expect(page.getByTestId('to-go')).toHaveText('3 moves to go');
+	await expect(lift.locator('h4')).toContainText(/\b1 move · 2 quarter turns\b/);
 
 	// Next algo stops where lift starts: R played, the trace line with it.
 	await page.getByTestId('next-algo').click();
@@ -108,11 +112,24 @@ test('marks the move playing in the history, and stops at each algo', async ({ p
 	await expect(lift).toHaveClass(/\bcurrent\b/);
 	await expect(history(page).locator('[data-block="Demo"]')).toHaveClass(/\bcurrent\b/);
 	await expect(history(page).locator('.move.ahead')).toHaveText(['U']);
+	await expect(page.getByTestId('to-go')).toHaveText('1 move to go');
 
 	// Played through: nothing marked or dimmed.
 	await page.getByTestId('play-pause').click();
 	await expect(page.getByTestId('play-pause')).toBeHidden();
 	await expect(history(page).locator('[aria-current], .ahead')).toHaveCount(0);
+});
+
+test('Next move stops where an algo starts, though it turns the same face', async ({ page }) => {
+	await open(page);
+	await page.getByTestId('new').click();
+	await source(page).fill('algo main {\n  do U\n  algo "Again" { do U }\n}\n');
+	await page.getByTestId('step-through').check();
+	await page.getByTestId('run').click();
+	await expect(history(page).locator('.move')).toHaveText(['U', 'U']);
+	await page.getByTestId('next-move').click();
+	await expect(history(page).locator('.move.ahead')).toHaveCount(1);
+	await expect(page.getByTestId('stage')).toHaveText('Again: move 1 of 1');
 });
 
 test('shows the current permutation', async ({ page }) => {

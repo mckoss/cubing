@@ -58,11 +58,26 @@ export class Player {
 	paused = $state(false);
 	private steps = 0;
 
-	// Read `version` so these update when the move list changes.
+	// Bumped when moves, blocks, or notes are added or cleared (not when
+	// they're played), so the history isn't rebuilt for every move played.
+	private edits = $state(0);
 	readonly history = $derived.by(() => {
-		void this.version;
+		void this.edits;
 		return this.moveList.history();
 	});
+	// The moves as the history shows them.
+	private readonly shown = $derived.by(() => {
+		void this.edits;
+		return this.moveList.shownMoves();
+	});
+	// How many of those haven't started playing.
+	readonly movesToGo = $derived.by(() => {
+		void this.version;
+		const played = this.moveList.played;
+		return this.shown.filter((move) => move.start >= played).length;
+	});
+	// Read `version` so these update when the move list changes.
+
 	readonly pendingCount = $derived.by(() => {
 		void this.version;
 		return this.moveList.pending.length;
@@ -119,6 +134,7 @@ export class Player {
 
 	// Show changes made to the move list, and play the moves added.
 	changed(): void {
+		this.edits++;
 		this.version++;
 		this.cue++;
 		void this.animate();
@@ -193,15 +209,14 @@ export class Player {
 	nextMove(): void {
 		this.cue++;
 		this.paused = true;
-		// A half turn is the same quarter turn twice in a row: play both.
-		const [first, second] = this.moveList.pending;
-		this.steps =
-			first !== undefined &&
-			second !== undefined &&
-			first.name === second.name &&
-			first.turns === second.turns
-				? 2
-				: 1;
+		// Play the rest of the move the history shows next (both quarter
+		// turns of a half turn), but only up to where a block starts or ends.
+		const played = this.moveList.played;
+		const next = this.shown.find((move) => move.start <= played && played < move.end);
+		this.steps = Math.max(
+			1,
+			Math.min(this.moveList.pending.length, (next?.end ?? played + 1) - played)
+		);
 		void this.animate();
 	}
 
@@ -222,6 +237,7 @@ export class Player {
 		this.view?.reset();
 		this.perm = new Permutation();
 		this.turning = undefined;
+		this.edits++;
 		this.version++;
 	}
 

@@ -252,6 +252,19 @@ export class MoveList {
 		return simplifyMoves(this.moves.slice(start, end));
 	}
 
+	// The moves the history shows, in order: quarter turns combined, but not
+	// across the start or end of a block or a note.
+	shownMoves(): HistoryMove[] {
+		const walls = new Set([0, this.moves.length]);
+		for (const block of this.blocks) {
+			walls.add(block.start);
+			if (block.end !== undefined) walls.add(block.end);
+		}
+		for (const note of this.notes) walls.add(note.at);
+		const at = [...walls].sort((a, b) => a - b);
+		return at.flatMap((from, i) => historyMoves(this.moves.slice(from, at[i + 1] ?? from), from));
+	}
+
 	// The history as nested blocks, as the 2003 simulator displayed it,
 	// with the notes in the blocks that were open when they were made.
 	history(): HistoryBlock[] {
