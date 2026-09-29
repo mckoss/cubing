@@ -274,6 +274,12 @@ test('Cube Racing shows the built-in benchmarks', async ({ page }) => {
 	await expect(builtIn.nth(1)).toContainText('Basic Modern Solution (TypeScript)');
 	await expect(builtIn.nth(2)).toContainText('Singmaster (TypeScript)');
 	await expect(racing.getByTestId('race-histogram')).toContainText('basic');
+	// Pointing at a bar shows its range of moves and its share of the cubes.
+	const columns = racing.getByTestId('race-bar');
+	await columns.nth(Math.floor((await columns.count()) / 2)).hover();
+	await expect(racing.getByTestId('race-bar-tip')).toHaveText(
+		/^\d+–\d+ moves · \d+ cubes? \(\d+\.\d%\)$/
+	);
 	// The open program races by default.
 	await expect(racing.getByTestId('race-what')).toHaveValue('open');
 	expect(errors).toEqual([]);

@@ -126,8 +126,7 @@ export interface RaceResult {
 	seed: number;
 	generator: number;
 	stats: RaceStats;
-	// How long it took, in milliseconds, and when it was run (ISO 8601).
-	ms: number;
+	// When it was run (ISO 8601).
 	date: string;
 	// One of the site's own benchmarks (benchmarks.json).
 	builtIn?: boolean;
@@ -280,7 +279,6 @@ export interface RaceOptions {
 	maxUnsolvedInARow?: number;
 	// Called after each cube: how many are done, of how many.
 	onProgress?: (done: number, count: number) => void;
-	now?: () => number;
 	date?: () => Date;
 }
 
@@ -291,10 +289,8 @@ export function race(racer: Racer, seed: number, options: RaceOptions = {}): Rac
 		count = RACE_COUNT,
 		maxUnsolvedInARow = MAX_UNSOLVED_IN_A_ROW,
 		onProgress,
-		now = Date.now,
 		date = (): Date => new Date()
 	} = options;
-	const started = now();
 	const { name, hash, solve } = prepareRacer(racer);
 	const results: CubeResult[] = [];
 	let inARow = 0;
@@ -316,7 +312,6 @@ export function race(racer: Racer, seed: number, options: RaceOptions = {}): Rac
 		seed,
 		generator: RACE_GENERATOR,
 		stats: raceStats(results),
-		ms: now() - started,
 		date: date().toISOString(),
 		...(stopped === undefined ? {} : { stopped })
 	};

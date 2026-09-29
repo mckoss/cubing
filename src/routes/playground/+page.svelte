@@ -540,10 +540,6 @@
 		playerSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	}
 
-	function seconds(ms: number): string {
-		return ms < 10_000 ? `${(ms / 1000).toFixed(1)} s` : `${Math.round(ms / 1000)} s`;
-	}
-
 	function day(iso: string): string {
 		return new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' });
 	}
@@ -570,6 +566,15 @@
 	}
 	const shownBars = $derived(bars(shownRace?.stats.histogram ?? []));
 	const tallest = $derived(Math.max(1, ...shownBars.map((b) => b.cubes)));
+	const barTotal = $derived(shownBars.reduce((sum, b) => sum + b.cubes, 0));
+	// The bar under the pointer (or tapped), whose range and share are shown.
+	let hoveredBar = $state<number | null>(null);
+	const hovered = $derived(hoveredBar === null ? undefined : shownBars[hoveredBar]);
+	function barText(bar: { from: number; cubes: number }): string {
+		const share = barTotal === 0 ? 0 : (bar.cubes / barTotal) * 100;
+		const cubes = bar.cubes === 1 ? '1 cube' : `${bar.cubes} cubes`;
+		return `${bar.from}–${bar.from + 4} moves · ${cubes} (${share.toFixed(1)}%)`;
+	}
 	// The histogram in words, for screen readers.
 	const histogramLabel = $derived.by((): string => {
 		const peak = shownBars.find((b) => b.cubes === tallest);
@@ -881,7 +886,6 @@
 						<th scope="col" class="num">Average</th>
 						<th scope="col" class="num">Median</th>
 						<th scope="col" class="num">Unsolved</th>
-						<th scope="col" class="num">Time</th>
 						<th scope="col">Date</th>
 					</tr>
 				</thead>
@@ -935,7 +939,6 @@
 									>
 								{/if}
 							</td>
-							<td class="num">{seconds(result.ms)}</td>
 							<td class="date">{day(result.date)}</td>
 						</tr>
 					{/each}
@@ -994,14 +997,41 @@
 				{#if shownBars.length === 0}
 					<p class="note">No cube was solved.</p>
 				{:else}
-					<div class="bars" role="img" aria-label={histogramLabel} data-testid="race-bars">
-						{#each shownBars as bar (bar.from)}
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<div
+						class="bars"
+						role="img"
+						aria-label={histogramLabel}
+						data-testid="race-bars"
+						onmouseleave={(): void => {
+							hoveredBar = null;
+						}}
+					>
+						{#each shownBars as bar, i (bar.from)}
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
 							<div
-								class="bar"
-								style:height="{(bar.cubes / tallest) * 100}%"
-								title="{bar.from}–{bar.from + 4} moves: {bar.cubes} cubes"
-							></div>
+								class="column"
+								class:hovered={hoveredBar === i}
+								data-testid="race-bar"
+								onpointerenter={(): void => {
+									hoveredBar = i;
+								}}
+								onpointerdown={(): void => {
+									hoveredBar = i;
+								}}
+							>
+								<div class="bar" style:height="{(bar.cubes / tallest) * 100}%"></div>
+							</div>
 						{/each}
+						{#if hoveredBar !== null && hovered !== undefined}
+							<div
+								class="bar-tip"
+								style:--at="{((hoveredBar + 0.5) / shownBars.length) * 100}%"
+								data-testid="race-bar-tip"
+							>
+								{barText(hovered)}
+							</div>
+						{/if}
 					</div>
 					<div class="axis">
 						<span>{shownBars[0]?.from}</span>
@@ -1564,19 +1594,56 @@
 	}
 
 	.bars {
+		position: relative;
 		display: flex;
 		align-items: flex-end;
 		gap: 2px;
-		height: 7rem;
+		/* The top band is room for the label of the bar pointed at. */
+		height: 9rem;
+		padding-top: 2rem;
 		padding-bottom: 1px;
+		box-sizing: border-box;
 		border-bottom: 1px solid var(--border);
 	}
 
-	.bar {
+	/* Each bar's column is its whole height, so short bars are easy to point at. */
+	.column {
 		flex: 1 1 0;
 		min-width: 0;
+		height: 100%;
+		display: flex;
+		align-items: flex-end;
+	}
+
+	.bar {
+		width: 100%;
 		background: var(--accent);
 		border-radius: 2px 2px 0 0;
+	}
+
+	.column.hovered .bar {
+		filter: brightness(0.8);
+	}
+
+	/* Above the bars, over the bar it describes, kept inside the chart. */
+	.bar-tip {
+		position: absolute;
+		top: 0;
+		--width: min(16rem, 100%);
+		left: clamp(0px, calc(var(--at) - var(--width) / 2), calc(100% - var(--width)));
+		width: var(--width);
+		box-sizing: border-box;
+		white-space: nowrap;
+		text-align: center;
+		pointer-events: none;
+		padding: 0.2rem 0.4rem;
+		font-size: 0.8rem;
+		font-variant-numeric: tabular-nums;
+		color: var(--text);
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: 4px;
+		box-shadow: 0 2px 6px rgb(0 0 0 / 0.15);
 	}
 
 	.axis {

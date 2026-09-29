@@ -21,10 +21,9 @@ const RACERS: Racer[] = [
 
 const FILE = new URL('./benchmarks.json', import.meta.url);
 
-// A result without what changes from run to run (the time taken, and when).
+// A result without what changes from run to run (when it was run).
 function lasting(result: RaceResult): Partial<RaceResult> {
 	const copy: Partial<RaceResult> = { ...result };
-	delete copy.ms;
 	delete copy.date;
 	return copy;
 }

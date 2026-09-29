@@ -35,7 +35,6 @@ function result(name: string, hash: string | null, date: string): RaceResult {
 			meanQuarterTurns: 130,
 			histogram: [[90, 20]]
 		},
-		ms: 100,
 		date
 	};
 }
