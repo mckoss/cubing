@@ -78,6 +78,19 @@ goals (checked at the end, bypass when already true, persistent), and a
 trace grouped by algo. Test: each construct, then each stage of Basic
 from states where the earlier goals hold.
 
+<<<<<<< HEAD
+=======
+
+**One run, two uses.** The runtime reads the syntax tree and produces a
+stream of events: a move (visible, or a frame change that renames what
+follows), entering an algo (with its description), leaving it, and an
+algo bypassed because its goal already holds. The same stream drives the
+cube simulator, move by move, and builds the execution trace, grouped by
+algo like the blocks in the demo's move list (`MoveList.openBlock`), with
+counts and "next stage" stepping.
+
+> > > > > > > origin/main
+
 ### 5. Modules
 
 `import`, `from … import … as …`, qualified names, `main`, finding files,
@@ -136,3 +149,32 @@ should change:
   `r`, `u` read as places, so `fun f(…)` or `let d = …` is an error. It's
   the stated rule (names made only of face letters are places), but short
   names are where it bites.
+
+### From writing the specification
+
+Writing [rubikon.md](rubikon.md) from the design notes and the grammar
+turned up gaps and disagreements:
+
+- **Application `p(q)`** only parses when `p` is a name: `R(U)` reads as
+  the sequence `R U`, and `inverse(F2)(df)` as a call and then a place.
+  Either drop application (open question 2) or give it a syntax.
+- **Spaces between items** are only required after a move: `sune'sexy`,
+  `(R U)(F)`, and `R<U>F` all parse. Require them everywhere?
+- **Not in the grammar yet:** `colors { … }`, `all c in …: …` (`all` and
+  `in` are reserved but unused), number literals in expressions (so an
+  `Int` result can't be compared with anything).
+- **Conditions aren't values:** a `fun` can't return `Bool` from an `is`
+  test, and `let b = uf is /df/` isn't possible.
+- **The grammar accepts** an unnamed algo with parameters, parameterized
+  algos nested in others, `do` inside a `fun`, `R''`, `else if`, and any
+  capitalized word as a type; the checker (7) should reject what the
+  design forbids.
+- **Underspecified:** whether `until` tests before its first pass, and
+  what happens when `max` runs out; `until goal` in an algo without a
+  goal; the order of `search y* U*` (every U within every y, or shortest
+  first?); `each U2` or `each R'`; scoping and forward references; a
+  search with both `otherwise` and `else search` (the `else` can never
+  run); a top-level algo without a name (can never be called); whether
+  `do t lift(p)` mixes moves and an algo call.
+- **Printing:** the canonical cycle spelling scores any edge read from F
+  or B, not only middle edges as LANGUAGE.md says.
