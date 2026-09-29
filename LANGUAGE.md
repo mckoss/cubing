@@ -80,7 +80,7 @@ Every special character and its uses:
 | `:`      | in `all c in …: …`                                                                               |
 | `" "`    | a string: an algo's description, captions                                                        |
 
-Keywords so far: `algo goal let fn do show each match search
+Keywords so far: `algo goal let fun do show each match search
 as case otherwise else until max if not and or in is all has face import
 from`.
 
@@ -279,7 +279,7 @@ be used as a permutation, not the reverse), Int, Bool.
 | `otherwise -> …`                         | when nothing matches                                                                                                                                                                                                                   |
 | `until <cond> max n { … }`               | retry a block; `until goal max n` repeats until the algo's goal holds                                                                                                                                                                  |
 | `if <cond> { … }`                        | plain condition                                                                                                                                                                                                                        |
-| `fn name(p) = …`                         | small helper returning a sequence                                                                                                                                                                                                      |
+| `fun name(p) { … }`                      | a helper: its body is a block, and its value is the block's last expression (a sequence, for `do`)                                                                                                                                     |
 
 ### Searches
 
@@ -389,8 +389,8 @@ method it covers:
 ### Modules and imports
 
 A file is a module, named by its file name: `cfop.rbk` is `cfop`. A module
-holds definitions at its top level (`let`, `fn`, and named `algo`s); the
-`let` and `fn` definitions can be imported. [`rubikon/cfop.rbk`](rubikon/cfop.rbk) holds well-known
+holds definitions at its top level (`let`, `fun`, and named `algo`s); the
+`let` and `fun` definitions can be imported. [`rubikon/cfop.rbk`](rubikon/cfop.rbk) holds well-known
 sequences (Sune, the sexy move, the PLLs), with where each was published.
 
 As in Python, there's never a mystery about where a name comes from:
@@ -501,48 +501,49 @@ or the move list.
 
 ## Discarded
 
-| Idea                                                                                        | Why                                                                                                                  |
-| ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `conjugate(a, b)` as a function                                                             | Which argument is the wrapper has to be remembered, and nesting gets hard to read; `F<R U>` shows it                 |
-| An infix conjugate (`p^w`, `p @ w`, `p ~ w`)                                                | Without brackets, it's unclear how much of `R U ~ F` is wrapped; `^` reads as a power                                |
-| `from cfop import *`                                                                        | A bare name could come from anywhere; names are listed, or written qualified (`cfop.sune`)                           |
-| Well-known sequences built in (always defined)                                              | Where a name comes from would be a mystery; they're a module, imported by name                                       |
-| `solution basic for cube3 { … }` and `stage "…" goal … { … }`                               | One construct for both: `algo [name] ["Description"] [goal …] { … }`, nested for stages                              |
-| `slot(x)` and `match slot(x) { case df -> … }`                                              | Asking which place holds a piece is a pattern test, `df is /df/r`; `match` takes only conditions                     |
-| The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations)                         | Replaced everywhere by standard notation                                                                             |
-| Upper case piece names (`URF`)                                                              | Reads as moves U R F; Singmaster used lower case                                                                     |
-| Corner names in either winding (`ufr` as well as `urf`)                                     | Six spellings per corner; clockwise only gives exactly three, one per sticker                                        |
-| Bare names as cubies, `@urf` for locations                                                  | Permutations move places, so places get the plain names; a cubie is a complete pattern, `/urf/`                      |
-| `home(c)` (or `target(c)`, `c.home`)                                                        | Not needed: a complete pattern's letters are its home                                                                |
-| `&c` / `*loc` (address and dereference)                                                     | `*&df == df` would be true only when df is home, unlike a pointer; `cubie(x)` and `location(p)` say it plainly       |
-| `loc.cubie`, `c.home` (properties)                                                          | Plain functions instead; no new syntax                                                                               |
-| `=~` for matching                                                                           | Looks like "not equal"; `is` reads as English                                                                        |
-| `==` comparing a place with a piece                                                         | `==` would mean two things; `is` looks inside a place, `==` never does                                               |
-| Bare patterns (`u_`, `u__`)                                                                 | Hard to tell from names; `/…/` marks them                                                                            |
-| `~=` (same piece, any twist)                                                                | Now the `r` flag: `ubr is /ulb/r`                                                                                    |
-| Face pictures in braces with spaced cells (`face U { _ u _ / … }`)                          | Brackets with `/` between rows read as a two-dimensional pattern: `face U [_u_/uuu/_u_]`                             |
-| Lists of places in brackets (`[uf ur ub ul] is [...]`)                                      | Brackets are for face pictures; functions take several places: `solved(uf ur ub ul)`                                 |
-| "Solved" meaning the identity (`c m == ()`)                                                 | Any way of holding a solved cube counts                                                                              |
-| Cubies named by color (`$ybo`), `#` as their mark                                           | `#` is for comments; names relative to the centers make rules work on every side                                     |
-| Permanent names (a letter always means one color)                                           | The meaning of `u` would split after `x`; rules must follow the cube as held                                         |
-| `where(c)`                                                                                  | Sounds like a loop; now `location(p)`                                                                                |
-| `solvable(p)`                                                                               | Sounds like it returns moves; now `legal(p)` (a yes/no check)                                                        |
-| `sticker(x)`                                                                                | Replaced by patterns: `uf is /u_/`                                                                                   |
-| `skip if <cond>`                                                                            | An algo's goal: an algo whose goal already holds is skipped                                                          |
-| `around y`                                                                                  | Renamed `each y` (open)                                                                                              |
-| `search U { … }`, `using U match`, `using y, U match`, `find /uf/ by U as t { at uf -> … }` | One construct: `search U* as t { case uf is /uf/ -> … }`                                                             |
-| Search turns made implicitly (before a case's moves)                                        | Explicit is better: `do t F2`                                                                                        |
-| `turns` / `turns'` (an unnamed search)                                                      | Every search names its turns: `as t`                                                                                 |
-| Searching in turn order (`E*` ≠ `E'*`)                                                      | Shortest first, so the direction doesn't matter                                                                      |
-| Whole cube turns as moves in the solution                                                   | They change the frame; `show` for a visible turn                                                                     |
-| `*` for composition                                                                         | Suggests order doesn't matter; side by side is used (`*` appears only as a suffix on a search generator, `U*`)       |
-| Sequences in brackets with commas `[R, U, F]`                                               | Reads as the commutator `[R, U]`, and arrays with commas imply a different order convention                          |
-| Commutator brackets `[A, B]`, `[A: B]`; GAP's `Comm(a, b)`, `a^b`                           | Brackets are face pictures, and GAP's definitions run the other way from cubers'; named functions say which is meant |
-| Powers: `p^3`, `p^-1` (and `p3`, `(…)x3`, `p*3`)                                            | `(p)3`, as cubers write it, and `'` for the inverse                                                                  |
-| GAP's `i^p` for "where i goes"                                                              | Function notation `p(uf)` chosen                                                                                     |
-| `<Identity>`                                                                                | `()`                                                                                                                 |
-| Moves without spaces (`RUR'U'`)                                                             | Spaces everywhere, one rule                                                                                          |
-| A `Notation` string type in the code                                                        | Sequences are `Move[]`; text only at the edges; `alg("…")` checked at compile time                                   |
+| Idea                                                                                        | Why                                                                                                                                                               |
+| ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `conjugate(a, b)` as a function                                                             | Which argument is the wrapper has to be remembered, and nesting gets hard to read; `F<R U>` shows it                                                              |
+| An infix conjugate (`p^w`, `p @ w`, `p ~ w`)                                                | Without brackets, it's unclear how much of `R U ~ F` is wrapped; `^` reads as a power                                                                             |
+| `from cfop import *`                                                                        | A bare name could come from anywhere; names are listed, or written qualified (`cfop.sune`)                                                                        |
+| Well-known sequences built in (always defined)                                              | Where a name comes from would be a mystery; they're a module, imported by name                                                                                    |
+| `solution basic for cube3 { … }` and `stage "…" goal … { … }`                               | One construct for both: `algo [name] ["Description"] [goal …] { … }`, nested for stages                                                                           |
+| `slot(x)` and `match slot(x) { case df -> … }`                                              | Asking which place holds a piece is a pattern test, `df is /df/r`; `match` takes only conditions                                                                  |
+| `fn name(p) = …`                                                                            | A body on several lines reads badly after `=`, so a function's body is a block; and the keyword is `fun`, because this is supposed to be fun: `fun name(p) { … }` |
+| The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations)                         | Replaced everywhere by standard notation                                                                                                                          |
+| Upper case piece names (`URF`)                                                              | Reads as moves U R F; Singmaster used lower case                                                                                                                  |
+| Corner names in either winding (`ufr` as well as `urf`)                                     | Six spellings per corner; clockwise only gives exactly three, one per sticker                                                                                     |
+| Bare names as cubies, `@urf` for locations                                                  | Permutations move places, so places get the plain names; a cubie is a complete pattern, `/urf/`                                                                   |
+| `home(c)` (or `target(c)`, `c.home`)                                                        | Not needed: a complete pattern's letters are its home                                                                                                             |
+| `&c` / `*loc` (address and dereference)                                                     | `*&df == df` would be true only when df is home, unlike a pointer; `cubie(x)` and `location(p)` say it plainly                                                    |
+| `loc.cubie`, `c.home` (properties)                                                          | Plain functions instead; no new syntax                                                                                                                            |
+| `=~` for matching                                                                           | Looks like "not equal"; `is` reads as English                                                                                                                     |
+| `==` comparing a place with a piece                                                         | `==` would mean two things; `is` looks inside a place, `==` never does                                                                                            |
+| Bare patterns (`u_`, `u__`)                                                                 | Hard to tell from names; `/…/` marks them                                                                                                                         |
+| `~=` (same piece, any twist)                                                                | Now the `r` flag: `ubr is /ulb/r`                                                                                                                                 |
+| Face pictures in braces with spaced cells (`face U { _ u _ / … }`)                          | Brackets with `/` between rows read as a two-dimensional pattern: `face U [_u_/uuu/_u_]`                                                                          |
+| Lists of places in brackets (`[uf ur ub ul] is [...]`)                                      | Brackets are for face pictures; functions take several places: `solved(uf ur ub ul)`                                                                              |
+| "Solved" meaning the identity (`c m == ()`)                                                 | Any way of holding a solved cube counts                                                                                                                           |
+| Cubies named by color (`$ybo`), `#` as their mark                                           | `#` is for comments; names relative to the centers make rules work on every side                                                                                  |
+| Permanent names (a letter always means one color)                                           | The meaning of `u` would split after `x`; rules must follow the cube as held                                                                                      |
+| `where(c)`                                                                                  | Sounds like a loop; now `location(p)`                                                                                                                             |
+| `solvable(p)`                                                                               | Sounds like it returns moves; now `legal(p)` (a yes/no check)                                                                                                     |
+| `sticker(x)`                                                                                | Replaced by patterns: `uf is /u_/`                                                                                                                                |
+| `skip if <cond>`                                                                            | An algo's goal: an algo whose goal already holds is skipped                                                                                                       |
+| `around y`                                                                                  | Renamed `each y` (open)                                                                                                                                           |
+| `search U { … }`, `using U match`, `using y, U match`, `find /uf/ by U as t { at uf -> … }` | One construct: `search U* as t { case uf is /uf/ -> … }`                                                                                                          |
+| Search turns made implicitly (before a case's moves)                                        | Explicit is better: `do t F2`                                                                                                                                     |
+| `turns` / `turns'` (an unnamed search)                                                      | Every search names its turns: `as t`                                                                                                                              |
+| Searching in turn order (`E*` ≠ `E'*`)                                                      | Shortest first, so the direction doesn't matter                                                                                                                   |
+| Whole cube turns as moves in the solution                                                   | They change the frame; `show` for a visible turn                                                                                                                  |
+| `*` for composition                                                                         | Suggests order doesn't matter; side by side is used (`*` appears only as a suffix on a search generator, `U*`)                                                    |
+| Sequences in brackets with commas `[R, U, F]`                                               | Reads as the commutator `[R, U]`, and arrays with commas imply a different order convention                                                                       |
+| Commutator brackets `[A, B]`, `[A: B]`; GAP's `Comm(a, b)`, `a^b`                           | Brackets are face pictures, and GAP's definitions run the other way from cubers'; named functions say which is meant                                              |
+| Powers: `p^3`, `p^-1` (and `p3`, `(…)x3`, `p*3`)                                            | `(p)3`, as cubers write it, and `'` for the inverse                                                                                                               |
+| GAP's `i^p` for "where i goes"                                                              | Function notation `p(uf)` chosen                                                                                                                                  |
+| `<Identity>`                                                                                | `()`                                                                                                                                                              |
+| Moves without spaces (`RUR'U'`)                                                             | Spaces everywhere, one rule                                                                                                                                       |
+| A `Notation` string type in the code                                                        | Sequences are `Move[]`; text only at the edges; `alg("…")` checked at compile time                                                                                |
 
 ## How the current solvers would be written
 
