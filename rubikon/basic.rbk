@@ -52,16 +52,19 @@ algo basic "The Basic Modern Solution" goal solved(cube) {
   let twistCornerBack  = twistCorner'
                        # (urf)+ (dr db fr) (dfr)+ (dbl)- (drb)-
 
-  # Moving a piece up to the top without disturbing the bottom.
-  fn edgeUp(x) = match slot(x) {
-    case df -> F2           case fr -> R<U>
-    case dr -> R2           case br -> R'<U>
-    case db -> B2           case bl -> L<U>
-    case dl -> L2           case fl -> L'<U>
+  # Moving a piece (p, a pattern) up to the top without disturbing the
+  # bottom, by where it is now.
+  fn edgeUp(p) = match {
+    case df is p -> F2           case fr is p -> R<U>
+    case dr is p -> R2           case br is p -> R'<U>
+    case db is p -> B2           case bl is p -> L<U>
+    case dl is p -> L2           case fl is p -> L'<U>
+    otherwise    -> ()                     # already in the top layer
   }
-  fn cornerUp(x) = match slot(x) {
-    case dfr -> R<U>        case dbl -> L<U>
-    case drb -> R'<U'>      case dlf -> L'<U'>
+  fn cornerUp(p) = match {
+    case dfr is p -> R<U>        case dbl is p -> L<U>
+    case drb is p -> R'<U'>      case dlf is p -> L'<U'>
+    otherwise     -> ()                    # already in the top layer
   }
 
   algo "First Face" goal solved(layer(D)) {
@@ -69,7 +72,7 @@ algo basic "The Basic Modern Solution" goal solved(cube) {
     algo "Bottom Edges" goal solved(df dr db dl) {
       each y {                                      # each bottom edge in turn
         if not solved(df) {
-          if location(/df/) not in layer(U) { do edgeUp(location(/df/)) }
+          do edgeUp(/df/r)                          # either way round
           search U* as t {
             case uf is /df/ -> do t F2                    # its bottom color up
             case fu is /df/ -> do t U' R'<F>              # its bottom color in front
@@ -81,7 +84,7 @@ algo basic "The Basic Modern Solution" goal solved(cube) {
     algo "Bottom Corners" goal solved(dfr drb dbl dlf) {
       each y {
         if not solved(dfr) {
-          if location(/dfr/) not in layer(U) { do cornerUp(location(/dfr/)) }
+          do cornerUp(/dfr/r)
           search U* as t {
             case rfu is /dfr/ -> do t R<U>                # bottom color facing right
             case fur is /dfr/ -> do t F'<U'>              # bottom color facing front
@@ -94,16 +97,16 @@ algo basic "The Basic Modern Solution" goal solved(cube) {
 
   algo "Middle" goal solved(fr fl br bl) {
     each y {                                        # each middle slot in turn
-      # Stuck in the wrong middle slot: insert any edge there to lift it out.
-      if location(/fr/) in layer(E) and not solved(fr) {
-        match slot(location(/fr/)) {
-          case fr -> do insertRight
-          case br -> do y<insertRight>
-          case bl -> do y2<insertRight>
-          case fl -> do y'<insertRight>
-        }
-      }
       if not solved(fr) {
+        # Stuck in a middle slot (flipped in its own, or in another): insert
+        # any edge there to lift it out.
+        match {
+          case fr is /fr/r -> do insertRight
+          case br is /fr/r -> do y<insertRight>
+          case bl is /fr/r -> do y2<insertRight>
+          case fl is /fr/r -> do y'<insertRight>
+          otherwise        -> ()                   # already in the top layer
+        }
         search U* as t {
           case fu is /fr/ -> do t insertRight          # front color in front
           case ur is /fr/ -> do t y<insertLeft>        # right color on the right

@@ -211,9 +211,9 @@ in the letter order of the place it's tested against:
 | `reflect(p, M)`    | p seen in a mirror through the M slice (likewise `E`, `S`): `reflect(U R U', M)` is `U' L' U`               |
 | `solved(x …)`      | for places, each holds its own piece the right way round (`x is /x/`); for a cube, solved however it's held |
 | `placed(x …)`      | each place holds its own piece, however twisted (`x is /x/r`)                                               |
+| `layer(D)`         | the places of a layer, home spellings (`d df dr db dl dfr drb dbl dlf`), for `solved` and `placed`          |
 | `location(p)`      | where the piece matching a complete pattern (or a cubie) is, facing so that it matches                      |
 | `cubie(x)`         | the physical piece in place x now (a Cubie value, to follow through turns)                                  |
-| `slot(x)`          | the place's home name, ignoring facing: `slot(fu) == uf`, `slot(fur) == urf`                                |
 
 `commutator` follows cubers' convention; GAP's `Comm(a, b)` is `a' b' a b`.
 Its arguments aren't a thing and a wrapper: swapping them gives the
@@ -272,7 +272,7 @@ be used as a permutation, not the reverse), Int, Bool.
 | `let name = …`                           | single assignment                                                                                                                                                                                                                      |
 | `do R U R'`                              | play moves (the only thing that changes the cube)                                                                                                                                                                                      |
 | `each y { … }`                           | the block 4 times, always, turning y after each: "for every side". With a whole cube turn it makes no moves of its own; with a face turn (`each U`) it really turns between passes. (Unlike `search`, which stops at the first match.) |
-| `match { case … -> … }`                  | first matching case wins; `-> ()` means "nothing to do"                                                                                                                                                                                |
+| `match { case … -> … }`                  | first true case wins; its cases are conditions (`case br is /fr/r -> …`), and there's no subject to compare. With no `otherwise`, nothing matching is an error, as in `search`. `-> ()` means "nothing to do"                          |
 | `search U* as t { case … }`              | try the cases with zero turns, then after each further turn (see Searches); the turns found are named `t` and are made only where written: `do t F2`                                                                                   |
 | `… else search D* as t { … }`            | if the first search finds nothing, try another                                                                                                                                                                                         |
 | `show z2`                                | a visible whole cube turn (see Whole cube turns)                                                                                                                                                                                       |
@@ -508,6 +508,7 @@ or the move list.
 | `from cfop import *`                                                                        | A bare name could come from anywhere; names are listed, or written qualified (`cfop.sune`)                           |
 | Well-known sequences built in (always defined)                                              | Where a name comes from would be a mystery; they're a module, imported by name                                       |
 | `solution basic for cube3 { … }` and `stage "…" goal … { … }`                               | One construct for both: `algo [name] ["Description"] [goal …] { … }`, nested for stages                              |
+| `slot(x)` and `match slot(x) { case df -> … }`                                              | Asking which place holds a piece is a pattern test, `df is /df/r`; `match` takes only conditions                     |
 | The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations)                         | Replaced everywhere by standard notation                                                                             |
 | Upper case piece names (`URF`)                                                              | Reads as moves U R F; Singmaster used lower case                                                                     |
 | Corner names in either winding (`ufr` as well as `urf`)                                     | Six spellings per corner; clockwise only gives exactly three, one per sticker                                        |
