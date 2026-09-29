@@ -55,7 +55,7 @@ algo basic "The Basic Modern Solution" goal solved(cube) {
   # Lift a piece (p, a pattern) to the top without disturbing the rest of
   # the bottom, by where it is now.  Edge and corner places never match
   # the same pattern, so one list covers both.
-  fun lift(p) {
+  fun lift(p: Pattern) -> Sequence {
     match {
       case df  is p -> F2          case fr  is p -> R<U>
       case dr  is p -> R2          case br  is p -> R'<U>
