@@ -75,12 +75,14 @@ Every special character and its uses:
 | `{ }`    | a block: `stage "…" goal … { … }`, `each y { … }`                                                |
 | `->`     | a case and what to do: `case … -> do R U R'`                                                     |
 | `=` `==` | `let` binding; equality                                                                          |
-| `,`      | separates arguments: `commutator(R, U)`                                                          |
+| `,`      | separates arguments, `commutator(R, U)`, and imported names, `from cfop import sexy, sune`       |
+| `.`      | a name from a module: `cfop.sune`                                                                |
 | `:`      | in `all c in …: …`                                                                               |
 | `" "`    | a string: stage names, captions                                                                  |
 
 Keywords so far: `solution for stage goal let fn do show each match search
-as case otherwise else until max if not and or in is all has face`.
+as case otherwise else until max if not and or in is all has face import
+from`.
 
 ### Locations
 
@@ -356,6 +358,32 @@ stage "Middle" goal solved(layer(D) layer(E)) { … }
   earlier goals hold, run the stage, check its goal.
 - The page can show each stage's goal next to its moves.
 
+### Modules and imports
+
+A file is a module, named by its file name: `cfop.rbk` is `cfop`. A module
+that isn't a solution holds only definitions (`let` and `fn`), each of which
+can be imported. [`rubikon/cfop.rbk`](rubikon/cfop.rbk) holds well-known
+sequences (Sune, the sexy move, the PLLs), with where each was published.
+
+As in Python, there's never a mystery about where a name comes from:
+
+| Written                       | Then                                      |
+| ----------------------------- | ----------------------------------------- |
+| `from cfop import sune`       | `sune` can be used bare                   |
+| `from cfop import sexy, sune` | several names, listed                     |
+| `import cfop`                 | its names are used qualified: `cfop.sune` |
+
+- **No `from cfop import *`.** Every bare name is defined in the file or
+  listed in a `from … import` line.
+- **No shadowing:** a name defined in the file and also imported, or
+  imported from two modules, is an error.
+- **Only what a module defines can be imported from it,** not what it
+  imported itself: `sune` always comes from `cfop`, however it reached the
+  module that uses it.
+- Imports come first in a file. A module is found next to the importing
+  file. Circular imports are an error.
+- A qualified name is used like any other: `cfop.sune'`, `F<cfop.sexy>`.
+
 ### Generalization
 
 Keep a puzzle-independent core (permutations, patterns, control) and put
@@ -406,6 +434,13 @@ or the move list.
     `3Rw`); the pyraminx's lower case tip moves clash with lower case place
     names; face pictures for triangles; a sticker-numbered engine (as GAP
     does) under the names.
+17. **Modules:** Is there a standard library, found without being next to
+    the importing file? (`cfop` is the obvious first member.) Is a shorter
+    qualifier (`import cfop as c`) worth having, or is it a second name for
+    the same thing? Should a module declare its puzzle (`for cube3`)? Should
+    provenance be data (a `source "…"` clause the page can show) rather
+    than a comment? And `.` now marks a module's names, so question 16's
+    `uf.1` for places would need another mark.
 
 ## Problems with the current design
 
@@ -434,6 +469,8 @@ or the move list.
 | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `conjugate(a, b)` as a function                                                             | Which argument is the wrapper has to be remembered, and nesting gets hard to read; `F<R U>` shows it                 |
 | An infix conjugate (`p^w`, `p @ w`, `p ~ w`)                                                | Without brackets, it's unclear how much of `R U ~ F` is wrapped; `^` reads as a power                                |
+| `from cfop import *`                                                                        | A bare name could come from anywhere; names are listed, or written qualified (`cfop.sune`)                           |
+| Well-known sequences built in (always defined)                                              | Where a name comes from would be a mystery; they're a module, imported by name                                       |
 | The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations)                         | Replaced everywhere by standard notation                                                                             |
 | Upper case piece names (`URF`)                                                              | Reads as moves U R F; Singmaster used lower case                                                                     |
 | Corner names in either winding (`ufr` as well as `urf`)                                     | Six spellings per corner; clockwise only gives exactly three, one per sticker                                        |
@@ -478,6 +515,8 @@ code:
   complete.
 - [`rubikon/singmaster.rbk`](rubikon/singmaster.rbk) — Singmaster, a
   sketch.
+- [`rubikon/cfop.rbk`](rubikon/cfop.rbk) — well-known sequences, for
+  solutions to import; Basic imports `sexy` and `sune` from it.
 
 Notes:
 
