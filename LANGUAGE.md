@@ -333,7 +333,7 @@ display**: it shows which part of the move sequence accomplishes what.
 the solution it names:
 
 ```
-stage "Middle" goal solved(layer(D) layer(E)) { … }
+stage "Middle" goal solved(fr fl br bl) { … }
 ```
 
 - **Checked at the end:** when the stage finishes, its goal must hold, or
@@ -348,6 +348,12 @@ stage "Middle" goal solved(layer(D) layer(E)) { … }
   (Twist Corners scrambles the bottom) as long as it's restored by the
   stage's end. So the goals build up, and the last stage's goal (the cube
   solved) is reached with every earlier one still true.
+- **So a goal states only what its stage adds:** Bottom Corners' goal is
+  `solved(dfr drb dbl dlf)`, not `solved(layer(D))`; the bottom edges are
+  already held by Bottom Edges' goal. A stage that groups others (First
+  Face) can state the whole of what they reach. The last stage's goal,
+  `solved(cube)`, is the exception worth keeping: it's the solution's
+  claim, and the one goal that allows any way of holding the cube.
 - A method that deliberately undoes earlier work would have to say so
   (e.g. a `releases` clause on the stage); neither of ours does.
 - **Goals keep their frame:** a goal is checked in the orientation the cube
