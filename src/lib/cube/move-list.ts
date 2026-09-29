@@ -8,7 +8,14 @@
 // text, such as a Rubikon trace) can be recorded between moves; they're
 // walls too.
 
-import { inverseTurns, isRotation, simplifyMoves, type Move, type MoveName } from './moves';
+import {
+	appendMove,
+	inverseTurns,
+	isRotation,
+	simplifyMoves,
+	type Move,
+	type MoveName
+} from './moves';
 
 // Moves whose 2003 letter turned the other way from standard notation (the
 // slices, and z): a half turn is two of their counterclockwise quarter
@@ -89,17 +96,30 @@ export type NoteKind = 'trace' | 'bypass';
 export interface HistoryNote {
 	note: NoteKind;
 	text: string;
+	// Its position in the history (it comes after this many quarter turns).
+	at: number;
 }
 
 interface Note extends HistoryNote {
-	at: number;
 	seq: number;
 }
 
-export type HistoryItem = Move[] | HistoryBlock | HistoryNote;
+// A move as the history shows it (quarter turns combined), with the
+// quarter turns it was made from: positions start to end (not including
+// end).
+export interface HistoryMove extends Move {
+	start: number;
+	end: number;
+}
+
+export type HistoryItem = HistoryMove[] | HistoryBlock | HistoryNote;
 
 export interface HistoryBlock {
 	name: string;
+	// Its moves' positions, in quarter turns (start to end, not including
+	// end).
+	start: number;
+	end: number;
 	// Moves, notes, and nested blocks, in order.
 	items: HistoryItem[];
 	// Face turns (a half turn counts as one; turning the whole cube doesn't
@@ -232,6 +252,19 @@ export class MoveList {
 		return simplifyMoves(this.moves.slice(start, end));
 	}
 
+	// The moves the history shows, in order: quarter turns combined, but not
+	// across the start or end of a block or a note.
+	shownMoves(): HistoryMove[] {
+		const walls = new Set([0, this.moves.length]);
+		for (const block of this.blocks) {
+			walls.add(block.start);
+			if (block.end !== undefined) walls.add(block.end);
+		}
+		for (const note of this.notes) walls.add(note.at);
+		const at = [...walls].sort((a, b) => a - b);
+		return at.flatMap((from, i) => historyMoves(this.moves.slice(from, at[i + 1] ?? from), from));
+	}
+
 	// The history as nested blocks, as the 2003 simulator displayed it,
 	// with the notes in the blocks that were open when they were made.
 	history(): HistoryBlock[] {
@@ -259,7 +292,7 @@ export class MoveList {
 		// Moves up to a position go in the innermost open block.
 		const flush = (to: number): void => {
 			if (to > pos) {
-				open[open.length - 1]?.items.push(this.movesBetween(pos, to));
+				open[open.length - 1]?.items.push(historyMoves(this.moves.slice(pos, to), pos));
 				pos = to;
 			}
 		};
@@ -270,7 +303,13 @@ export class MoveList {
 			if (top === undefined || top.items.length === 0) return;
 			const { block, items } = top;
 			const end = block.end ?? this.moves.length;
-			const built = { name: block.name, items, ...countTurns(this.moves.slice(block.start, end)) };
+			const built = {
+				name: block.name,
+				start: block.start,
+				end,
+				items,
+				...countTurns(this.moves.slice(block.start, end))
+			};
 			(open[open.length - 1]?.items ?? result).push(built);
 		};
 
@@ -285,12 +324,72 @@ export class MoveList {
 					pop();
 				}
 			} else {
-				const { note, text } = mark.note;
-				open[open.length - 1]?.items.push({ note, text });
+				const { note, text, at } = mark.note;
+				open[open.length - 1]?.items.push({ note, text, at });
 			}
 		}
 		flush(this.moves.length);
 		while (open.length > 0) pop();
 		return result;
 	}
+}
+
+// Combine quarter turns into the moves the history shows (as
+// simplifyMoves does), keeping track of which quarter turns each one was
+// made from; `offset` is the position of the first.  Quarter turns that
+// cancel out aren't in any move.
+export function historyMoves(quarters: Move[], offset = 0): HistoryMove[] {
+	const result: HistoryMove[] = [];
+	quarters.forEach((move, i) => {
+		const last = result[result.length - 1];
+		const combined = appendMove(last === undefined ? [] : [last], move);
+		const at = offset + i;
+		if (last === undefined || combined.length === 2) {
+			result.push({ name: move.name, turns: move.turns, start: at, end: at + 1 });
+		} else {
+			result.pop();
+			const [merged] = combined;
+			if (merged !== undefined) {
+				result.push({ name: merged.name, turns: merged.turns, start: last.start, end: at + 1 });
+			}
+		}
+	});
+	return result;
+}
+
+// Where playback is, in quarter turns: `taken` moves have been taken to
+// play (the last may still be turning), `done` have finished turning, and
+// `current` is the one turning or last stepped to, while playing is under
+// way (undefined when idle).
+export interface Playhead {
+	taken: number;
+	done: number;
+	current: number | undefined;
+}
+
+// How far along a part of the history is: played, the move now playing
+// (or the block containing it), or not yet played.
+export type PlayState = 'played' | 'current' | 'ahead';
+
+export function moveState(move: HistoryMove, head: Playhead): PlayState {
+	if (head.current !== undefined && move.start <= head.current && head.current < move.end) {
+		return 'current';
+	}
+	return move.start < head.taken ? 'played' : 'ahead';
+}
+
+// A note shows once the moves before it have finished.
+export function noteState(note: HistoryNote, head: Playhead): PlayState {
+	return note.at <= head.done ? 'played' : 'ahead';
+}
+
+// A block has started once its first move is taken (or, without moves,
+// once the moves before it have finished), and is current while it
+// contains the current move.
+export function blockState(block: HistoryBlock, head: Playhead): PlayState {
+	if (head.current !== undefined && block.start <= head.current && head.current < block.end) {
+		return 'current';
+	}
+	const started = block.end > block.start ? block.start < head.taken : block.start <= head.done;
+	return started ? 'played' : 'ahead';
 }

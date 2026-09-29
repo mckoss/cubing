@@ -169,15 +169,20 @@ the line marked and selected, and an error in an imported module shown
 with the module's name (`cfop 12:5`: each error keeps its syntax tree
 `loc`, which says whose tree it's in). Run runs `algo main` with the
 runtime (`runMain`, with each imported library program parsed and passed
-as a module) on a solved cube ("From solved") or the cube as it is
-(Scramble unchecks "From solved"); the history shows the algo blocks,
+as a module) on the cube as it is (Reset first to start from solved; Run
+and its menu sit under the cube, with Scramble and Reset); the history
+shows the algo blocks,
 bypass notes, and trace lines as the run makes them, through
 `RunRecorder`. A run is limited (10,000 moves, 1,000,000 steps) so a
 program that loops stops with an error; it's synchronous (`basic` on a
-scramble takes a moment). Without a main, or when chosen from the Run
-menu (main, the last let, or any let), Run plays a let: the lets are
-evaluated with the runtime's `evaluateModule`/`evaluateLets` (top level
-and inside algos without parameters). A line of moves (`sune`, `F<R U>`)
+scramble takes a moment). The Run menu offers main, every other algo
+without parameters, nested ones too ("main › Top Cross": run by itself
+with `run`, in the scope of the lets of the algos it's inside, its goal
+checked, bypassed if it holds), and the named sequences (lets; the page
+calls them that), with main, else the first algo, else the last sequence
+chosen by default. The lets are evaluated with the runtime's
+`evaluateModule`/`evaluateLets` (top level and inside algos without
+parameters). A line of moves (`sune`, `F<R U>`)
 plays against the program's names; imports come from the library by
 name. The library (`library.ts`) saves, lists, pages through, opens,
 renames, and deletes programs, remembers the last one open, starts with
@@ -189,6 +194,14 @@ turns that aren't shown renamed away by the runtime's `renameMove` (so
 the history agrees with `physicalMoves()`). Decided: a history block's
 title is the algo's description if it has one, else its name (`algo
 lift(p) "Lift a piece to the top"` shows as "Lift a piece to the top").
+
+The history plays in step with the cube (shared `MoveHistory`, so on
+the main page too): moves not played yet are dimmed, the move playing (or
+just stepped to) is marked, with the blocks containing it, and the
+history scrolls to keep it in view (`historyMoves` maps the quarter turns
+played onto the moves shown). "Next algo" steps to the next place a
+block starts or ends, including called algos like `lift`. The Current
+Permutation card is shared with the main page.
 
 Left: running a long program without blocking the page (in a worker, or
 in slices).
@@ -268,8 +281,8 @@ should change:
 - **Where imports come from** in the browser: the playground finds
   `import cfop` by a library program's name, so a program's name is its
   module name, and renaming it breaks its importers.
-- **Where to start a run.** The playground offers "From solved" (reset
-  before each run) or playing on from the current cube; a program has no
+- **Where to start a run.** The playground runs on the cube as it is
+  (Reset first to start from solved); a program has no
   way to say what state it expects (a scramble, a setup).
 - **`until` is tested before each pass** (so it may run none), and running
   out of passes with the condition still false is an error. The spec

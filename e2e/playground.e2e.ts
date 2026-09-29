@@ -26,15 +26,22 @@ test('starts with the examples, and runs one', async ({ page }) => {
 	await page.getByTestId('run').click();
 	await expect(page.getByTestId('lets')).toContainText(/main ›\s*insertRight/);
 	await expect(page.getByTestId('run-what')).toHaveValue('main');
-	// Run from solved: basic's main has nothing to do.
+	// The cube starts solved: basic's main has nothing to do.
 	await expect(history(page)).toContainText(
 		'The Basic Modern Solution: skipped, its goal already holds'
 	);
 	await expect(page.getByTestId('status')).toHaveText('Ran main.');
 	await expect(page.getByTestId('solved')).toBeVisible();
 
-	// Or play one of its lets.
-	await page.getByTestId('run-what').selectOption({ label: 'the last let' });
+	// Or run one of its stages by itself.
+	await page.getByTestId('run-what').selectOption({ label: 'main › Top Cross' });
+	await page.getByTestId('run').click();
+	await expect(page.getByTestId('status')).toHaveText('Ran main › Top Cross.');
+	await expect(history(page)).toContainText('Top Cross: skipped, its goal already holds');
+
+	// Or play one of its named sequences.
+	await expect(page.getByText(/^Named Sequences \(\d+\)$/)).toBeVisible();
+	await page.getByTestId('run-what').selectOption({ label: 'the last sequence' });
 	await page.getByTestId('run').click();
 	await expect(history(page)).toContainText('twistCorner');
 	await expect(page.getByTestId('solved')).toBeHidden();
@@ -47,7 +54,6 @@ test("solves a scramble with basic's main", async ({ page }) => {
 	const errors = await open(page);
 	await page.getByTestId('scramble').click();
 	await expect(history(page)).toContainText('Scramble');
-	await expect(page.getByLabel('From solved')).not.toBeChecked();
 	await expect(page.getByTestId('solved')).toBeHidden();
 	await page.getByTestId('run').click();
 	await expect(page.getByTestId('status')).toHaveText('Ran main.');
@@ -71,6 +77,72 @@ test('shows trace lines, unless Show trace is off', async ({ page }) => {
 	await expect(line).toBeVisible();
 });
 
+test('marks the move playing in the history, and stops at each algo', async ({ page }) => {
+	await open(page);
+	await page.getByTestId('new').click();
+	await source(page).fill(
+		'from basic import lift\nalgo main "Demo" {\n  do R\n  trace("lifting")\n  do lift(/df/r) U\n}\n'
+	);
+	await page.getByTestId('step-through').check();
+	await page.getByTestId('run').click();
+	const moves = history(page).locator('.move');
+	const lift = history(page).locator('[data-block="Lift a piece to the top"]');
+	const note = history(page).locator('[data-note="trace"]');
+	const stage = page.getByTestId('stage');
+
+	// Paused at the start: every move and the trace line dimmed.
+	await expect(moves).toHaveText(['R', 'F2', 'U']);
+	await expect(history(page).locator('.move.ahead')).toHaveCount(3);
+	await expect(note).toHaveClass(/\bahead\b/);
+	// Counted as the history shows them (F2 is one move), in the singular
+	// for one.
+	await expect(page.getByTestId('to-go')).toHaveText('3 moves to go');
+	await expect(lift.locator('h4')).toContainText(/\b1 move · 2 quarter turns\b/);
+
+	// Next algo stops where lift starts: R played, the trace line with it.
+	await page.getByTestId('next-algo').click();
+	await expect(stage).toHaveText('Lift a piece to the top: move 1 of 1');
+	await expect(history(page).locator('[aria-current]')).toHaveText('R');
+	await expect(note).not.toHaveClass(/\bahead\b/);
+	await expect(lift).toHaveClass(/\bahead\b/);
+
+	// The next move is lift's F2: it's marked, and so are lift and main.
+	await page.getByTestId('next-move').click();
+	await expect(lift.locator('[aria-current]')).toHaveText('F2');
+	await expect(lift).toHaveClass(/\bcurrent\b/);
+	await expect(history(page).locator('[data-block="Demo"]')).toHaveClass(/\bcurrent\b/);
+	await expect(history(page).locator('.move.ahead')).toHaveText(['U']);
+	await expect(page.getByTestId('to-go')).toHaveText('1 move to go');
+
+	// Played through: nothing marked or dimmed.
+	await page.getByTestId('play-pause').click();
+	await expect(page.getByTestId('play-pause')).toBeHidden();
+	await expect(history(page).locator('[aria-current], .ahead')).toHaveCount(0);
+});
+
+test('Next move stops where an algo starts, though it turns the same face', async ({ page }) => {
+	await open(page);
+	await page.getByTestId('new').click();
+	await source(page).fill('algo main {\n  do U\n  algo "Again" { do U }\n}\n');
+	await page.getByTestId('step-through').check();
+	await page.getByTestId('run').click();
+	await expect(history(page).locator('.move')).toHaveText(['U', 'U']);
+	await page.getByTestId('next-move').click();
+	await expect(history(page).locator('.move.ahead')).toHaveCount(1);
+	await expect(page.getByTestId('stage')).toHaveText('Again: move 1 of 1');
+});
+
+test('shows the current permutation', async ({ page }) => {
+	await open(page);
+	const permutation = page.getByTestId('permutation');
+	await expect(permutation).toHaveText('Solved');
+	await page.getByTestId('play-line').fill('R');
+	await page.getByTestId('play').click();
+	await expect(permutation).toHaveText('(ur br dr fr) (urf bru drb frd)');
+	await page.getByTestId('reset').click();
+	await expect(permutation).toHaveText('Solved');
+});
+
 test('shows runtime errors at their line', async ({ page }) => {
 	await open(page);
 	await page.getByTestId('new').click();
@@ -86,7 +158,8 @@ test('plays a let, and moves typed in', async ({ page }) => {
 	await source(page).fill("let sexy = R U R' U'\nlet six = (sexy)6\n");
 	await page.getByTestId('run').click();
 	await expect(page.getByTestId('lets')).toContainText("R U R' U'");
-	// Run plays the last let; six times is nothing: back to solved.
+	// Without algos, Run plays the last named sequence; six times is
+	// nothing: back to solved.
 	await expect(history(page)).toContainText('six');
 	// The history counts the moves; the status line doesn't.
 	await expect(page.getByTestId('status')).toHaveText('Played six.');
@@ -96,7 +169,6 @@ test('plays a let, and moves typed in', async ({ page }) => {
 	await expect(page.getByTestId('solved')).toBeHidden();
 
 	// Play on from there, and undo it.
-	await page.getByLabel('From solved').uncheck();
 	await page.getByTestId('play-line').fill("sexy'");
 	await page.getByTestId('play-line').press('Enter');
 	await expect(page.getByTestId('solved')).toBeVisible();

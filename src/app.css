@@ -5,6 +5,8 @@
 	--surface: #ffffff;
 	--text: #1d2330;
 	--muted: #5f6b7d;
+	/* Moves in the history not played yet. */
+	--ahead: #8b95a5;
 	--border: #dde2ea;
 	--accent: #356eef;
 	--accent-text: #ffffff;
@@ -19,6 +21,7 @@
 		--surface: #171b24;
 		--text: #e6e9ef;
 		--muted: #98a2b3;
+		--ahead: #697386;
 		--border: #2a3140;
 		--accent: #5b8cff;
 	}
