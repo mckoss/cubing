@@ -476,17 +476,22 @@ code:
 Notes:
 
 - Both solutions name their sequences and write them as commutators,
-  conjugates, inverses, and mirrors (`insertRight = commutator(U, R)
-commutator(U', F')`, `insertLeft = reflect(insertRight, M)`,
-  `swapRight = B'<U'<(R2 U2)3>>`), each with its moves in a comment. Every
-  identity was checked on the TypeScript cube.
+  conjugates, inverses, and mirrors (`swapRight = B'<U'<(R2 U2)3>>`,
+  `insertLeft = reflect(insertRight, M)`), with the permutation each makes
+  in a comment under it. Every identity and every cycle was checked on the
+  TypeScript cube. A compiler could check those comments, or they could
+  become assertions.
 - Basic's twist stage is simpler than the TypeScript: a pattern on colors
   (`rfu is /u__/`) instead of finding which corner is at the front right.
 - Basic's first-face case places could be derived from the sequences
   (`inverse(F2)(df)` is `uf`) and checked by the compiler.
-- `cube has (…)` in Singmaster: whether the cycle is read as the cube's
-  permutation or its inverse (the TypeScript `hasMap` paths read "the
-  piece at uf goes to ur"), and how several cycles combine.
+- `cube has (…)` in Singmaster reads the cube's permutation: `cube has
+(uf ur ub)` means the piece from uf is now at ur. The case then does a
+  sequence making the inverse cycle, `(uf ub ur)`, which the comments make
+  easy to check. (The TypeScript's corner paths read the other way, from
+  each place to its piece's home; the draft had copied them, so its corner
+  3-cycle cases were backwards. They are fixed.) Still open: how several
+  cycles combine.
 - Singmaster's Orient D Edges pictures are read from the current code; the
   exact pictures need checking against the 2003 table.
 - **The language versions won't make the 2003 moves exactly:** shortest-

@@ -9,32 +9,49 @@
 solution singmaster for cube3 {
 
   # The sequences, written to show how they work: w<p> is w p w' (p set up
-  # with w, then put back), commutator(a, b) is a b a' b'.
+  # with w, then put back), commutator(a, b) is a b a' b'.  Under each is
+  # the permutation it makes, in cycle notation.  A case that finds a cycle
+  # in the cube (`cube has (uf ur ub)`) does the sequence that makes its
+  # inverse (`(uf ub ur)`).
 
-  # Flip two top edges: a commutator set up by B.
-  let flipLeft          = B<commutator(L, U)>                    # B L U L' U' B'
-  let flipFront         = B<commutator(U, L)>                    # B U L U' L' B'
+  # Turn the top edges' top colors up: a commutator set up by B.  The edges
+  # move as well; a later stage puts them in place.
+  let flipLeft          = B<commutator(L, U)>
+                        # (uf bu ul) (ufl urf)- (ulb ubr)+
+  let flipFront         = B<commutator(U, L)>
+                        # (uf ul bu) (urf ufl)+ (ubr ulb)-
 
-  # Swap an edge into the middle layer: (R2 U2)3 swaps two edges on the
-  # right, set up by U' and then B'.
-  let swapRight         = B'<U'<(R2 U2)3>>                       # B' U' R2 U2 R2 U2 R2 U2 U B
-  let swapLeft          = L<U'<(F2 U2)3>>                        # L U' F2 U2 F2 U2 F2 U2 U L'
+  # Swap an edge into the middle layer: (R2 U2)3 swaps two pairs of edges,
+  # set up by U' and then B'.
+  let swapRight         = B'<U'<(R2 U2)3>>
+                        # (ur ul) (ub rf)
+  let swapLeft          = L<U'<(F2 U2)3>>
+                        # (uf ub) (ul fr)
 
   # Cycle three top edges, set up by R2 then D'.
-  let cycleEdges        = R2<D'<U2 (R' L)<F2>>>                  # R2 D' U2 R' L F2 R L' D R2
-  let cycleEdgesBack    = cycleEdges'                            # R2 D' R' L F2 R L' U2 D R2 (L and R commute)
-  let swapEdgePairs     = R2<D2<B2<D<(L2 F2)3>>>>                # R2 D2 B2 D L2 F2 L2 F2 L2 F2 D' B2 D2 R2
+  let cycleEdges        = R2<D'<U2 (R' L)<F2>>>
+                        # (uf ub ur)
+  let cycleEdgesBack    = cycleEdges'
+                        # (uf ur ub)
+  let swapEdgePairs     = R2<D2<B2<D<(L2 F2)3>>>>
+                        # (uf ur) (ub ul)
 
   # Cycle three top corners, or swap two pairs of them.
-  let cycleCorners      = L'<commutator(U, R)> commutator(R, U)  # L' U R U' R' L R U R' U'
-  let cycleCornersBack  = cycleCorners'                          # U R U' R' L' R U R' U' L
-  let swapCornerPairs   = B<(commutator(L, U))3>                 # B (L U L' U')3 B'
-  let swapCornersAcross = (R' B2)<(commutator(F, R))3>           # R' B2 (F R F' R')3 B2 R
+  let cycleCorners      = L'<commutator(U, R)> commutator(R, U)
+                        # (ufl bul bru)
+  let cycleCornersBack  = cycleCorners'
+                        # (ufl bru bul)
+  let swapCornerPairs   = B<(commutator(L, U))3>
+                        # (urf flu) (ulb bru)
+  let swapCornersAcross = (R' B2)<(commutator(F, R))3>
+                        # (urf bul) (ufl ubr)
 
-  # Twist the front right top corner in place (and the bottom, which the
-  # other corners' twists put back).
-  let twistCorner       = (commutator(F, D))2                    # (F D F' D')2
-  let twistCornerBack   = twistCorner'                           # (D F D' F')2
+  # Twist the front right top corner in place.  The bottom is scrambled
+  # too, and the other top corners' twists put it back.
+  let twistCorner       = (commutator(F, D))2
+                        # (urf)+ (df rf dl) (dfr)+ (dlf)- (dbl)-
+  let twistCornerBack   = twistCorner'
+                        # (urf)- (df dl rf) (dfr)- (dlf)+ (dbl)+
 
   stage "Solve U Edges" goal solved(uf ur ub ul) {
     each y {
@@ -102,8 +119,8 @@ solution singmaster for cube3 {
 
   stage "Place D Corners" goal placed(urf ufl ulb ubr) {
     search y* as t {                         # positions only, twists ignored
-      case positions(cube) has (ufl ulb ubr)       -> do t cycleCorners
-      case positions(cube) has (ufl ubr ulb)       -> do t cycleCornersBack
+      case positions(cube) has (ufl ubr ulb)       -> do t cycleCorners
+      case positions(cube) has (ufl ulb ubr)       -> do t cycleCornersBack
       case positions(cube) has (ufl urf) (ulb ubr) -> do t swapCornerPairs
       case positions(cube) has (ufl ubr) (urf ulb) -> do t swapCornersAcross
     }
