@@ -7,6 +7,7 @@ import {
 	invertMoves,
 	parseMoves,
 	permutationOf,
+	randomScramble,
 	reduceMoves,
 	simplifyMoves,
 	type Move
@@ -146,6 +147,18 @@ describe('2003 compatibility', () => {
 	it('reduces like the 2003 simulator', () => {
 		for (const [moves, reduced] of reference.reduce) {
 			expect(formatMoves(reduceMoves(parseMoves(moves)))).toBe(formatMoves(parseMoves(reduced)));
+		}
+	});
+});
+
+describe('randomScramble', () => {
+	it('makes quarter turns of the faces, never the same face twice in a row', () => {
+		const moves = randomScramble(200);
+		expect(moves).toHaveLength(200);
+		for (const [i, move] of moves.entries()) {
+			expect(['U', 'D', 'L', 'R', 'F', 'B']).toContain(move.name);
+			expect([1, 3]).toContain(move.turns);
+			expect(move.name).not.toBe(moves[i - 1]?.name);
 		}
 	});
 });

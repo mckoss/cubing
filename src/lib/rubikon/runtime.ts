@@ -764,16 +764,19 @@ export function evaluateModule(
 	return new Runner(Permutation.identity(), undefined).module(file, modules);
 }
 
-// Evaluate the lets among statements, in order, each able to use the names
-// before it; other statements are skipped.  (For looking at an algo's
-// definitions without running it.)
+// Evaluate the lets (and define the funs) among statements, in order, each
+// able to use the names before it; other statements are skipped.  (For
+// looking at an algo's definitions without running it.)
 export function evaluateLets(statements: readonly (Statement | Definition)[], env: Env): Scope {
 	const scope = new Scope(env);
+	const runner = new Runner(Permutation.identity(), undefined);
 	for (const s of statements) {
 		if (s.kind === 'let') {
 			const value = evaluateValue(s.value, Permutation.identity(), scope);
 			checkType(value, s.type, s.name, s.loc);
 			scope.define(s.name, value, s.loc);
+		} else if (s.kind === 'fun') {
+			scope.define(s.name, runner.makeFun(s, scope), s.loc);
 		}
 	}
 	return scope;
