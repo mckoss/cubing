@@ -2,8 +2,17 @@ import { defineConfig } from 'vitest/config';
 import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { enhancedImages } from '@sveltejs/enhanced-img';
+import { readFileSync } from 'node:fs';
+
+// The site's version (package.json), shown in the page headings.
+const { version } = JSON.parse(
+	readFileSync(new URL('./package.json', import.meta.url), 'utf8')
+) as {
+	version: string;
+};
 
 export default defineConfig({
+	define: { __APP_VERSION__: JSON.stringify(version) },
 	plugins: [
 		// Resize and convert images imported with <enhanced:img> at build time.
 		enhancedImages(),
