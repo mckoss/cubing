@@ -136,3 +136,18 @@ should change:
   `r`, `u` read as places, so `fun f(…)` or `let d = …` is an error. It's
   the stated rule (names made only of face letters are places), but short
   names are where it bites.
+- **`cube == ()` and `solved(cube)` disagree** on a solved cube that has
+  been turned: `==` compares the raw state, `solved` allows any way of
+  holding it. `==` on cube states probably shouldn't exist, or should mean
+  "the same up to how it's held".
+- **Slice turns and "solved".** Colors are relative to the centers, so
+  after `M` the cube reads as R and L turned: `solved(cube)` is false,
+  which is right, but a stage like "place the centers" can't be written
+  as a condition on centers (they're always "solved").
+- **`layer()` of a slice** (`layer(M)`) isn't specified; the evaluator
+  takes it to be the slice's centers and edges.
+- **Face pictures** have a reading order only for U.
+- **Two environments.** The moves evaluator and the condition evaluator
+  each have their own `Env` (names to moves; names to patterns and
+  places). The runtime needs one environment holding values of every
+  type.
