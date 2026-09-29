@@ -54,7 +54,7 @@ algo basic "The Basic Modern Solution" goal solved(cube) {
 
   # Moving a piece (p, a pattern) up to the top without disturbing the
   # bottom, by where it is now.
-  fn edgeUp(p) {
+  fun edgeUp(p) {
     match {
       case df is p -> F2           case fr is p -> R<U>
       case dr is p -> R2           case br is p -> R'<U>
@@ -63,7 +63,7 @@ algo basic "The Basic Modern Solution" goal solved(cube) {
       otherwise    -> ()                     # already in the top layer
     }
   }
-  fn cornerUp(p) {
+  fun cornerUp(p) {
     match {
       case dfr is p -> R<U>        case dbl is p -> L<U>
       case drb is p -> R'<U'>      case dlf is p -> L'<U'>
