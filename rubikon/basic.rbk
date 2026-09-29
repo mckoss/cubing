@@ -7,6 +7,8 @@
 # moves after them come out renamed.  (`show y` would make a visible turn;
 # this method doesn't need one.)
 
+from cfop import sexy, sune          # well-known sequences (cfop.rbk)
+
 solution basic for cube3 {
 
   # The sequences from the notes, written to show how they work, each with
@@ -25,13 +27,13 @@ solution basic for cube3 {
   let insertLeft       = reflect(insertRight, M)
                        # (ub ul ru fu fl) (ulb fur ubr)
 
-  # Flip up two top edges: the commutator R U R' U', set up by F.
-  let topCross         = F<commutator(R, U)>
+  # Flip up two top edges: sexy (the commutator R U R' U'), set up by F.
+  let topCross         = F<sexy>
                        # (ur ub fu) (urf ufl)+ (ubr ulb)-
 
-  # Swap the front and left top edges: Sune, then put the top back.
-  let sune             = R<U> U R<U2>
-                       # (ur ub ul) (urf lbu)- (ufl ubr)+
+  # Swap the front and left top edges: Sune cycles three top edges, and
+  # the U after it makes that a swap.  (It moves the corners too; later
+  # stages fix them.)
   let swapEdges        = sune U
                        # (uf ul) (urf bru bul ufl)
 
