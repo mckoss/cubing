@@ -74,7 +74,7 @@
 		void tick().then(() => {
 			const el = currentMove();
 			if (!following || !el) return;
-			if (offBy(el, 24) === 0) return;
+			if (offBy(el, 48) === 0) return;
 			// Bring it a third of the way down, to show some of what's next.
 			const view = scroller.getBoundingClientRect();
 			const by = el.getBoundingClientRect().top - view.top - view.height / 3;

@@ -33,8 +33,15 @@ test('starts with the examples, and runs one', async ({ page }) => {
 	await expect(page.getByTestId('status')).toHaveText('Ran main.');
 	await expect(page.getByTestId('solved')).toBeVisible();
 
-	// Or play one of its lets.
-	await page.getByTestId('run-what').selectOption({ label: 'the last let' });
+	// Or run one of its stages by itself.
+	await page.getByTestId('run-what').selectOption({ label: 'main › Top Cross' });
+	await page.getByTestId('run').click();
+	await expect(page.getByTestId('status')).toHaveText('Ran main › Top Cross.');
+	await expect(history(page)).toContainText('Top Cross: skipped, its goal already holds');
+
+	// Or play one of its named sequences.
+	await expect(page.getByText(/^Named Sequences \(\d+\)$/)).toBeVisible();
+	await page.getByTestId('run-what').selectOption({ label: 'the last sequence' });
 	await page.getByTestId('run').click();
 	await expect(history(page)).toContainText('twistCorner');
 	await expect(page.getByTestId('solved')).toBeHidden();
@@ -134,7 +141,8 @@ test('plays a let, and moves typed in', async ({ page }) => {
 	await source(page).fill("let sexy = R U R' U'\nlet six = (sexy)6\n");
 	await page.getByTestId('run').click();
 	await expect(page.getByTestId('lets')).toContainText("R U R' U'");
-	// Run plays the last let; six times is nothing: back to solved.
+	// Without algos, Run plays the last named sequence; six times is
+	// nothing: back to solved.
 	await expect(history(page)).toContainText('six');
 	// The history counts the moves; the status line doesn't.
 	await expect(page.getByTestId('status')).toHaveText('Played six.');

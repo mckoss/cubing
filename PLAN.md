@@ -175,10 +175,14 @@ shows the algo blocks,
 bypass notes, and trace lines as the run makes them, through
 `RunRecorder`. A run is limited (10,000 moves, 1,000,000 steps) so a
 program that loops stops with an error; it's synchronous (`basic` on a
-scramble takes a moment). Without a main, or when chosen from the Run
-menu (main, the last let, or any let), Run plays a let: the lets are
-evaluated with the runtime's `evaluateModule`/`evaluateLets` (top level
-and inside algos without parameters). A line of moves (`sune`, `F<R U>`)
+scramble takes a moment). The Run menu offers main, every other algo
+without parameters, nested ones too ("main › Top Cross": run by itself
+with `run`, in the scope of the lets of the algos it's inside, its goal
+checked, bypassed if it holds), and the named sequences (lets; the page
+calls them that), with main, else the first algo, else the last sequence
+chosen by default. The lets are evaluated with the runtime's
+`evaluateModule`/`evaluateLets` (top level and inside algos without
+parameters). A line of moves (`sune`, `F<R U>`)
 plays against the program's names; imports come from the library by
 name. The library (`library.ts`) saves, lists, pages through, opens,
 renames, and deletes programs, remembers the last one open, starts with

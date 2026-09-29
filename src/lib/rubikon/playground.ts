@@ -1,5 +1,7 @@
 // What the playground runs: a program's `algo main` (with the runtime,
-// runtime.ts), or one of its lets, or a line of moves played against them.
+// runtime.ts), or another of its algos without parameters (nested ones
+// too), or one of its lets (named sequences), or a line of moves played
+// against them.
 // Each run is a stream of events (events.ts), which the page records with
 // record.ts.
 
@@ -8,7 +10,14 @@ import type { Algo, Expr, Loc, RubikonFile } from './ast';
 import type { RunEvent, RunListener } from './events';
 import { evaluateMoves, type Moves } from './moves';
 import { parseRubikon } from './parse';
-import { evaluateLets, evaluateModule, runMain, type RunOptions, type RunResult } from './runtime';
+import {
+	evaluateLets,
+	evaluateModule,
+	run,
+	runMain,
+	type RunOptions,
+	type RunResult
+} from './runtime';
 import { RubikonError, type Env, type Value } from './values';
 
 // An error to show, with where it is: in the program (module null), or in
@@ -68,6 +77,17 @@ export interface LetEntry {
 	moves: Moves;
 }
 
+// An algo without parameters, which Run can run by itself.
+export interface AlgoEntry {
+	// Its name (else its description), after those of the algos it's
+	// inside, outermost first: ["main", "First Face"].
+	path: string[];
+	def: Algo;
+	// The names it can use: the top level's, and the lets of the algos
+	// it's inside.
+	env: Env;
+}
+
 export interface EvaluatedProgram {
 	file: RubikonFile;
 	// The library programs it imports (directly or not), parsed, by name.
@@ -76,6 +96,9 @@ export interface EvaluatedProgram {
 	hasMain: boolean;
 	// Every let of moves that could be evaluated, in the order written.
 	lets: LetEntry[];
+	// Every algo without parameters (and not inside one with them), in the
+	// order written, nested ones after the algo they're in.
+	algos: AlgoEntry[];
 	// The names a line of moves can use: imports, the top-level lets, and
 	// the lets inside algos (first one wins if two algos use a name).
 	scope: Env;
@@ -111,8 +134,9 @@ export function evaluateProgram(source: string, findModule: FindModule): Evaluat
 			}
 		}
 	}
+	const algos: AlgoEntry[] = [];
 	for (const def of file.defs) {
-		if (def.kind === 'algo') algoLets(def, module.scope, [], lets, owners);
+		if (def.kind === 'algo') algoLets(def, module.scope, [], { lets, algos }, owners);
 	}
 	const algoScope = new Map<string, Value>();
 	for (const entry of lets) {
@@ -121,15 +145,22 @@ export function evaluateProgram(source: string, findModule: FindModule): Evaluat
 	}
 	const scope: Env = { get: (key) => module.scope.get(key) ?? algoScope.get(key) };
 	const main = module.scope.own().get('main');
-	return { file, modules, hasMain: main?.kind === 'algo', lets, scope, owners };
+	return { file, modules, hasMain: main?.kind === 'algo', lets, algos, scope, owners };
 }
 
-// The lets of moves in an algo's body and the algos nested in it.  An algo
-// with parameters is skipped: its lets may use them, which only a run
-// knows.
-function algoLets(algo: Algo, env: Env, path: string[], out: LetEntry[], owners: Owners): void {
+// An algo, and the lets of moves in its body, and the same for the algos
+// nested in it.  An algo with parameters is skipped: its lets may use
+// them, which only a run knows.
+function algoLets(
+	algo: Algo,
+	env: Env,
+	path: string[],
+	out: { lets: LetEntry[]; algos: AlgoEntry[] },
+	owners: Owners
+): void {
 	if (algo.params !== null && algo.params.length > 0) return;
 	const inside = [...path, algo.name ?? algo.description ?? 'algo'];
+	out.algos.push({ path: inside, def: algo, env });
 	let scope;
 	try {
 		scope = evaluateLets(algo.body, env);
@@ -140,7 +171,12 @@ function algoLets(algo: Algo, env: Env, path: string[], out: LetEntry[], owners:
 		if (statement.kind === 'let') {
 			const value = scope.get(statement.name);
 			if (value?.kind === 'moves') {
-				out.push({ name: statement.name, path: inside, loc: statement.loc, moves: value.moves });
+				out.lets.push({
+					name: statement.name,
+					path: inside,
+					loc: statement.loc,
+					moves: value.moves
+				});
 			}
 		}
 	}
@@ -219,6 +255,22 @@ export function runProgram(
 ): RunResult {
 	try {
 		return runMain(program.file, state, listener, program.modules, options);
+	} catch (e) {
+		throw programError(e, null, program.owners);
+	}
+}
+
+// Run one of a program's algos by itself (see AlgoEntry) on a cube: its
+// goal is checked at its end, and it's bypassed if the goal already holds.
+export function runAlgo(
+	program: EvaluatedProgram,
+	algo: AlgoEntry,
+	state: Permutation,
+	listener?: RunListener,
+	options: RunOptions = RUN_LIMITS
+): RunResult {
+	try {
+		return run(algo.def, state, algo.env, listener, options);
 	} catch (e) {
 		throw programError(e, null, program.owners);
 	}

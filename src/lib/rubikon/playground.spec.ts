@@ -9,7 +9,9 @@ import {
 	evaluateMovesLine,
 	evaluateProgram,
 	playEvents,
-	runProgram
+	runAlgo,
+	runProgram,
+	type EvaluatedProgram
 } from './playground';
 import { RunRecorder } from './record';
 
@@ -131,6 +133,78 @@ function record(source: string, state: Permutation, library = find): MoveList {
 	}
 	return list;
 }
+
+describe('runAlgo', () => {
+	const paths = (program: EvaluatedProgram): string[] =>
+		program.algos.map((a) => a.path.join(' › '));
+
+	it('lists the algos without parameters, nested ones too', () => {
+		const source = [
+			'algo helper(p: Pattern) { algo "Inside helper" { do R } }',
+			'algo main "Demo" {',
+			'  algo "Stage" { algo deep { do U } }',
+			'}',
+			'algo other() { do F }'
+		].join('\n');
+		expect(paths(evaluateProgram(source, find))).toEqual([
+			'main',
+			'main › Stage',
+			'main › Stage › deep',
+			'other'
+		]);
+		expect(paths(evaluateProgram(read('basic'), find))).toEqual([
+			'main',
+			'main › First Face',
+			'main › First Face › Bottom Edges',
+			'main › First Face › Bottom Corners',
+			'main › Middle',
+			'main › Top Cross',
+			'main › Top Edges',
+			'main › Top Corners',
+			'main › Twist Corners'
+		]);
+	});
+
+	// Run the algo at a path by itself, recording it.
+	function runAt(program: EvaluatedProgram, path: string, state: Permutation): MoveList {
+		const algo = program.algos.find((a) => a.path.join(' › ') === path);
+		if (algo === undefined) throw new Error(`No algo ${path}`);
+		const list = new MoveList();
+		const recorder = new RunRecorder(list);
+		try {
+			runAlgo(program, algo, state, recorder.listener);
+		} finally {
+			recorder.finish();
+		}
+		return list;
+	}
+
+	it("runs a nested algo by itself, with its parents' lets", () => {
+		const program = evaluateProgram('algo main {\n  let s = R U\n  algo "Stage" { do s }\n}', find);
+		const list = runAt(program, 'main › Stage', new Permutation());
+		expect(formatMoves(list.moves)).toBe('R U');
+		expect(outline(list.history()[0]?.items ?? [])).toEqual(['{Stage']);
+	});
+
+	it("runs basic's Top Cross on a last layer scramble, and bypasses it once solved", () => {
+		const basic = evaluateProgram(read('basic'), find);
+		// Two top edges flipped; the first two layers solved.
+		const start = permutationOf(parseMoves("F R U R' U' F'"));
+		const list = runAt(basic, 'main › Top Cross', start);
+		expect(list.moves.length).toBeGreaterThan(0);
+		expect(outline(list.history()[0]?.items ?? [])).toEqual(['{Top Cross']);
+		const after = applyMoves(start, list.moves);
+		expect(outline(runAt(basic, 'main › Top Cross', after).history()[0]?.items ?? [])).toEqual([
+			'[bypass: Top Cross: skipped, its goal already holds]'
+		]);
+	});
+
+	it('reports a goal not reached at its line', () => {
+		const program = evaluateProgram('algo main {\n  algo "Fail" goal solved(df) { do F }\n}', find);
+		const error = errorOf(() => runAt(program, 'main › Fail', permutationOf(parseMoves('F'))));
+		expect([error.message, error.where]).toEqual(['Goal not reached: Fail', '2:20']);
+	});
+});
 
 describe('runProgram', () => {
 	it('says whether a program has a main', () => {
