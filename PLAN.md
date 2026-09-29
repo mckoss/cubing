@@ -136,3 +136,15 @@ should change:
   `r`, `u` read as places, so `fun f(…)` or `let d = …` is an error. It's
   the stated rule (names made only of face letters are places), but short
   names are where it bites.
+- **A face or slice argument is an ordinary expression.** `reflect(p, M)`
+  gets a move token, so `reflect(p, M2)` or a name there is only caught
+  when it's evaluated; the checker (7) should check `Face`/`Slice`
+  arguments. Likewise `show(x y)` parses and is rejected only because its
+  argument isn't a single turn.
+- **Wide turns parse, but the engine has none:** `Rw` is an evaluation
+  error until the engine gets wide turns.
+- **`let` holds more than moves:** the evaluator takes `let` to be `Moves`,
+  but `let piece = cubie(df)` will need other types. The runtime (4)
+  needs values of every type in one environment.
+- **Qualified and bare names from the same module** (`import cfop` and
+  `from cfop import sune`) have no rule yet for being used together.
