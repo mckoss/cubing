@@ -34,7 +34,7 @@ assert solved(c basic(c))
   including which way the piece in them faces.
 - **Patterns describe what's in a place.** `/u_/`, `/!u!u/`, `/df/`.
 - **A pattern with no wildcards is a cubie:** `/df/` is the down-front
-  piece, identified by its colors.
+  piece, identified by its colors, with an orientation (d read first).
 - **`is` tests a place against a pattern:** `uf is /df/` — the df piece is
   at uf, with its d sticker on the u side.
 - **Permutations move places:** `(uf ur ub)`, `R(urf)`.
@@ -128,8 +128,8 @@ in the letter order of the place it's tested against:
 - **`is`** tests the piece in a place: `uf is /u_/` (the top color faces up
   at uf); `rfu is /u__/` (reading the urf corner from its r sticker, that
   sticker is the top color: yellow faces right).
-- **A pattern with no wildcards names a piece and its facing**, by its
-  colors: `/df/` is the down-front edge, read d first. So
+- **A pattern with no wildcards names a piece and its orientation**, by
+  its colors: `/df/` is the down-front edge, read d first. So
   - `uf is /df/`: the df piece is at uf, with its d sticker up;
   - `fu is /df/`: the same piece at the same place, flipped;
   - `df is /df/`: df is home, the right way round (`solved(df)`).
@@ -138,11 +138,11 @@ in the letter order of the place it's tested against:
   with a top-color sticker. (A corner has only three clockwise rotations, so
   `/ulb/r` is exactly "the ulb piece, however twisted".) Patterns like
   `/!u!u/` match every rotation anyway.
-- **A complete pattern with `r` is a cubie:** `/df/r` is the df piece,
-  whichever way it faces. A piece has no facing of its own (facing is how
-  it sits in a place), so this is exactly one piece and nothing more; `/df/`
-  is more specific (the piece and a facing), and `/u__/r` isn't a cubie
-  (it could be several pieces). See Types.
+- **A complete pattern is a cubie:** `/df/` is the df piece with an
+  orientation (its d sticker is read first), just as a location has a
+  facing: `/df/` and `/fd/` are the same piece, oriented two ways, as `uf`
+  and `fu` are the same place. `/df/r` leaves the orientation open, so it's
+  a pattern, not a cubie; so is `/u__/r`, which could be several pieces.
 - **Face pictures**: a pattern for a whole face, as seen looking at it, in
   brackets, rows separated by `/`; each cell is one sticker (`u`, `_`, or
   `!u`), and spaces are optional. Read in a fixed order (for U: back row
@@ -209,25 +209,25 @@ in the letter order of the place it's tested against:
   backwards (`R(U(R'(U')))` is `U' R' U R`).
 - `==` never looks inside a place; `is` always does. A place and a pattern for a
   different kind of piece never match. When the compiler knows both
-  kinds, it's an error (`df is /dfr/r`: an EdgeLocation against a Corner);
+  kinds, it's an error (`df is /dfr/`: an EdgeLocation against a Corner);
   when it doesn't (a `Cubie` parameter), the test is simply false.
 
 ### Functions
 
-| Signature                                          | Meaning                                                                                 |
-| -------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `order(p: Permutation) -> Int`                     | the order of p                                                                          |
-| `inverse(p: Sequence) -> Sequence`                 | `p'` (for a Permutation, a Permutation)                                                 |
-| `legal(p: Permutation) -> Bool`                    | whether some sequence of moves makes p (flip parity, twist sum, permutation parity)     |
-| `commutator(a: Sequence, b: Sequence) -> Sequence` | `a b a' b'` (cubers' order): `commutator(R, U)` is `R U R' U'`                          |
-| `reflect(p: Sequence, s: Slice) -> Sequence`       | p seen in a mirror through the slice's plane: `reflect(U R U', M)` is `U' L' U`         |
-| `solved(x: Location…) -> Bool`                     | each place holds its own piece the right way round (`x is /x/`)                         |
-| `solved(c: Permutation) -> Bool`                   | the cube is solved, however it's held: `solved(cube)`                                   |
-| `placed(x: Location…) -> Bool`                     | each place holds its own piece, however twisted (`x is /x/r`)                           |
-| `layer(f: Face) -> Set(Location)`                  | the places of a layer, home spellings (`d df dr db dl dfr drb dbl dlf`)                 |
-| `location(p: Pattern) -> Location`                 | where the piece matching a complete pattern is, facing so that it matches               |
-| `location(c: Cubie) -> Location`                   | where that piece is, spelled as its home name (`urf`, not `rfu`): a cubie has no facing |
-| `cubie(x: Location) -> Cubie`                      | the physical piece in place x now (to follow through turns)                             |
+| Signature                                          | Meaning                                                                                |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `order(p: Permutation) -> Int`                     | the order of p                                                                         |
+| `inverse(p: Sequence) -> Sequence`                 | `p'` (for a Permutation, a Permutation)                                                |
+| `legal(p: Permutation) -> Bool`                    | whether some sequence of moves makes p (flip parity, twist sum, permutation parity)    |
+| `commutator(a: Sequence, b: Sequence) -> Sequence` | `a b a' b'` (cubers' order): `commutator(R, U)` is `R U R' U'`                         |
+| `reflect(p: Sequence, s: Slice) -> Sequence`       | p seen in a mirror through the slice's plane: `reflect(U R U', M)` is `U' L' U`        |
+| `solved(x: Location…) -> Bool`                     | each place holds its own piece the right way round (`x is /x/`)                        |
+| `solved(c: Permutation) -> Bool`                   | the cube is solved, however it's held: `solved(cube)`                                  |
+| `placed(x: Location…) -> Bool`                     | each place holds its own piece, however twisted (`x is /x/r`)                          |
+| `layer(f: Face) -> Set(Location)`                  | the places of a layer, home spellings (`d df dr db dl dfr drb dbl dlf`)                |
+| `location(p: Pattern) -> Location`                 | where the piece matching a complete pattern is, facing so that it matches              |
+| `location(c: Cubie) -> Location`                   | where that piece is, spelled so its orientation matches: `uf is location(c)` reads `c` |
+| `cubie(x: Location) -> Cubie`                      | the physical piece in place x now (to follow through turns)                            |
 
 `Location…` takes any number of places, and a `Set(Location)` counts as
 its members: `solved(df dr db dl)`, `solved(layer(D))`.
@@ -262,26 +262,26 @@ that matches.
 
 Types are keywords, written with a capital letter:
 
-| Type            | Values                                                                                                                    |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `Location`      | a place, with facing: `uf`, `fu`, `urf`; its kinds are `EdgeLocation`, `CornerLocation`, `CenterLocation`                 |
-| `Pattern`       | `/df/`, `/u__/`, `/ulb/r`                                                                                                 |
-| `Cubie`         | one piece, no facing: a complete pattern with `r` (`/df/r`), or from `cubie(x)`; its kinds are `Edge`, `Corner`, `Center` |
-| `Permutation`   | cycles, `(uf ur ub)`; a cube state is one (`cube`)                                                                        |
-| `Sequence`      | a permutation that remembers its moves, so it can be played (any sequence can be used as a permutation, not the reverse)  |
-| `Face`          | `U D F B L R`, as in `layer(D)`                                                                                           |
-| `Slice`         | `M E S`, as in `reflect(p, M)`                                                                                            |
-| `Set(Location)` | several places: `layer(D)`                                                                                                |
-| `Int`, `Bool`   | numbers and truth values; a condition (`uf is /df/`, a face picture) is a Bool                                            |
+| Type            | Values                                                                                                                           |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `Location`      | a place, with facing: `uf`, `fu`, `urf`; its kinds are `EdgeLocation`, `CornerLocation`, `CenterLocation`                        |
+| `Pattern`       | `/df/`, `/u__/`, `/ulb/r`                                                                                                        |
+| `Cubie`         | one piece with an orientation: a complete pattern (`/df/`, `/fd/`), or from `cubie(x)`; its kinds are `Edge`, `Corner`, `Center` |
+| `Permutation`   | cycles, `(uf ur ub)`; a cube state is one (`cube`)                                                                               |
+| `Sequence`      | a permutation that remembers its moves, so it can be played (any sequence can be used as a permutation, not the reverse)         |
+| `Face`          | `U D F B L R`, as in `layer(D)`                                                                                                  |
+| `Slice`         | `M E S`, as in `reflect(p, M)`                                                                                                   |
+| `Set(Location)` | several places: `layer(D)`                                                                                                       |
+| `Int`, `Bool`   | numbers and truth values; a condition (`uf is /df/`, a face picture) is a Bool                                                   |
 
 The kinds form a hierarchy; a value of a type can be used wherever its
 parent is expected:
 
 ```
-Pattern          /d_/  /u__/  /!u_/  /df/      anything between slashes
-└── Cubie        /df/r  /urf/r                 one piece, no facing
-    ├── Edge     /df/r
-    ├── Corner   /urf/r
+Pattern          /d_/  /u__/  /!u_/  /df/r     anything between slashes
+└── Cubie        /df/  /fd/  /urf/             one piece, with an orientation
+    ├── Edge     /df/  /fd/
+    ├── Corner   /urf/  /rfu/
     └── Center   /u/
 
 Location         uf  fu  urf  u
@@ -291,7 +291,7 @@ Location         uf  fu  urf  u
 ```
 
 - **Every function states its types:** each parameter and the result.
-  `fun lift(c: Cubie) -> Sequence { … }`. The compiler checks every call
+  `fun lift(p: Pattern) -> Sequence { … }`. The compiler checks every call
   and every use of the result.
 - Where a `Face` or `Slice` is expected, a move letter names the face or
   slice, not the turn: `layer(D)`, `reflect(p, M)`.
@@ -299,13 +299,15 @@ Location         uf  fu  urf  u
   type of what it's given. A search's `as t` is a Sequence.
 - A **Pattern** is read relative to the centers: after `y`, `/fr/` is the
   piece that now belongs at the front right.
-- A **Cubie** is a piece. As a pattern (`/df/r`) it's read relative to the
-  centers, like any pattern. From `cubie(x)`, it follows the physical
-  piece through whole cube turns: `let piece = cubie(df)`, then later
-  `location(piece)`; it prints as the pattern that names it now.
-- **Kinds catch mistakes:** `fun lift(c: Cubie)` accepts `/df/r` but not
-  `/df/`, which would only find the piece facing one way; `df is /dfr/r`
-  is an error.
+- A **Cubie** is a piece with an orientation. Written as a pattern
+  (`/df/`), it's read relative to the centers, like any pattern. From
+  `cubie(x)`, it's the piece in x, oriented as x reads it, and it follows
+  that physical piece through whole cube turns: `let piece = cubie(df)`,
+  then later `location(piece)`; it prints as the pattern that names it now.
+- `==` on cubies includes the orientation, as on locations: `/df/ == /fd/`
+  is false, like `uf == fu`.
+- **Kinds catch mistakes:** `df is /dfr/` is an error (an EdgeLocation
+  against a Corner).
 
 ### Solved
 
@@ -568,7 +570,7 @@ or the move list.
 | The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations)                         | Replaced everywhere by standard notation                                                                                                                          |
 | Upper case piece names (`URF`)                                                              | Reads as moves U R F; Singmaster used lower case                                                                                                                  |
 | Corner names in either winding (`ufr` as well as `urf`)                                     | Six spellings per corner; clockwise only gives exactly three, one per sticker                                                                                     |
-| Bare names as cubies, `@urf` for locations                                                  | Permutations move places, so places get the plain names; a cubie is a complete pattern with `r`, `/urf/r`                                                         |
+| Bare names as cubies, `@urf` for locations                                                  | Permutations move places, so places get the plain names; a cubie is a complete pattern, `/urf/`                                                                   |
 | `home(c)` (or `target(c)`, `c.home`)                                                        | Not needed: a complete pattern's letters are its home                                                                                                             |
 | `&c` / `*loc` (address and dereference)                                                     | `*&df == df` would be true only when df is home, unlike a pointer; `cubie(x)` and `location(p)` say it plainly                                                    |
 | `loc.cubie`, `c.home` (properties)                                                          | Plain functions instead; no new syntax                                                                                                                            |
