@@ -198,7 +198,9 @@ in the letter order of the place it's tested against:
   nest: `t<F<D>>` is `t F D F' t'`.
 - Applying a bare move (`R(U)`) is allowed but warned against: it reads
   backwards (`R(U(R'(U')))` is `U' R' U R`).
-- `==` never looks inside a place; `is` always does.
+- `==` never looks inside a place; `is` always does. A place and a pattern for a
+  different kind of piece (`df is /dfr/`) never match: the test is false,
+  and the compiler warns when it can see both.
 
 ### Functions
 

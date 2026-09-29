@@ -52,19 +52,15 @@ algo basic "The Basic Modern Solution" goal solved(cube) {
   let twistCornerBack  = twistCorner'
                        # (urf)+ (dr db fr) (dfr)+ (dbl)- (drb)-
 
-  # Moving a piece (p, a pattern) up to the top without disturbing the
-  # bottom, by where it is now.
-  fun edgeUp(p) {
+  # Lift a piece (p, a pattern) to the top without disturbing the rest of
+  # the bottom, by where it is now.  Edge and corner places never match
+  # the same pattern, so one list covers both.
+  fun lift(p) {
     match {
-      case df is p -> F2           case fr is p -> R<U>
-      case dr is p -> R2           case br is p -> R'<U>
-      case db is p -> B2           case bl is p -> L<U>
-      case dl is p -> L2           case fl is p -> L'<U>
-      otherwise    -> ()                     # already in the top layer
-    }
-  }
-  fun cornerUp(p) {
-    match {
+      case df  is p -> F2          case fr  is p -> R<U>
+      case dr  is p -> R2          case br  is p -> R'<U>
+      case db  is p -> B2          case bl  is p -> L<U>
+      case dl  is p -> L2          case fl  is p -> L'<U>
       case dfr is p -> R<U>        case dbl is p -> L<U>
       case drb is p -> R'<U'>      case dlf is p -> L'<U'>
       otherwise     -> ()                    # already in the top layer
@@ -76,7 +72,7 @@ algo basic "The Basic Modern Solution" goal solved(cube) {
     algo "Bottom Edges" goal solved(df dr db dl) {
       each y {                                      # each bottom edge in turn
         if not solved(df) {
-          do edgeUp(/df/r)                          # either way round
+          do lift(/df/r)                            # either way round
           search U* as t {
             case uf is /df/ -> do t F2                    # its bottom color up
             case fu is /df/ -> do t U' R'<F>              # its bottom color in front
@@ -88,7 +84,7 @@ algo basic "The Basic Modern Solution" goal solved(cube) {
     algo "Bottom Corners" goal solved(dfr drb dbl dlf) {
       each y {
         if not solved(dfr) {
-          do cornerUp(/dfr/r)
+          do lift(/dfr/r)
           search U* as t {
             case rfu is /dfr/ -> do t R<U>                # bottom color facing right
             case fur is /dfr/ -> do t F'<U'>              # bottom color facing front
