@@ -192,6 +192,7 @@ in the letter order of the place it's tested against:
 | `legal(p)`         | whether some sequence of moves makes p (flip parity, twist sum, permutation parity)                         |
 | `commutator(a, b)` | `a b a' b'` (cubers' order): `commutator(R, U)` is `R U R' U'`                                              |
 | `conjugate(a, b)`  | `a b a'`: `conjugate(F, commutator(R, U))` is `F R U R' U' F'`                                              |
+| `reflect(p, M)`    | p seen in a mirror through the M slice (likewise `E`, `S`): `reflect(U R U', M)` is `U' L' U`               |
 | `solved(x …)`      | for places, each holds its own piece the right way round (`x is /x/`); for a cube, solved however it's held |
 | `placed(x …)`      | each place holds its own piece, however twisted (`x is /x/r`)                                               |
 | `location(p)`      | where the piece matching a complete pattern (or a cubie) is, facing so that it matches                      |
@@ -200,6 +201,23 @@ in the letter order of the place it's tested against:
 
 `commutator` and `conjugate` follow cubers' convention; GAP's `Comm(a, b)`
 is `a' b' a b` and its `a^b` is `b' a b`, the other way round.
+
+`reflect(p, M)` mirrors p through the plane of the M slice, between L
+and R. The faces on either side swap (R and L), and every turn goes the
+other way, because a mirror reverses clockwise: `R` becomes `L'`, `U`
+becomes `U'`. `E` mirrors top and bottom (U and D), and `S` front and back
+(F and B). The plane is named by its slice rather than by the axis
+through it (`x`), so it can't be read as a whole cube turn. For a
+permutation written as cycles, each location is mirrored, and corner names
+are respelled clockwise (the mirror of `urf` reads `ufl`), which also
+swaps each corner's `+` and `-`.
+
+A mirror is not a move: nothing can be turned to make it. The mirror of a
+sequence, though, is a sequence, and it does the mirror image of the
+original's job: Basic's `insertLeft` is `reflect(insertRight, M)`, and
+`cycleCornersBack` is `reflect(cycleCorners, M)`. Where the mirror image of
+a job is the same job done backwards, the inverse is the simpler relation:
+`twistCornerBack` is `twistCorner'`.
 
 `location(/df/) is /df/` is always true: it names the place with the facing
 that matches.
@@ -441,6 +459,10 @@ code:
 
 Notes:
 
+- Basic's sequences are written as commutators, conjugates, and mirrors
+  (`insertRight = commutator(U, R) commutator(U', F')`,
+  `insertLeft = reflect(insertRight, M)`), each with its moves in a
+  comment. Every identity was checked on the TypeScript cube.
 - Basic's twist stage is simpler than the TypeScript: a pattern on colors
   (`rfu is /u__/`) instead of finding which corner is at the front right.
 - Basic's first-face case places could be derived from the sequences
