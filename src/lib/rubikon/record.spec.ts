@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { MoveList, type HistoryBlock, type HistoryItem } from '../cube/move-list';
-import { formatMoves, parseMoves } from '../cube/moves';
+import {
+	MOVE_NAMES,
+	formatMoves,
+	invertMoves,
+	parseMoves,
+	perm,
+	permutationOf
+} from '../cube/moves';
 import { Permutation } from '../cube/permutation';
 import type { Move } from '../cube/types';
 import type { RunEvent } from './events';
@@ -157,5 +164,23 @@ describe('renameMove', () => {
 
 	it('leaves moves alone in the starting frame', () => {
 		expect(renameMove(R, new Permutation())).toEqual(R);
+	});
+
+	it('renames every move in every frame to the move it is', () => {
+		// Two whole cube turns reach all 24 ways of holding the cube.
+		const turns = parseMoves("x x2 x' y y2 y' z z2 z'");
+		for (const a of turns) {
+			for (const b of turns) {
+				const frame = perm(a.name, a.turns).compose(perm(b.name, b.turns));
+				for (const name of MOVE_NAMES) {
+					for (const t of [1, 2, 3] as const) {
+						const move: Move = { name, turns: t };
+						// Turning the cube, making the move, and turning it back.
+						const expected = permutationOf([a, b, move, ...invertMoves([a, b])]);
+						expect(permutationOf([renameMove(move, frame)]).equals(expected)).toBe(true);
+					}
+				}
+			}
+		}
 	});
 });

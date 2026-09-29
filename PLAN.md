@@ -134,7 +134,10 @@ open, starts with copies of `cfop.rbk` and `basic.rbk`, and works in
 memory when local storage is unavailable. Every run goes through one
 adapter (`record.ts`): run events become history blocks (enter/leave),
 notes (bypass, trace, with a "Show trace" checkbox), and moves, with
-whole cube turns that aren't shown renamed away.
+whole cube turns that aren't shown renamed away. Decided: a history
+block's title is the algo's description if it has one, else its name
+(`algo lift(p) "Lift a piece to the top"` shows as "Lift a piece to the
+top").
 
 Waits on the runtime (4): running `do`, algos, `main`, and whole methods;
 runtime errors; trace and bypass lines from a real run (the adapter and
@@ -217,9 +220,6 @@ should change:
 - **Where imports come from** in the browser: the playground finds
   `import cfop` by a library program's name, so a program's name is its
   module name, and renaming it breaks its importers.
-- **A block's title:** the history names an algo's block by its
-  description, else its name; an algo with both (`algo lift(p) "Lift a
-piece to the top"`) loses one of them.
 - **Where to start a run.** The playground offers "From solved" (reset
   before each run) or playing on from the current cube; a program has no
   way to say what state it expects (a scramble, a setup).
