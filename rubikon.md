@@ -119,7 +119,7 @@ its first letter and its spelling:
 ```
 algo  goal  let  fun  return  do  each  match  search  as  case
 otherwise  else  until  max  if  not  and  or  in  is  all  has  face
-import  from
+import  from  trace
 ```
 
 `in` and `all` are reserved for future use; nothing uses them yet.
@@ -171,8 +171,9 @@ corner name is an error that names the clockwise spelling:
 ### Strings and numbers
 
 A **string** is text in double quotes, on one line, with no escapes:
-`"Lift a piece to the top"`. Strings are used only for an algo's
-description.
+`"Lift a piece to the top"`. Strings are used for an algo's description
+and for `trace`, where `{…}` holds an expression (see
+[`trace`](#trace)).
 
 A **number** is a run of digits. Numbers appear in only two places: a
 repeat count straight after `)` (`(R U)3`), and the bound of an `until`
@@ -749,6 +750,29 @@ until goal max 4 {
 holds, at most n times. `until goal` uses the enclosing algo's goal as
 the condition.
 
+### `trace`
+
+`trace("…")` prints a line to the console, for debugging. It's a
+**format string**: each `{expr}` is replaced by the value of the
+expression, printed the way the engine prints it: moves in standard
+notation, a permutation (and `cube`) in cycle notation, a place by its
+name, a pattern as written, a `Bool` as `true` or `false`. `{{` and `}}`
+are a literal brace.
+
+```
+search U* as t {
+  case fu is /df/ -> do t F2
+}
+trace("after {t}: cube is {cube}, uf is {uf}, cross {solved(df dr db dl)}")
+```
+
+`trace` doesn't move the cube, doesn't count as a move, and doesn't
+affect goals, so a method solves the same with or without it. It may be
+used anywhere a statement can, including in a `fun`. The runtime sends it
+as a `trace` event with the text and its line; the default listener
+writes it to the console, and the playground can show it beside the
+moves.
+
 ## 9. Algos
 
 An **algo** is a named, described part of a method, with its goal:
@@ -915,7 +939,7 @@ Import      = "from" Ident "import" ImportedName ("," ImportedName)*
 ImportedName= Ident ("as" Ident)?
 TopDef      = Let | Fun | Algo
 
-Statement   = Let | Fun | Algo | Do | Return | If | Match | Search | Each | Until
+Statement   = Let | Fun | Algo | Do | Return | If | Match | Search | Each | Until | Trace
 Block       = "{" Statement* "}"
 Let         = "let" Ident (":" Type)? "=" Expr
 Fun         = "fun" Ident Params ":" Type Block
@@ -934,6 +958,8 @@ Search      = "search" Generator+ "as" Ident "{" Case* Otherwise? "}" ("else" Se
 Generator   = Move "*"
 Each        = "each" Move Block
 Until       = "until" ("goal" | Cond) "max" Int Block
+Trace       = "trace" "(" Format ")"
+Format      = '"' ( [^"{}\n] | "{{" | "}}" | "{" _ Expr _ "}" )* '"'
 
 Expr        = Term+
 Term        = Atom "'"* ("<" Expr ">")? "'"*

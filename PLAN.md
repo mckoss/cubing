@@ -86,6 +86,13 @@ cube simulator, move by move, and builds the execution trace, grouped by
 algo like the blocks in the demo's move list (`MoveList.openBlock`), with
 counts and "next stage" stepping.
 
+**`trace("…")` (low priority, for debugging).** A `trace` event with the
+formatted text and its line; the default listener prints it to the
+console. Parsing needs a format string rule (`{expr}`, `{{`, `}}`) and a
+printer for every value kind. The word clashes a little with "execution
+trace" (the grouped move history); if that gets confusing, the statement
+could be `print` or `log`.
+
 ### 5. Modules
 
 `import`, `from … import … as …`, qualified names, `main`, finding files,
