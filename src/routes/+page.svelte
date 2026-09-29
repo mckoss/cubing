@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { formatMoves, permutationOf } from '$lib/cube/moves';
 	import type { Face, Move, MoveName } from '$lib/cube/types';
 	import { CATALOG, type CatalogEntry } from '$lib/cube/catalog';
@@ -178,7 +179,10 @@
 
 <header>
 	<h1>Rubik's Cube Simulator</h1>
-	<p class="byline">by <a href="https://mckoss.com">Mike Koss</a> · 2003, rebuilt in 2026</p>
+	<p class="byline">
+		by <a href="https://mckoss.com">Mike Koss</a> · 2003, rebuilt in 2026 ·
+		<a href={resolve('/playground')}>Rubikon Playground</a>
+	</p>
 </header>
 
 <main>

@@ -114,6 +114,26 @@ listed, paged through, opened, edited, renamed, and deleted. It can start
 as soon as milestone 2 works (play a `let` or `do`), and grows with the
 runtime.
 
+Done (`src/routes/playground/`): the page, with the player and history
+shared with the main page (`Player`, `CubePlayer`, `MoveHistory`); a
+code window with line numbers; parse and evaluation errors shown with
+line:column, the line marked and selected; Run evaluates the lets (top
+level and inside algos without parameters) and plays one; a line of
+moves (`sune`, `F<R U>`) plays against the program's names; imports come
+from the library by name. The library (`library.ts`) saves, lists, pages
+through, opens, renames, and deletes programs, remembers the last one
+open, starts with copies of `cfop.rbk` and `basic.rbk`, and works in
+memory when local storage is unavailable. Every run goes through one
+adapter (`record.ts`): run events become history blocks (enter/leave),
+notes (bypass, trace, with a "Show trace" checkbox), and moves, with
+whole cube turns that aren't shown renamed away.
+
+Waits on the runtime (4): running `do`, algos, `main`, and whole methods;
+runtime errors; trace and bypass lines from a real run (the adapter and
+history already show them). When it lands, Run hands the runtime's
+events to `applyEvents` (or its listener to `RunRecorder`) instead of
+`playEvents`.
+
 ### 9. On the page
 
 The page offers each `.rbk` file with a `main` as a method; the history
@@ -178,3 +198,20 @@ should change:
   each have their own `Env` (names to moves; names to patterns and
   places). The runtime needs one environment holding values of every
   type.
+- **Lets inside algos.** The playground lists and plays the lets inside
+  algos (as `main › insertRight`), and lets a line of moves use them, but
+  in the language they're only in scope inside their algo. Lets in an
+  algo with parameters are skipped, since they may use the parameters.
+- **Hidden whole cube turns and the history.** The history shows moves
+  as played on the cube as it's held, so after a hidden `y` the program's
+  `R` is recorded as `B`; the history no longer reads like the source.
+  Showing both (as written, and as played) may be wanted.
+- **Where imports come from** in the browser: the playground finds
+  `import cfop` by a library program's name, so a program's name is its
+  module name, and renaming it breaks its importers.
+- **A block's title:** the history names an algo's block by its
+  description, else its name; an algo with both (`algo lift(p) "Lift a
+piece to the top"`) loses one of them.
+- **Where to start a run.** The playground offers "From solved" (reset
+  before each run) or playing on from the current cube; a program has no
+  way to say what state it expects (a scramble, a setup).
