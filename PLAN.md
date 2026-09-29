@@ -78,6 +78,14 @@ goals (checked at the end, bypass when already true, persistent), and a
 trace grouped by algo. Test: each construct, then each stage of Basic
 from states where the earlier goals hold.
 
+**One run, two uses.** The runtime reads the syntax tree and produces a
+stream of events: a move (visible, or a frame change that renames what
+follows), entering an algo (with its description), leaving it, and an
+algo bypassed because its goal already holds. The same stream drives the
+cube simulator, move by move, and builds the execution trace, grouped by
+algo like the blocks in the demo's move list (`MoveList.openBlock`), with
+counts and "next stage" stepping.
+
 ### 5. Modules
 
 `import`, `from … import … as …`, qualified names, `main`, finding files,
