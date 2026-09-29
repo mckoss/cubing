@@ -50,7 +50,7 @@ assert solved(c basic(c))
 | `U D L R F B`, `M E S`, `x y z`, `Rw` … | Moves, in standard (WCA) notation: capitals; `'` and `2` are part of the move (`R'`, `U2`); wide turns are `Rw`, never lower case |
 | `urf`, `uf`, `u`                        | Locations: lower case face letters                                                                                                |
 | `/u__/`, `/df/`, `/u_/r`                | Patterns (see below)                                                                                                              |
-| `Pattern`, `Sequence`, `Int` …          | Types: capitalized words longer than a move; all are keywords (see Types)                                                         |
+| `Pattern`, `Moves`, `Int` …             | Types: capitalized words longer than a move; all are keywords (see Types)                                                         |
 | other lower case words                  | Variables and keywords (`x`, `y`, `z` are reserved: they're moves)                                                                |
 
 - Items are separated by spaces, moves included (`R U R' U'`, not `RUR'U'`).
@@ -85,7 +85,7 @@ Keywords so far: `algo goal let fun return do show each match search
 as case otherwise else until max if not and or in is all has face import
 from`.
 Types are keywords too: `Location EdgeLocation CornerLocation
-CenterLocation Pattern Cubie Edge Corner Center Permutation Sequence Face
+CenterLocation Pattern Cubie Edge Corner Center Permutation Moves Face
 Slice Set Int Bool`.
 
 ### Locations
@@ -214,20 +214,20 @@ in the letter order of the place it's tested against:
 
 ### Functions
 
-| Signature                                        | Meaning                                                                                |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| `order(p: Permutation): Int`                     | the order of p                                                                         |
-| `inverse(p: Sequence): Sequence`                 | `p'` (for a Permutation, a Permutation)                                                |
-| `legal(p: Permutation): Bool`                    | whether some sequence of moves makes p (flip parity, twist sum, permutation parity)    |
-| `commutator(a: Sequence, b: Sequence): Sequence` | `a b a' b'` (cubers' order): `commutator(R, U)` is `R U R' U'`                         |
-| `reflect(p: Sequence, s: Slice): Sequence`       | p seen in a mirror through the slice's plane: `reflect(U R U', M)` is `U' L' U`        |
-| `solved(x: Location…): Bool`                     | each place holds its own piece the right way round (`x is /x/`)                        |
-| `solved(c: Permutation): Bool`                   | the cube is solved, however it's held: `solved(cube)`                                  |
-| `placed(x: Location…): Bool`                     | each place holds its own piece, however twisted (`x is /x/r`)                          |
-| `layer(f: Face): Set(Location)`                  | the places of a layer, home spellings (`d df dr db dl dfr drb dbl dlf`)                |
-| `location(p: Pattern): Location`                 | where the piece matching a complete pattern is, facing so that it matches              |
-| `location(c: Cubie): Location`                   | where that piece is, spelled so its orientation matches: `uf is location(c)` reads `c` |
-| `cubie(x: Location): Cubie`                      | the physical piece in place x now (to follow through turns)                            |
+| Signature                               | Meaning                                                                                |
+| --------------------------------------- | -------------------------------------------------------------------------------------- |
+| `order(p: Permutation): Int`            | the order of p                                                                         |
+| `inverse(p: Moves): Moves`              | `p'` (for a Permutation, a Permutation)                                                |
+| `legal(p: Permutation): Bool`           | whether some sequence of moves makes p (flip parity, twist sum, permutation parity)    |
+| `commutator(a: Moves, b: Moves): Moves` | `a b a' b'` (cubers' order): `commutator(R, U)` is `R U R' U'`                         |
+| `reflect(p: Moves, s: Slice): Moves`    | p seen in a mirror through the slice's plane: `reflect(U R U', M)` is `U' L' U`        |
+| `solved(x: Location…): Bool`            | each place holds its own piece the right way round (`x is /x/`)                        |
+| `solved(c: Permutation): Bool`          | the cube is solved, however it's held: `solved(cube)`                                  |
+| `placed(x: Location…): Bool`            | each place holds its own piece, however twisted (`x is /x/r`)                          |
+| `layer(f: Face): Set(Location)`         | the places of a layer, home spellings (`d df dr db dl dfr drb dbl dlf`)                |
+| `location(p: Pattern): Location`        | where the piece matching a complete pattern is, facing so that it matches              |
+| `location(c: Cubie): Location`          | where that piece is, spelled so its orientation matches: `uf is location(c)` reads `c` |
+| `cubie(x: Location): Cubie`             | the physical piece in place x now (to follow through turns)                            |
 
 `Location…` takes any number of places, and a `Set(Location)` counts as
 its members: `solved(df dr db dl)`, `solved(layer(D))`.
@@ -262,17 +262,17 @@ that matches.
 
 Types are keywords, written with a capital letter:
 
-| Type            | Values                                                                                                                           |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `Location`      | a place, with facing: `uf`, `fu`, `urf`; its kinds are `EdgeLocation`, `CornerLocation`, `CenterLocation`                        |
-| `Pattern`       | `/df/`, `/u__/`, `/ulb/r`                                                                                                        |
-| `Cubie`         | one piece with an orientation: a complete pattern (`/df/`, `/fd/`), or from `cubie(x)`; its kinds are `Edge`, `Corner`, `Center` |
-| `Permutation`   | cycles, `(uf ur ub)`; a cube state is one (`cube`)                                                                               |
-| `Sequence`      | a permutation that remembers its moves, so it can be played (any sequence can be used as a permutation, not the reverse)         |
-| `Face`          | `U D F B L R`, as in `layer(D)`                                                                                                  |
-| `Slice`         | `M E S`, as in `reflect(p, M)`                                                                                                   |
-| `Set(Location)` | several places: `layer(D)`                                                                                                       |
-| `Int`, `Bool`   | numbers and truth values; a condition (`uf is /df/`, a face picture) is a Bool                                                   |
+| Type            | Values                                                                                                                                                    |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Location`      | a place, with facing: `uf`, `fu`, `urf`; its kinds are `EdgeLocation`, `CornerLocation`, `CenterLocation`                                                 |
+| `Pattern`       | `/df/`, `/u__/`, `/ulb/r`                                                                                                                                 |
+| `Cubie`         | one piece with an orientation: a complete pattern (`/df/`, `/fd/`), or from `cubie(x)`; its kinds are `Edge`, `Corner`, `Center`                          |
+| `Permutation`   | cycles, `(uf ur ub)`; a cube state is one (`cube`)                                                                                                        |
+| `Moves`         | a sequence of moves, `R U R' U'`: a permutation that remembers its moves, so it can be played (any `Moves` can be used as a permutation, not the reverse) |
+| `Face`          | `U D F B L R`, as in `layer(D)`                                                                                                                           |
+| `Slice`         | `M E S`, as in `reflect(p, M)`                                                                                                                            |
+| `Set(Location)` | several places: `layer(D)`                                                                                                                                |
+| `Int`, `Bool`   | numbers and truth values; a condition (`uf is /df/`, a face picture) is a Bool                                                                            |
 
 The kinds form a hierarchy; a value of a type can be used wherever its
 parent is expected:
@@ -297,8 +297,8 @@ Location         uf  fu  urf  u
   and every use of the result.
 - Where a `Face` or `Slice` is expected, a move letter names the face or
   slice, not the turn: `layer(D)`, `reflect(p, M)`.
-- A `let` may state its type (`let t: Sequence = …`) but needn't: it's the
-  type of what it's given. A search's `as t` is a Sequence.
+- A `let` may state its type (`let t: Moves = …`) but needn't: it's the
+  type of what it's given. A search's `as t` is of type `Moves`.
 - A **Pattern** is read relative to the centers: after `y`, `/fr/` is the
   piece that now belongs at the front right.
 - A **Cubie** is a piece with an orientation. Written as a pattern
@@ -593,6 +593,7 @@ or the move list.
 | Functions without types (`fun lift(p) { … }`)                                                      | Every parameter and result is typed, so the compiler can check each call                                                                                          |
 | `fun f(p: T) -> T`                                                                                 | `->` is the case arrow; a result type is written like a parameter's, `fun f(p: T): T`                                                                             |
 | Functions whose value is their last expression, cases that produce values (`case fr is p -> R<U>`) | `match` would mean two things; actions are algos (`-> do …`), and a `fun` says `return`                                                                           |
+| `Sequence` as a type name                                                                          | A sequence of what? `Moves` says it                                                                                                                               |
 | The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations)                                | Replaced everywhere by standard notation                                                                                                                          |
 | Upper case piece names (`URF`)                                                                     | Reads as moves U R F; Singmaster used lower case                                                                                                                  |
 | Corner names in either winding (`ufr` as well as `urf`)                                            | Six spellings per corner; clockwise only gives exactly three, one per sticker                                                                                     |
