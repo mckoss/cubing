@@ -52,17 +52,17 @@ algo basic "The Basic Modern Solution" goal solved(cube) {
   let twistCornerBack  = twistCorner'
                        # (urf)+ (dr db fr) (dfr)+ (dbl)- (drb)-
 
-  # Lift a piece (p, a pattern) to the top without disturbing the rest of
+  # Lift a piece (c, a cubie) to the top without disturbing the rest of
   # the bottom, by where it is now.  Edge and corner places never match
-  # the same pattern, so one list covers both.
-  fun lift(p: Pattern) -> Sequence {
+  # the same cubie, so one list covers both.
+  fun lift(c: Cubie) -> Sequence {
     match {
-      case df  is p -> F2          case fr  is p -> R<U>
-      case dr  is p -> R2          case br  is p -> R'<U>
-      case db  is p -> B2          case bl  is p -> L<U>
-      case dl  is p -> L2          case fl  is p -> L'<U>
-      case dfr is p -> R<U>        case dbl is p -> L<U>
-      case drb is p -> R'<U'>      case dlf is p -> L'<U'>
+      case df  is c -> F2          case fr  is c -> R<U>
+      case dr  is c -> R2          case br  is c -> R'<U>
+      case db  is c -> B2          case bl  is c -> L<U>
+      case dl  is c -> L2          case fl  is c -> L'<U>
+      case dfr is c -> R<U>        case dbl is c -> L<U>
+      case drb is c -> R'<U'>      case dlf is c -> L'<U'>
       otherwise     -> ()                    # already in the top layer
     }
   }
