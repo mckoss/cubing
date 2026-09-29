@@ -11,7 +11,7 @@ import {
 	type Env,
 	type Moves
 } from './moves';
-import { formatMoves, MOVE_NAMES, parseMoves, permutationOf } from '../cube/moves';
+import { formatMoves, isRotation, MOVE_NAMES, parseMoves, permutationOf } from '../cube/moves';
 import { Permutation } from '../cube/permutation';
 import { LOCATIONS, type Location } from '../cube/types';
 import basicSource from '../../../rubikon/basic.rbk?raw';
@@ -69,6 +69,7 @@ describe('evaluateMoves', () => {
 		expect(text("(R U R' U')3")).toBe("R U R' U' R U R' U' R U R' U'");
 		expect(text("(R U)3'")).toBe(formatMoves(parseMoves("U' R' U' R' U' R'")));
 		expect(text('(R)0')).toBe('');
+		expect(text('(R)1000')).toHaveLength(1000 * 2 - 1);
 	});
 
 	it('conjugates', () => {
@@ -106,19 +107,20 @@ describe('evaluateMoves', () => {
 	it('mirrors the effect of every move, as the engine sees it', () => {
 		// Whole cube turns change only the frame, so check them by what
 		// they do to a face turn after them.
-		const probes = [
-			...MOVE_NAMES.filter((m) => !/[xyz]/.test(m)),
-			...['x', 'y', 'z'].flatMap((r) => ['R', 'U', 'F'].map((f) => `${r} ${f}`))
-		];
+		const suffixes = ['', "'", '2'];
+		const sources = MOVE_NAMES.flatMap((name) =>
+			suffixes.flatMap((suffix) =>
+				isRotation(name)
+					? ['R', 'U', 'F'].map((face) => `${name}${suffix} ${face}`)
+					: [`${name}${suffix}`]
+			)
+		);
 		for (const mirror of ['M', 'E', 'S'] as const) {
-			for (const probe of probes) {
-				for (const suffix of ['', "'", '2']) {
-					const source = `${probe}${suffix}`;
-					const mirrored = mirrorPermutation(permutationOf(parseMoves(source)), mirror);
-					expect(cycles(`reflect(${source}, ${mirror})`), `${source} in ${mirror}`).toBe(
-						mirrored.toString()
-					);
-				}
+			for (const source of sources) {
+				const mirrored = mirrorPermutation(permutationOf(parseMoves(source)), mirror);
+				expect(cycles(`reflect(${source}, ${mirror})`), `${source} in ${mirror}`).toBe(
+					mirrored.toString()
+				);
 			}
 		}
 	});
@@ -149,6 +151,8 @@ describe('evaluateMoves', () => {
 		expect(evalError('R (uf ur ub)').message).toContain('a permutation');
 		expect(evalError('solved(df)').message).toContain('Unknown function: solved');
 		expect(evalError('Rw').message).toContain('Wide turns');
+		expect(evalError('(R U)1001').message).toBe('1:9: Repeat count too large (at most 1000)');
+		expect(evalError('(R)99999999999999999999').message).toContain('Repeat count too large');
 	});
 });
 

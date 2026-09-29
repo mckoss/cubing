@@ -10,19 +10,20 @@
 import {
 	formatMove,
 	inverseTurns,
+	isMoveName,
 	isRotation,
-	MOVE_NAMES,
 	type Move,
 	type MoveName
 } from '../cube/moves';
 import type { Call, Definition, Expr, Loc, MoveToken, Name, RubikonFile, Statement } from './ast';
 
+// Read-only: one value is shared by every repeat, lookup, and import of it.
 export interface TaggedMove {
-	move: Move;
-	visible: boolean;
+	readonly move: Readonly<Move>;
+	readonly visible: boolean;
 }
 
-export type Moves = TaggedMove[];
+export type Moves = readonly TaggedMove[];
 
 // Names in scope: a bare name ("sune"), or a module's ("cfop.sune").
 export type Env = ReadonlyMap<string, Moves>;
@@ -77,12 +78,10 @@ const MIRRORS: Readonly<Record<MirrorSlice, readonly [MoveName, MoveName, MoveNa
 	S: ['F', 'B', 'S', 'z']
 };
 
-// A mirror reverses clockwise, so each face turn becomes the other way
-// round (R -> L', U -> U').  Turns about the axis through the mirror are
-// the exception: the mirror swaps the faces at either end as well as
-// reversing the turn, so the sense of turning is kept.  The swapped faces
-// become each other, inverted (R -> L'), and the slice and whole cube turn
-// on that axis are unchanged (M -> M, x -> x).
+// A mirror reverses clockwise.  Turns about the mirror's own axis (its
+// slice and its whole cube turn) are unchanged: M -> M, x -> x.  Its two
+// faces swap and invert: R -> L', since R and L' turn the same way in
+// space.  Every other turn is inverted: U -> U', y -> y'.
 function reflectMove(move: Move, slice: MirrorSlice): Move {
 	const [a, b, axisSlice, axisTurn] = MIRRORS[slice];
 	if (move.name === axisSlice || move.name === axisTurn) {
@@ -104,10 +103,6 @@ export function reflectMoves(moves: Moves, slice: MirrorSlice): Moves {
 
 // --- Evaluation ---
 
-function isMoveName(name: string): name is MoveName {
-	return MOVE_NAMES.some((m) => m === name);
-}
-
 function moveOf(token: MoveToken): Move {
 	if (!isMoveName(token.name)) {
 		// Wide turns (Rw) parse, but the engine has no permutation for them.
@@ -125,8 +120,12 @@ function lookUp(name: Name, env: Env): Moves {
 	return value;
 }
 
+// More repeats than any method needs; a bigger count is surely a mistake,
+// and would run out of memory.
+const MAX_REPEAT = 1000;
+
 // What an expression that isn't moves is, for error messages.
-const NOT_MOVES: Readonly<Partial<Record<Expr['kind'], string>>> = {
+const NOT_MOVES: Readonly<Record<'location' | 'pattern' | 'cycle', string>> = {
 	location: 'a location',
 	pattern: 'a pattern',
 	cycle: 'a permutation (cycles)'
@@ -148,6 +147,9 @@ export function evaluateMoves(expr: Expr, env: Env): Moves {
 		case 'inverse':
 			return invertTagged(evaluateMoves(expr.of, env));
 		case 'repeat': {
+			if (expr.times > MAX_REPEAT) {
+				throw new RubikonEvalError(`Repeat count too large (at most ${MAX_REPEAT})`, expr.loc);
+			}
 			const once = evaluateMoves(expr.of, env);
 			return Array.from({ length: expr.times }, () => once).flat();
 		}
@@ -160,35 +162,20 @@ export function evaluateMoves(expr: Expr, env: Env): Moves {
 		case 'location':
 		case 'pattern':
 		case 'cycle': {
-			const what = NOT_MOVES[expr.kind] ?? expr.kind;
-			throw new RubikonEvalError(`Expected moves, but this is ${what}`, expr.loc);
+			throw new RubikonEvalError(`Expected moves, but this is ${NOT_MOVES[expr.kind]}`, expr.loc);
 		}
 	}
 }
 
-function checkCount(call: Call, count: number): void {
+// A call's arguments, checked for how many there are.
+function args(call: Call, count: 1): [Expr];
+function args(call: Call, count: 2): [Expr, Expr];
+function args(call: Call, count: number): Expr[] {
 	if (call.args.length !== count) {
 		const wanted = count === 1 ? '1 argument' : `${count} arguments`;
 		throw new RubikonEvalError(`${call.name} takes ${wanted}, not ${call.args.length}`, call.loc);
 	}
-}
-
-function oneArg(call: Call): Expr {
-	checkCount(call, 1);
-	const [a] = call.args;
-	if (a === undefined) {
-		throw new RubikonEvalError(`${call.name} takes 1 argument`, call.loc);
-	}
-	return a;
-}
-
-function twoArgs(call: Call): [Expr, Expr] {
-	checkCount(call, 2);
-	const [a, b] = call.args;
-	if (a === undefined || b === undefined) {
-		throw new RubikonEvalError(`${call.name} takes 2 arguments`, call.loc);
-	}
-	return [a, b];
+	return call.args;
 }
 
 // The built-in functions that make moves.  (User functions, `fun`, come
@@ -199,19 +186,19 @@ function evaluateCall(call: Call, env: Env): Moves {
 	}
 	switch (call.name) {
 		case 'commutator': {
-			const [a, b] = twoArgs(call);
+			const [a, b] = args(call, 2);
 			const am = evaluateMoves(a, env);
 			const bm = evaluateMoves(b, env);
 			return [...am, ...bm, ...invertTagged(am), ...invertTagged(bm)];
 		}
 		case 'inverse':
-			return invertTagged(evaluateMoves(oneArg(call), env));
+			return invertTagged(evaluateMoves(args(call, 1)[0], env));
 		case 'reflect': {
-			const [p, s] = twoArgs(call);
+			const [p, s] = args(call, 2);
 			return reflectMoves(evaluateMoves(p, env), mirrorOf(s));
 		}
 		case 'show':
-			return [{ move: showTurnOf(oneArg(call)), visible: true }];
+			return [{ move: showTurnOf(args(call, 1)[0]), visible: true }];
 		default:
 			throw new RubikonEvalError(`Unknown function: ${call.name}`, call.loc);
 	}

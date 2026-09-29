@@ -244,8 +244,9 @@ and R. The faces on either side swap (R and L), and turns go the other
 way, because a mirror reverses clockwise: `R` becomes `L'`, `U` becomes
 `U'`, `y` becomes `y'`. The exceptions are the turns about the axis
 through the mirror, which the mirror maps onto themselves: `M` stays `M`
-and `x` stays `x` (checked against the engine). `E` mirrors top and bottom (U and D), and `S` front and back
-(F and B). The plane is named by its slice rather than by the axis
+and `x` stays `x`. `E` mirrors top and bottom (U and D), with `y` and `E`
+unchanged; `S` mirrors front and back (F and B), with `z` and `S`
+unchanged. The plane is named by its slice rather than by the axis
 through it (`x`), so it can't be read as a whole cube turn. For a
 permutation written as cycles, each location is mirrored, and corner names
 are respelled clockwise (the mirror of `urf` reads `ufl`), which also

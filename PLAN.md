@@ -156,3 +156,8 @@ should change:
   needs values of every type in one environment.
 - **Qualified and bare names from the same module** (`import cfop` and
   `from cfop import sune`) have no rule yet for being used together.
+- **Imported names have no `loc`:** an error about one name in
+  `from cfop import sexy, nope` can only point at the whole import line.
+- **Two imports can give the same prefix** (`import cfop` and
+  `import other as cfop`); the error names the first clashing qualified
+  name (`Imported twice: cfop.sune`), not the clashing prefix.
