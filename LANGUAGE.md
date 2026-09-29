@@ -1,5 +1,8 @@
 # Rubikon — a Language for Cube Solutions: Design Notes
 
+The settled design is specified in [rubikon.md](rubikon.md); this file
+keeps the design notes, open questions, and discarded ideas.
+
 Status: **design in progress, nothing implemented.** This collects the
 design discussion so far: what's settled, what's open, what was tried and
 dropped, and how the two solvers on the site would be written. Syntax in
@@ -346,6 +349,7 @@ Location         uf  fu  urf  u
 | `if <cond> { … }`                        | plain condition                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `fun name(p: Type): Type { … return … }` | a pure helper: computes a value, never moves the cube; `return` gives its result                                                                                                                                                                                                                                                                                                                                                                                        |
 | `algo name(p: Type) "…" { … }`           | an algo with parameters: defined here, run where another algo calls it (`do lift(/df/r)`)                                                                                                                                                                                                                                                                                                                                                                               |
+| `trace("t is {t}, cube {cube}")`         | debugging: add a line to the execution trace, in place among the moves and algo entries (a checkbox on the page shows or hides these lines); `{expr}` is replaced by its value (`{{` `}}` for braces). Makes no moves and doesn't affect goals                                                                                                                                                                                                                          |
 
 ### Searches
 
