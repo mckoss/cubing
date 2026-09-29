@@ -5,6 +5,18 @@ each page's title. It follows [semantic versioning](https://semver.org):
 the major version changes when something a user relies on changes, the
 minor version for new features, and the patch for fixes.
 
+## 2.1.0 (2026-09-29)
+
+- Cube Racing, at the bottom of the playground: race a program's
+  `algo main`, or one of the TypeScript solvers, on 500 random scrambles
+  made from a seed, and see the best, worst, average, and median number of
+  moves (counted as the move history counts them), a histogram, and any
+  cube it couldn't solve, with why; Load cube puts that cube on the page to
+  run it again. Races run in the background with a Cancel button, your
+  results are kept in the browser, and the site comes with results for
+  basic.rbk and both TypeScript solvers (`npm run build:benchmarks`; a test
+  checks they're current).
+
 ## 2.0.0 (2026-09-29)
 
 The simulator rebuilt as a Svelte site, with the 2003 simulator's

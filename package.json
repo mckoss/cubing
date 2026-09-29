@@ -1,7 +1,7 @@
 {
 	"name": "cubing",
 	"private": true,
-	"version": "2.0.0",
+	"version": "2.1.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
@@ -15,7 +15,8 @@
 		"test:unit": "vitest",
 		"test": "vitest run && playwright test",
 		"test:e2e": "playwright test",
-		"build:favicon": "vite build && node scripts/favicon.js"
+		"build:favicon": "vite build && node scripts/favicon.js",
+		"build:benchmarks": "WRITE_BENCHMARKS=1 vitest run src/lib/rubikon/benchmarks.spec.ts && prettier --write src/lib/rubikon/benchmarks.json"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
