@@ -1,5 +1,8 @@
 # Rubikon — a Language for Cube Solutions: Design Notes
 
+The settled design is specified in [rubikon.md](rubikon.md); this file
+keeps the design notes, open questions, and discarded ideas.
+
 Status: **design in progress, nothing implemented.** This collects the
 design discussion so far: what's settled, what's open, what was tried and
 dropped, and how the two solvers on the site would be written. Syntax in
