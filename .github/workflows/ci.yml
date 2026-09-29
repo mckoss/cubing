@@ -14,7 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  # Lint, type checks, and unit tests: on every pull request and push.
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -26,6 +27,27 @@ jobs:
       - run: npm run lint
       - run: npm run check
       - run: npm run test:unit -- --run
+
+  # End to end tests: on pull requests (and when run by hand), not on the
+  # push to main that merging one makes, so deploys don't wait for them.
+  e2e:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      # The browser download, for this Playwright version (its system
+      # dependencies are still installed each time).
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v4
@@ -35,10 +57,15 @@ jobs:
           path: playwright-report
           retention-days: 7
 
-  # Deploy to GitHub Pages (mckoss.com/cubing) only after the tests pass on main.
+  # Deploy to GitHub Pages (mckoss.com/cubing) once the checks pass on main.
+  # It waits for e2e when that runs (a manual run), but not when it's
+  # skipped (a push to main, whose pull request already passed it).
   build:
-    needs: test
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: [check, e2e]
+    if: >-
+      always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' &&
+      needs.check.result == 'success' &&
+      (needs.e2e.result == 'success' || needs.e2e.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

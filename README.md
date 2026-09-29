@@ -58,7 +58,9 @@ npm run dev        # http://localhost:5173
 
 The first time, install a browser for the end to end tests with
 `npx playwright install chromium`. To use a Chromium that's already installed,
-set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to its path.
+set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to its path. The tests that play many
+moves open the page with `?instant`, which makes moves at once instead of
+turning them (the history and stepping work as usual).
 
 ## Code
 
@@ -77,6 +79,8 @@ set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to its path.
 
 ## Deployment
 
-[GitHub Actions](.github/workflows/ci.yml) runs lint, type checks, unit tests,
-and end to end tests on every push and pull request. On `main`, once they
-pass, it builds the site and deploys it to GitHub Pages.
+[GitHub Actions](.github/workflows/ci.yml) runs lint, type checks, and unit
+tests on every push and pull request, and the end to end tests on pull
+requests (and when run by hand). On `main`, once the checks pass, it builds
+the site and deploys it to GitHub Pages; the end to end tests already passed
+on the pull request.

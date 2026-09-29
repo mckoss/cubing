@@ -2,14 +2,16 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 
 // Open the playground at the fastest speed, with an empty local storage
 // (each test has its own browser context); returns the page errors seen.
-async function open(page: Page): Promise<string[]> {
+// Instant makes moves at once instead of turning them, for tests that
+// play a lot.
+async function open(page: Page, { instant = false } = {}): Promise<string[]> {
 	const errors: string[] = [];
 	page.on('pageerror', (e): void => {
 		errors.push(e.message);
 	});
 	// Say yes to confirm() (discard changes, replace, delete).
 	page.on('dialog', (dialog) => void dialog.accept());
-	await page.goto('./playground');
+	await page.goto(instant ? './playground?instant' : './playground');
 	await page.getByRole('button', { name: 'Fastest' }).click();
 	return errors;
 }
@@ -49,9 +51,7 @@ test('starts with the examples, and runs one', async ({ page }) => {
 });
 
 test("solves a scramble with basic's main", async ({ page }) => {
-	// Playing a solution takes a while, even at the fastest speed.
-	test.setTimeout(180_000);
-	const errors = await open(page);
+	const errors = await open(page, { instant: true });
 	await page.getByTestId('scramble').click();
 	await expect(history(page)).toContainText('Scramble');
 	await expect(page.getByTestId('solved')).toBeHidden();
@@ -60,7 +60,7 @@ test("solves a scramble with basic's main", async ({ page }) => {
 	for (const stage of ['The Basic Modern Solution', 'First Face', 'Bottom Edges', 'Middle']) {
 		await expect(history(page).locator(`[data-block="${stage}"]`).first()).toBeVisible();
 	}
-	await expect(page.getByTestId('solved')).toBeVisible({ timeout: 170_000 });
+	await expect(page.getByTestId('solved')).toBeVisible({ timeout: 20_000 });
 	expect(errors).toEqual([]);
 });
 
@@ -154,7 +154,7 @@ test('shows runtime errors at their line', async ({ page }) => {
 });
 
 test('plays a let, and moves typed in', async ({ page }) => {
-	await open(page);
+	await open(page, { instant: true });
 	await source(page).fill("let sexy = R U R' U'\nlet six = (sexy)6\n");
 	await page.getByTestId('run').click();
 	await expect(page.getByTestId('lets')).toContainText("R U R' U'");
@@ -163,7 +163,7 @@ test('plays a let, and moves typed in', async ({ page }) => {
 	await expect(history(page)).toContainText('six');
 	// The history counts the moves; the status line doesn't.
 	await expect(page.getByTestId('status')).toHaveText('Played six.');
-	await expect(page.getByTestId('solved')).toBeVisible({ timeout: 30_000 });
+	await expect(page.getByTestId('solved')).toBeVisible();
 	await page.getByRole('button', { name: 'Play sexy' }).click();
 	await expect(history(page)).toContainText("R U R' U'");
 	await expect(page.getByTestId('solved')).toBeHidden();

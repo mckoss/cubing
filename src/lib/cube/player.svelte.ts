@@ -39,6 +39,13 @@ function isMoveKey(key: string): key is MoveKey {
 	return Object.hasOwn(KEYS, key);
 }
 
+// With `?instant` in the URL (for tests), moves are made at once instead
+// of turning, one frame per quarter turn at best. Everything else (the
+// history, stepping, pausing) works as usual.
+function instantMoves(): boolean {
+	return new URLSearchParams(window.location.search).has('instant');
+}
+
 export class Player {
 	readonly moveList = new MoveList();
 	view: CubeView | undefined = $state();
@@ -114,7 +121,7 @@ export class Player {
 	// Show the cube on a canvas; returns a function to stop.
 	attach(canvas: HTMLCanvasElement): () => void {
 		try {
-			this.view = new CubeView(canvas);
+			this.view = new CubeView(canvas, 3, instantMoves());
 		} catch (e) {
 			// Without WebGL, moves still work; they just aren't drawn.
 			console.warn(e);
