@@ -82,6 +82,8 @@ jobs:
 
   deploy:
     needs: build
+    # Without always(), a skipped e2e (upstream of build) would skip this too.
+    if: always() && needs.build.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       pages: write
