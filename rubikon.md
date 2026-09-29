@@ -117,9 +117,14 @@ its first letter and its spelling:
 **Keywords** (reserved; not usable as names):
 
 ```
-algo  goal  let  fun  return  do  each  match  search  as  case
-otherwise  else  until  max  if  not  and  or  in  is  all  has  face
-import  from  trace
+do not return
+until all is fun
+if each algo has face
+import goal from trace
+search in case
+as max and match
+let otherwise
+or else
 ```
 
 `in` and `all` are reserved for future use; nothing uses them yet.
