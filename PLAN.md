@@ -119,8 +119,9 @@ same stream: the formatted text and its line. The history shows it in
 place, inside the current algo's block between its moves; with no page,
 the stream prints to the console. The page and the playground get a
 "Show trace" checkbox that shows or hides these lines (the moves and algo
-blocks stay). Parsing needs a format string rule
-(`{expr}`, `{{`, `}}`) and a printer for every value kind.
+blocks stay). The format string rule (`{expr}`, `{{`, `}}`), the printer
+for every value kind, and the event are done; the page, the checkbox, and
+printing to the console are left.
 
 ### 5. Modules
 
@@ -217,13 +218,6 @@ should change:
 - **`until` is tested before each pass** (so it may run none), and running
   out of passes with the condition still false is an error. The spec
   leaves both open.
-- **Several search generators: fewest turns first, or nested?** The spec
-  says both ("shortest first", and "every U within every y"), and they
-  differ: is `U2` tried before `y U`? The runtime tries the fewest turns
-  first, and among as many, the first generator varies slowest:
-  `y* U*` is `()`, `U`, `U'`, `U2`, `y`, `y'`, `y2`, `y U`, … A frame
-  change costs no move, so "fewest turns" could also mean "fewest shown
-  turns" (all of `y*` before any `U`).
 - **Goals are enforced as persistent**, at the end of every algo,
   including algos called with `do` (`lift`): a macro may disturb earlier
   goals only if it restores them by its own end. A bypassed goal counts as
@@ -250,6 +244,8 @@ should change:
   (`cube == R U R' U'`), since conditions evaluate moves too.
 - **Resolved by the runtime:** "`let` holds more than moves" and "Two
   environments" above: `values.ts` has one `Env` of values of every kind.
+  The order of `search y* U*` too: fewest turns first, then the first
+  generator varies slowest (`U2` before `y U`), as rubikon.md now says.
 
 ### From writing the specification
 
@@ -272,8 +268,7 @@ turned up gaps and disagreements:
   design forbids.
 - **Underspecified:** whether `until` tests before its first pass, and
   what happens when `max` runs out; `until goal` in an algo without a
-  goal; the order of `search y* U*` (every U within every y, or shortest
-  first?); `each U2` or `each R'`; scoping and forward references; a
+  goal; `each U2` or `each R'`; scoping and forward references; a
   search with both `otherwise` and `else search` (the `else` can never
   run); a top-level algo without a name (can never be called); whether
   `do t lift(p)` mixes moves and an algo call.
