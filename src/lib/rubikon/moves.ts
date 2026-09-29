@@ -15,7 +15,10 @@ import {
 	type Move,
 	type MoveName
 } from '../cube/moves';
-import type { Call, Definition, Expr, Loc, MoveToken, Name, RubikonFile, Statement } from './ast';
+import type { Call, Expr, Loc, MoveToken, Name } from './ast';
+import { describeKind, nameKey, RubikonError, type Env } from './values';
+
+export type { Env } from './values';
 
 // Read-only: one value is shared by every repeat, lookup, and import of it.
 export interface TaggedMove {
@@ -25,20 +28,12 @@ export interface TaggedMove {
 
 export type Moves = readonly TaggedMove[];
 
-// Names in scope: a bare name ("sune"), or a module's ("cfop.sune").
-export type Env = ReadonlyMap<string, Moves>;
-
 // An evaluation error, with where it happened (1-based), like
 // RubikonSyntaxError.
-export class RubikonEvalError extends Error {
-	readonly line: number;
-	readonly column: number;
-
+export class RubikonEvalError extends RubikonError {
 	constructor(message: string, loc: Loc) {
-		super(`${loc.line}:${loc.column}: ${message}`);
+		super(message, loc);
 		this.name = 'RubikonEvalError';
-		this.line = loc.line;
-		this.column = loc.column;
 	}
 }
 
@@ -112,17 +107,51 @@ function moveOf(token: MoveToken): Move {
 }
 
 function lookUp(name: Name, env: Env): Moves {
-	const key = name.module === null ? name.name : `${name.module}.${name.name}`;
+	const key = nameKey(name);
 	const value = env.get(key);
 	if (value === undefined) {
 		throw new RubikonEvalError(`Unknown name: ${key}`, name.loc);
 	}
-	return value;
+	if (value.kind === 'algo') {
+		throw new RubikonEvalError(`${key} is an algo: run it with do ${key}`, name.loc);
+	}
+	if (value.kind !== 'moves') {
+		throw new RubikonEvalError(
+			`Expected moves, but ${key} is ${describeKind(value.kind)}`,
+			name.loc
+		);
+	}
+	return value.moves;
 }
 
 // More repeats than any method needs; a bigger count is surely a mistake,
 // and would run out of memory.
 const MAX_REPEAT = 1000;
+
+// Longer than any run may play (the runtime's default limit), so surely a
+// mistake: repeats of repeats would otherwise run out of memory first.
+const MAX_LENGTH = 100_000;
+
+// Moves, checked for length.
+export function limited(moves: Moves, loc: Loc): Moves {
+	if (moves.length > MAX_LENGTH) {
+		throw new RubikonEvalError(`Too many moves in one value (more than ${MAX_LENGTH})`, loc);
+	}
+	return moves;
+}
+
+// A repeat's count, checked (for moves or a permutation).
+export function checkRepeat(times: number, loc: Loc): void {
+	if (times > MAX_REPEAT) {
+		throw new RubikonEvalError(`Repeat count too large (at most ${MAX_REPEAT})`, loc);
+	}
+}
+
+// Moves played `times` times over.
+export function repeatMoves(moves: Moves, times: number, loc: Loc): Moves {
+	checkRepeat(times, loc);
+	return limited(Array.from({ length: times }, () => moves).flat(), loc);
+}
 
 // What an expression that isn't moves is, for error messages.
 const NOT_MOVES: Readonly<Record<'location' | 'pattern' | 'cycle', string>> = {
@@ -139,23 +168,24 @@ export function evaluateMoves(expr: Expr, env: Env): Moves {
 			return [{ move, visible: !isRotation(move.name) }];
 		}
 		case 'seq':
-			return expr.items.flatMap((item) => evaluateMoves(item, env));
+			return limited(
+				expr.items.flatMap((item) => evaluateMoves(item, env)),
+				expr.loc
+			);
 		case 'name':
 			return lookUp(expr, env);
 		case 'identity':
 			return [];
 		case 'inverse':
 			return invertTagged(evaluateMoves(expr.of, env));
-		case 'repeat': {
-			if (expr.times > MAX_REPEAT) {
-				throw new RubikonEvalError(`Repeat count too large (at most ${MAX_REPEAT})`, expr.loc);
-			}
-			const once = evaluateMoves(expr.of, env);
-			return Array.from({ length: expr.times }, () => once).flat();
-		}
+		case 'repeat':
+			return repeatMoves(evaluateMoves(expr.of, env), expr.times, expr.loc);
 		case 'conjugate': {
 			const wrapper = evaluateMoves(expr.wrapper, env);
-			return [...wrapper, ...evaluateMoves(expr.body, env), ...invertTagged(wrapper)];
+			return limited(
+				[...wrapper, ...evaluateMoves(expr.body, env), ...invertTagged(wrapper)],
+				expr.loc
+			);
 		}
 		case 'call':
 			return evaluateCall(expr, env);
@@ -178,18 +208,21 @@ function args(call: Call, count: number): Expr[] {
 	return call.args;
 }
 
-// The built-in functions that make moves.  (User functions, `fun`, come
-// with the runtime.)
+// The built-in functions that make moves.
+export const BUILT_INS: ReadonlySet<string> = new Set(['commutator', 'inverse', 'reflect', 'show']);
+
+// The built-in functions that make moves, and functions (`fun`) bound in
+// env.
 function evaluateCall(call: Call, env: Env): Moves {
-	if (call.module !== null) {
-		throw new RubikonEvalError(`Unknown function: ${call.module}.${call.name}`, call.loc);
+	if (call.module !== null || !BUILT_INS.has(call.name)) {
+		return callBound(call, env);
 	}
 	switch (call.name) {
 		case 'commutator': {
 			const [a, b] = args(call, 2);
 			const am = evaluateMoves(a, env);
 			const bm = evaluateMoves(b, env);
-			return [...am, ...bm, ...invertTagged(am), ...invertTagged(bm)];
+			return limited([...am, ...bm, ...invertTagged(am), ...invertTagged(bm)], call.loc);
 		}
 		case 'inverse':
 			return invertTagged(evaluateMoves(args(call, 1)[0], env));
@@ -200,8 +233,28 @@ function evaluateCall(call: Call, env: Env): Moves {
 		case 'show':
 			return [{ move: showTurnOf(args(call, 1)[0]), visible: true }];
 		default:
-			throw new RubikonEvalError(`Unknown function: ${call.name}`, call.loc);
+			return callBound(call, env);
 	}
+}
+
+// A call of a function bound in env (a `fun`), which must give moves.
+function callBound(call: Call, env: Env): Moves {
+	const key = nameKey(call);
+	const bound = env.get(key);
+	if (bound?.kind === 'algo') {
+		throw new RubikonEvalError(`${key} is an algo: run it with do ${key}(…)`, call.loc);
+	}
+	if (bound?.kind !== 'fun') {
+		throw new RubikonEvalError(`Unknown function: ${key}`, call.loc);
+	}
+	const result = bound.apply(call, env);
+	if (result.kind !== 'moves') {
+		throw new RubikonEvalError(
+			`Expected moves, but ${key}(…) gives ${describeKind(result.kind)}`,
+			call.loc
+		);
+	}
+	return result.moves;
 }
 
 // reflect's second argument: a slice letter, naming the mirror's plane.
@@ -228,74 +281,4 @@ function showTurnOf(expr: Expr): Move {
 		"show takes one whole cube turn (x, y, or z, with an optional ' or 2); face turns are always shown",
 		expr.loc
 	);
-}
-
-// --- Lets and modules ---
-
-// Evaluate the lets among statements, in order, each able to use the
-// names before it; other statements are skipped.  Returns env with the new
-// names added.  A name can't be defined twice (no shadowing).
-export function evaluateLets(
-	statements: readonly (Statement | Definition)[],
-	env: Env
-): Map<string, Moves> {
-	const scope = new Map(env);
-	for (const statement of statements) {
-		if (statement.kind !== 'let') {
-			continue;
-		}
-		if (scope.has(statement.name)) {
-			throw new RubikonEvalError(`Already defined: ${statement.name}`, statement.loc);
-		}
-		if (statement.type !== null && statement.type.name !== 'Moves') {
-			throw new RubikonEvalError(
-				`Only Moves can be evaluated here, not ${statement.type.name}`,
-				statement.loc
-			);
-		}
-		scope.set(statement.name, evaluateMoves(statement.value, scope));
-	}
-	return scope;
-}
-
-export interface ModuleMoves {
-	// Everything a file's top level can use: its imports, then its lets.
-	scope: Map<string, Moves>;
-	// Only what the file defines itself: what other modules may import.
-	exports: Map<string, Moves>;
-}
-
-// Evaluate a file's imports and top-level lets.  modules gives each
-// imported module's exports, by module name.
-export function evaluateModule(file: RubikonFile, modules: ReadonlyMap<string, Env>): ModuleMoves {
-	const imported = new Map<string, Moves>();
-	const define = (name: string, value: Moves, loc: Loc): void => {
-		if (imported.has(name)) {
-			throw new RubikonEvalError(`Imported twice: ${name}`, loc);
-		}
-		imported.set(name, value);
-	};
-	for (const imp of file.imports) {
-		const module = modules.get(imp.module);
-		if (module === undefined) {
-			throw new RubikonEvalError(`Unknown module: ${imp.module}`, imp.loc);
-		}
-		if (imp.kind === 'import') {
-			const prefix = imp.alias ?? imp.module;
-			for (const [name, value] of module) {
-				define(`${prefix}.${name}`, value, imp.loc);
-			}
-		} else {
-			for (const { name, alias } of imp.names) {
-				const value = module.get(name);
-				if (value === undefined) {
-					throw new RubikonEvalError(`${imp.module} has no ${name}`, imp.loc);
-				}
-				define(alias ?? name, value, imp.loc);
-			}
-		}
-	}
-	const scope = evaluateLets(file.defs, imported);
-	const exports = new Map([...scope].filter(([name]) => !imported.has(name)));
-	return { scope, exports };
 }

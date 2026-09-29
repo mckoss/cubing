@@ -365,7 +365,9 @@ search U* as t {
   before counterclockwise), then the half turn. So `U*` and `U'*` are the
   same search, and a search never makes three quarter turns where one will
   do. A turn's order bounds it, so the search is finite and repeatable.
-- `y* U*` searches two generators: every U turn within every y turn.
+- `y* U*` searches two generators, still fewest turns first; among as
+  many turns, the first generator varies slowest: `()`, `U`, `U'`, `U2`,
+  `y`, `y'`, `y2`, `y U`, … (see rubikon.md, `search`).
 - For each candidate, the cases are tested as if the turns had been made;
   the first match wins.
 - **The turns found are named (`as t`) and are made only where the case
@@ -570,8 +572,8 @@ or the move list.
     needs "these corners cycle, ignoring twists". `positions(cube) has
 (ufl ulb ubr)`, or a flag on the cycle?
 12. _(Resolved: `uf is not /u_/` is allowed. Still open: a way to write "either f or r" in a cell, and which face a picture without `face U` would mean.)_
-13. _(Resolved: `y* U*` searches two generators, every U turn within
-    every y turn.)_
+13. _(Resolved: `y* U*` searches two generators, fewest turns first, the
+    first generator varying slowest.)_
 14. _(Resolved: the JSON is designed along with the compiler.)_
 15. _(Resolved: `x y z` are a change of frame, not a permutation; a cube state never contains one. See Whole cube turns.)_
 16. **Other puzzles** (deferred): "solved however held" is already the right

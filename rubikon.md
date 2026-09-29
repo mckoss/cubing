@@ -701,8 +701,13 @@ A search looks for the fewest turns after which a case holds.
   before counterclockwise), then the half turn: `()`, `U`, `U'`, `U2`.
   So `U*` and `U'*` are the same search. A generator's order bounds it, so
   every search is finite and repeatable.
-- **Several generators.** `y* U*` tries every U candidate within every y
-  candidate.
+- **Several generators.** `y* U*` also tries candidates with the fewest
+  turns first, counting every turn (a whole cube turn too). Among
+  candidates with as many turns, the generators are compared left to
+  right, each in its own order (none, clockwise, counterclockwise, half),
+  so the first generator varies slowest: `()`, `U`, `U'`, `U2`, `y`,
+  `y'`, `y2`, `y U`, `y U'`, `y U2`, `y' U`, … So `U2` is tried before
+  `y U`.
 - **Testing.** For each candidate, the cases are tested as if its turns
   had been made. The first case to hold, for the first candidate that has
   one, wins.
@@ -1038,8 +1043,6 @@ open:
   what happens when n passes run out and it still doesn't hold.
 - `each` with a turn that isn't a quarter turn (`each U2`), which the
   grammar accepts.
-- The order of candidates with several generators: "every U within every
-  y" and "shortest first" differ (`U2` before `y U`?).
 - Scope: whether a definition can be used before it's written, and
   whether a nested `let` can reuse an outer name.
 - Whether an algo call can be played in the same `do` as moves

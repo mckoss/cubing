@@ -86,13 +86,42 @@ cube simulator, move by move, and builds the execution trace, grouped by
 algo like the blocks in the demo's move list (`MoveList.openBlock`), with
 counts and "next stage" stepping.
 
+**Done** (`src/lib/rubikon/runtime.ts`, `values.ts`; tests in
+`runtime.spec.ts`):
+
+- [x] One environment (`values.ts`): moves, permutations, places, lists of
+      places, patterns, Bools, funs, and algos, read by the moves
+      evaluator, the condition evaluator (which now evaluates any
+      expression, `evaluateValue`), and the runtime.
+- [x] `let`, `do` (moves, an algo, `do lift(/df/r)`, `do t F2`, and the
+      two mixed: `do t lift(p)`), `match`, `if`/`else`, `each`, `until`,
+      `search` (with `else search` and `otherwise`), `fun`/`return`,
+      nested stages, `show(x)`.
+- [x] Goals: bypassed when they hold at the start, checked at the end,
+      persistent (every goal reached is checked at the end of every later
+      algo), each read in the frame its algo started in.
+- [x] Whole cube turns as frame changes: the state is relative to how the
+      cube is held, so conditions read the current frame; the events carry
+      the turn with `visible: false`, and `physicalMoves()` renames the
+      moves after it for display.
+- [x] `trace("…")` (grammar, syntax tree, and `trace` events).
+- [x] Limits: moves, steps, and nesting depth, each an error with a
+      position. Every error is a `RubikonError` with line and column.
+- [x] `runMain(file, state, listener, modules)` runs `algo main`, with
+      imports from already parsed modules (full module loading is 5).
+- [x] Each stage of `basic.rbk` from states where the earlier goals hold,
+      and `main` solving random scrambles: 100 in the tests (2000 tried
+      once, all solved), 125.9 face turns on average against 129.6 for the
+      TypeScript Basic solver.
+
 **`trace("…")` (low priority, for debugging).** One more event in the
 same stream: the formatted text and its line. The history shows it in
 place, inside the current algo's block between its moves; with no page,
 the stream prints to the console. The page and the playground get a
 "Show trace" checkbox that shows or hides these lines (the moves and algo
-blocks stay). Parsing needs a format string rule
-(`{expr}`, `{{`, `}}`) and a printer for every value kind.
+blocks stay). The format string rule (`{expr}`, `{{`, `}}`), the printer
+for every value kind, and the event are done; the page, the checkbox, and
+printing to the console are left.
 
 ### 5. Modules
 
@@ -223,6 +252,37 @@ should change:
 - **Where to start a run.** The playground offers "From solved" (reset
   before each run) or playing on from the current cube; a program has no
   way to say what state it expects (a scramble, a setup).
+- **`until` is tested before each pass** (so it may run none), and running
+  out of passes with the condition still false is an error. The spec
+  leaves both open.
+- **Goals are enforced as persistent**, at the end of every algo,
+  including algos called with `do` (`lift`): a macro may disturb earlier
+  goals only if it restores them by its own end. A bypassed goal counts as
+  reached. A goal is read in its algo's scope (parameters), not its body's
+  (a `let` in the body can't be named in the goal).
+- **Every consumer has to rename moves after a frame change.** The move
+  event carries the move as written (`R` after an unseen `y`), so the
+  simulator, the trace, and a move count each need `physicalMoves()` (or
+  their own frame). The event could carry the move as shown as well.
+- **An algo that does nothing still shows up.** `lift` is entered and
+  left for every piece, even when its `otherwise -> ()` makes no moves,
+  so the trace has many empty "Lift a piece to the top" entries. The page
+  may want to hide empty algos (bypass is only for goals).
+- **A fun can't return a condition.** `return` takes an expression, so a
+  `fun …: Bool` can return `solved(…)` or a Bool name, but not
+  `uf is p` or `a and b`. Likewise `{…}` in `trace` takes an expression,
+  not a condition.
+- **Single letters bite in tests too:** `fun f`, `let x`, `let b`, and
+  `import b` are all errors (face letters are places, `x y z` are moves).
+- **Definitions at the top level:** lets are bound in order, but funs and
+  algos are looked up when called, so an algo can call one defined after
+  it. The spec leaves use before definition open.
+- **`==` on moves** now compares the permutations they make
+  (`cube == R U R' U'`), since conditions evaluate moves too.
+- **Resolved by the runtime:** "`let` holds more than moves" and "Two
+  environments" above: `values.ts` has one `Env` of values of every kind.
+  The order of `search y* U*` too: fewest turns first, then the first
+  generator varies slowest (`U2` before `y U`), as rubikon.md now says.
 
 ### From writing the specification
 
@@ -245,8 +305,7 @@ turned up gaps and disagreements:
   design forbids.
 - **Underspecified:** whether `until` tests before its first pass, and
   what happens when `max` runs out; `until goal` in an algo without a
-  goal; the order of `search y* U*` (every U within every y, or shortest
-  first?); `each U2` or `each R'`; scoping and forward references; a
+  goal; `each U2` or `each R'`; scoping and forward references; a
   search with both `otherwise` and `else search` (the `else` can never
   run); a top-level algo without a name (can never be called); whether
   `do t lift(p)` mixes moves and an algo call.

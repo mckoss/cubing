@@ -8,7 +8,7 @@
   const KEYWORDS = new Set([
     'algo', 'goal', 'let', 'fun', 'return', 'do', 'each', 'match', 'search',
     'as', 'case', 'otherwise', 'else', 'until', 'max', 'if', 'not', 'and',
-    'or', 'in', 'is', 'all', 'has', 'face', 'import', 'from'
+    'or', 'in', 'is', 'all', 'has', 'face', 'import', 'from', 'trace'
   ]);
   const TURNS = { '': 1, '2': 2, "'": 3 };
   const TWIST = { '': 0, '+': 1, '-': 2 };
@@ -21,6 +21,19 @@
   }
   function seq(items) {
     return items.length === 1 ? items[0] : { kind: 'seq', items, loc: items[0].loc };
+  }
+  // Adjacent pieces of text joined into one string.
+  function joinText(parts) {
+    const joined = [];
+    for (const part of parts) {
+      const last = joined.length - 1;
+      if (typeof part === 'string' && typeof joined[last] === 'string') {
+        joined[last] += part;
+      } else {
+        joined.push(part);
+      }
+    }
+    return joined;
   }
 }
 
@@ -44,7 +57,7 @@ TopDef = Let / Fun / Algo
 
 // ---------------------------------------------------------------- Statements
 
-Statement = Let / Fun / Algo / Do / Return / If / Match / Search / Each / Until
+Statement = Let / Fun / Algo / Do / Return / If / Match / Search / Each / Until / Trace
 
 Block = "{" _ body:(@Statement _)* "}" { return body; }
 
@@ -114,6 +127,19 @@ Each = EACH _ turn:Move _ body:Block { return { kind: 'each', turn, body, loc: h
 Until
   = UNTIL _ cond:(GOAL { return { kind: 'goal', loc: here() }; } / Cond) _ MAX _ max:Int _ body:Block
     { return { kind: 'until', cond, max, body, loc: here() }; }
+
+// trace("…"): a format string, each {expr} replaced by its value; {{ and }}
+// are literal braces.
+Trace
+  = TRACE _ "(" _ '"' parts:TracePart* '"' _ ")"
+    { return { kind: 'trace', parts: joinText(parts), loc: here() }; }
+
+// (Written as escapes: Peggy counts braces in actions, even in strings.)
+TracePart
+  = "{{" { return '\x7b'; }
+  / "}}" { return '\x7d'; }
+  / "{" _ @Expr _ "}"
+  / $[^"{}\n]+
 
 // ---------------------------------------------------------------- Expressions
 
@@ -270,6 +296,7 @@ HAS       = "has"       !IdentChar
 FACE      = "face"      !IdentChar
 IMPORT    = "import"    !IdentChar
 FROM      = "from"      !IdentChar
+TRACE     = "trace"     !IdentChar
 
 // Whitespace and comments.
 _ = ([ \t\r\n] / Comment)*
