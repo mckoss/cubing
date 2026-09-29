@@ -5,76 +5,85 @@
 #   import cfop            # then cfop.sune
 # Under each is the permutation it makes, as the engine prints it.
 #
-# Provenance.  Most of these are in CFOP, the speedcubing method (also
-# called the Fridrich method).  Cross and F2L are credited to René Schoof,
-# first published by Anneke Treep and Kurt Dockhorn (Netherlands, 1981);
-# OLL and PLL to Jessica Fridrich and Mirek Goljan (1981–83).  Fridrich put
-# the method on the web in January 1997; the name "CFOP" (the steps' first
-# letters) has no known coiner.
+# Provenance, as the sources cited say (checked September 2026).  Most of
+# these are in CFOP, the speedcubing method, also called the Fridrich
+# method.  Its steps' proposers, per the Speedsolving wiki: the cross,
+# Donald Taylor (first known publication, 1978, per research by James
+# Straughan); F2L, René Schoof, John Conway, David Benson, and David Seal;
+# OLL and PLL, independently Hans Dockhorn, Kurt Dockhorn, and Anneke Treep
+# (Netherlands) and Jessica Fridrich and Mirek Goljan (Czech Republic),
+# 1981–83.  Wikipedia: the first official publication was by Anneke Treep
+# and Kurt Dockhorn in 1981, and Fridrich published her approach online in
+# 1997.  Who coined the name "CFOP": unknown.
 #   https://www.speedsolving.com/wiki/index.php/CFOP_method
 #   https://en.wikipedia.org/wiki/CFOP_method
 # For each sequence below: who is credited with it and who named it, where
-# known; "unknown" where no source says.  The standard forms are listed at
-#   https://www.speedsolving.com/wiki/index.php/PLL (and OLL)
+# a source says; "unknown" where none does.
 
 # Commutators on the top layer.
 
-# Sequence: unknown (older than its name).  Name: Arnaud van Galen, in his
-# video series "Complete beginners 3x3x3 tutorial", April 2008.
+# Sequence: unknown.  Name: Arnaud van Galen, in his YouTube series
+# "Complete beginners 3x3x3 tutorial", April 2008.
 #   https://www.speedsolving.com/wiki/index.php/Sexy_Move
 let sexy         = commutator(R, U)
                  # (ur ub fr) (urf rdf)+ (ubr ulb)-
 
-# Sequence: unknown.  Name: Jeremy Fleischman, 2009 (with its inverse,
-# "hedgeslammer").
+# Sequence: unknown.  Name: Jason Baum, who says his fiancée suggested
+# it; Jeremy Fleischman, who first saw the name on Baum's website, named
+# the inverse (F R' F' R) the "hedgeslammer" in 2009.
+#   https://www.speedsolving.com/threads/hedgeslammer.13224/
 #   https://www.speedsolving.com/wiki/index.php/Sledgehammer
 let sledgehammer = commutator(R', F)
                  # (ur fr fu) (urf frd)- (ufl rub)+
 
 # Orienting the top corners.
 
-# Sequence: older than its name; Wikipedia's article on James Nourse's
-# "The Simple Solution to Rubik's Cube" (June 1981) says the book gives it
-# for this case.  Name: Lars Petrus, for his method (Sune is a Swedish
-# name).
+# Sequence: the case is older than the name; James Nourse's "The Simple
+# Solution to Rubik's Cube" (June 1981) solves it, on the bottom face, with
+# R' D' R D' R' D2 R D2.  Name: Lars Petrus, for his method (Sune is a
+# Swedish man's name).
 #   https://www.speedsolving.com/wiki/index.php/Sune
 #   https://en.wikipedia.org/wiki/The_Simple_Solution_to_Rubik%27s_Cube
 let sune         = R<U> U R<U2>
                  # (ur ub ul) (urf lbu)- (ufl ubr)+
 
-# Sune's inverse, hence the name (also called "Chair"); who named it:
-# unknown.
+# Sune's inverse.  Who named it: unknown.  (In French-speaking countries
+# it's "the chair", from a Francocube mnemonic; so Sune is "Anti-Chair".)
 #   https://www.speedsolving.com/wiki/index.php/Sune
 let antisune     = sune'
                  # (ur ul ub) (urf bul)+ (ubr ufl)-
 
 # Cycling top corners.
 
-# Name: Lars Petrus, for his method's corner step; what it refers to and
-# when: unknown.  Sequence: unknown.
+# Sequence: unknown ("a common commutator applicable to many puzzles").
+# Name: Lars Petrus, for his method's last-layer corner step.  Followed by
+# U, it is commutator(R, U'<L'>), a 3-cycle of corners.
 #   https://www.speedsolving.com/wiki/index.php/Niklas
-let niklas       = commutator(R, U'<L'>)
-                 # (urf bru bul)
+#   https://www.speedsolving.com/wiki/index.php/Lars_Petrus
+let niklas       = R U' L' U R' U' L
+                 # (uf ur ub ul) (urf lbu rub ufl)
 
-# The PLLs (permute the last layer).  Their letter names follow the shape
-# of the pieces' paths; Fridrich credits the classification to Mirek
-# Goljan, early 1980s.  (Subscripts such as Ua/Ub and Ja/Jb may come from
-# the Speedsolving wiki and Stefan Lidström; sources differ.)  Who first
-# published each move sequence below: unknown.
-#   http://www.ws.binghamton.edu/fridrich/Mike/permute.html
+# The PLLs (permute the last layer), each named after a letter.  Who
+# named them: reportedly Mirek Goljan, early 1980s, on Fridrich's PLL page,
+# which is offline and could not be checked.  Who first published each
+# sequence: unknown.  All are listed on the Speedsolving wiki, under the
+# names given here; the wiki writes some with a U turn first to set up the
+# case, left out here.
 #   https://www.speedsolving.com/wiki/index.php/PLL
 
-# A-perm (without whole cube turns: x R' U R' D2 R U' R' D2 R2).
+# A-perm (Aa): the wiki's x R' U R' D2 R U' R' D2 R2 x', without the
+# whole cube turns.
 let aPerm        = R'<commutator(F, R'<B2>)>
                  # (urf ulb ubr)
 
-# U-perms.
+# U-perms (Ua, and its inverse Ub).
 let uPermA       = R U' R U R U R U' R' U' R2
                  # (uf ur ul)
 let uPermB       = uPermA'
                  # (uf ul ur)
 
-# H-perm and Z-perm.
+# H-perm, and Z-perm (the wiki's M' U M2 U M2 U M' U2 M2, then U' to line
+# the top layer up).
 let hPerm        = M2<U> U2 M2<U>
                  # (uf ub) (ur ul)
 let zPerm        = M' U M2 U M2 U M' U2 M2 U'
