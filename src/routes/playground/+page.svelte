@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { VERSION } from '$lib/version';
-	import { tick } from 'svelte';
+	import { onDestroy, tick } from 'svelte';
 	import { beforeNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { Player } from '$lib/cube/player.svelte';
@@ -408,8 +408,11 @@
 				label: `${name.trim() || 'untitled'}${dirty ? ' (edited)' : ''}`
 			});
 		}
+		// A saved program is left out only when it's the one open, under its
+		// own name (renamed and not yet saved, the saved copy still races).
+		const openSaved = openName !== null && name.trim() === openName ? openName : null;
 		for (const p of programs) {
-			if (p.name !== openName && p.name !== name.trim() && hasMain(p.source)) {
+			if (p.name !== openSaved && hasMain(p.source)) {
 				options.push({ value: `lib:${p.name}`, label: p.name });
 			}
 		}
@@ -459,8 +462,9 @@
 		raceStatus = '';
 		raceError = '';
 		const seed = raceSeed;
-		if (seed === null || !Number.isInteger(seed) || Math.abs(seed) > 2 ** 31 - 1) {
-			raceError = 'The seed is a whole number (up to 2147483647).';
+		// Seeds are 32-bit integers (as mulberry32 takes them).
+		if (seed === null || !Number.isInteger(seed) || seed < -(2 ** 31) || seed > 2 ** 31 - 1) {
+			raceError = 'The seed is a whole number from -2147483648 to 2147483647.';
 			return;
 		}
 		const racer = racerFor(raceWhat);
@@ -479,13 +483,18 @@
 					selectedRace = raceKey(result);
 					const unsolved = result.stats.count - result.stats.solved;
 					raceStatus =
-						`Raced ${result.name}: ${result.stats.solved} of ${result.stats.count} solved` +
+						(result.stopped === undefined
+							? `Raced ${result.name}: `
+							: `${result.stopped}: ${result.name} raced `) +
+						`${result.stats.solved} of ${result.stats.count} solved` +
 						(unsolved > 0 ? `, ${unsolved} not.` : '.') +
 						(raceLog.persisted ? '' : " (This browser won't keep it.)");
+					focusRace();
 				},
 				error: (message): void => {
 					racing = null;
 					raceError = message;
+					focusRace();
 				}
 			}
 		);
@@ -495,7 +504,17 @@
 		racing?.cancel();
 		racing = null;
 		raceStatus = 'Race cancelled.';
+		focusRace();
 	}
+
+	// Back to the Race button (it replaces Cancel when a race is over).
+	let raceButton: HTMLButtonElement | undefined = $state();
+	function focusRace(): void {
+		void tick().then(() => raceButton?.focus({ preventScroll: true }));
+	}
+
+	// A race still running when the page goes away is stopped.
+	onDestroy(() => racing?.cancel());
 
 	function clearRaces(): void {
 		if (!confirm('Clear your race results?')) return;
@@ -508,7 +527,16 @@
 	function loadCube(result: RaceResult, index: number): void {
 		player.reset();
 		player.play(raceScramble(result.seed, index), `Race cube ${index + 1} (seed ${result.seed})`);
-		status = `Loaded cube ${index + 1} of seed ${result.seed}: Run to watch ${result.name} on it.`;
+		const loaded = `Loaded cube ${index + 1} of seed ${result.seed}`;
+		if (result.kind === 'typescript') {
+			status = `${loaded}. ${result.name} is one of the simulator's solvers: it runs with Solve on the Rubik's Cube Simulator page, not here.`;
+		} else if (result.name === (name.trim() || 'untitled')) {
+			// Run runs main, as the race did.
+			runChoice = 'main';
+			status = `${loaded}: Run to watch it.`;
+		} else {
+			status = `${loaded}: open ${result.name} from the library, then Run to watch it.`;
+		}
 		playerSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	}
 
@@ -542,6 +570,16 @@
 	}
 	const shownBars = $derived(bars(shownRace?.stats.histogram ?? []));
 	const tallest = $derived(Math.max(1, ...shownBars.map((b) => b.cubes)));
+	// The histogram in words, for screen readers.
+	const histogramLabel = $derived.by((): string => {
+		const peak = shownBars.find((b) => b.cubes === tallest);
+		const stats = shownRace?.stats;
+		if (peak === undefined || stats === undefined) return '';
+		return (
+			`Moves to solve, from ${stats.best} to ${stats.worst}; ` +
+			`most cubes (${peak.cubes}) took ${peak.from} to ${peak.from + 4} moves.`
+		);
+	});
 </script>
 
 <svelte:window onkeydown={(ev): void => player.keydown(ev)} />
@@ -808,11 +846,13 @@
 			{#if racing}
 				<button onclick={cancelRace} data-testid="race-cancel">Cancel</button>
 				<span class="race-progress" data-testid="race-progress">
-					<progress max={raceCount} value={raceProgress}></progress>
+					<progress max={raceCount} value={raceProgress} aria-label="Cubes raced"></progress>
 					{raceProgress} of {raceCount}
 				</span>
 			{:else}
-				<button class="primary" onclick={startRacing} data-testid="race">Race</button>
+				<button class="primary" bind:this={raceButton} onclick={startRacing} data-testid="race"
+					>Race</button
+				>
 			{/if}
 			{#if myRaces.length > 0}
 				<button
@@ -824,7 +864,11 @@
 			{/if}
 		</div>
 		{#if raceError}<p class="error" role="alert" data-testid="race-error">{raceError}</p>{/if}
-		{#if raceStatus}<p class="status" data-testid="race-status">{raceStatus}</p>{/if}
+		<div role="status" aria-live="polite">
+			{#if racing}<span class="visually-hidden">Racing: {raceProgress} of {raceCount} cubes</span
+				>{/if}
+			{#if raceStatus}<p class="status" data-testid="race-status">{raceStatus}</p>{/if}
+		</div>
 
 		<div class="race-table">
 			<table data-testid="race-results">
@@ -852,6 +896,7 @@
 							<th scope="row">
 								<button
 									class="race-name"
+									aria-pressed={shownRace !== undefined && raceKey(shownRace) === key}
 									onclick={(): void => {
 										selectedRace = key;
 									}}
@@ -861,8 +906,13 @@
 								{#if result.hash !== null}<span class="hash" title="Hash of the program's source"
 										>#{result.hash}</span
 									>{/if}
-								{#if result.stats.count !== RACE_COUNT}<span class="hash"
-										>{result.stats.count} cubes</span
+								{#if result.stopped !== undefined}<span
+										class="tag stopped"
+										title={result.stopped}
+										data-testid="race-stopped">stopped early</span
+									>{/if}
+								{#if result.stats.count !== RACE_COUNT || result.stopped !== undefined}<span
+										class="hash">{result.stats.count} cubes</span
 									>{/if}
 							</th>
 							<td>{result.seed}</td>
@@ -919,6 +969,17 @@
 						</li>
 					{/each}
 				</ul>
+				{#if failedRace.stats.count - failedRace.stats.solved > failedRace.stats.failures.length}
+					<p class="note">
+						and {failedRace.stats.count -
+							failedRace.stats.solved -
+							failedRace.stats.failures.length} more (only the first {failedRace.stats.failures
+							.length} are kept)
+					</p>
+				{/if}
+				{#if failedRace.stopped !== undefined}
+					<p class="note">{failedRace.stopped}; the numbers are of the cubes raced.</p>
+				{/if}
 			</div>
 		{/if}
 
@@ -933,7 +994,7 @@
 				{#if shownBars.length === 0}
 					<p class="note">No cube was solved.</p>
 				{:else}
-					<div class="bars" role="img" aria-label="Histogram of moves to solve">
+					<div class="bars" role="img" aria-label={histogramLabel} data-testid="race-bars">
 						{#each shownBars as bar (bar.from)}
 							<div
 								class="bar"
@@ -1398,6 +1459,20 @@
 		padding: 0.05rem 0.4rem;
 		border: 1px solid var(--border);
 		border-radius: 999px;
+	}
+
+	.tag.stopped {
+		color: #c62828;
+		border-color: #c62828;
+	}
+
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 
 	.hash {

@@ -173,12 +173,26 @@ describe('racing', () => {
 		const progress: number[] = [];
 		const result = race(program('algo main goal solved(cube) {\n  do ()\n}\n', 'lazy'), 1, {
 			count: 20,
+			maxUnsolvedInARow: 100,
 			onProgress: (done) => progress.push(done)
 		});
 		expect(result.stats.solved).toBe(0);
 		expect(result.stats.failures.length).toBe(20);
-		expect(result.stats.failures[3]).toEqual({ index: 3, reason: '1:16 Goal not reached: main' });
+		expect(result.stats.failures[3]).toEqual({ index: 3, reason: '1:16: Goal not reached: main' });
 		expect(progress).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
+		expect(result.stopped).toBeUndefined();
+	});
+
+	it('stops early after 10 unsolved cubes in a row', () => {
+		const lazy = program('algo main goal solved(cube) {\n  do ()\n}\n', 'lazy');
+		const result = race(lazy, 1, { count: 500 });
+		expect(result.stopped).toBe('Stopped after 10 unsolved cubes in a row');
+		expect(result.stats.count).toBe(10);
+		expect(result.stats.failures.length).toBe(10);
+		// Not when the last cube is the 10th.
+		expect(race(lazy, 1, { count: 10 }).stopped).toBeUndefined();
+		// Nor when solved cubes come between.
+		expect(race(BASIC, 1, { count: 12 }).stopped).toBeUndefined();
 	});
 
 	it('reports a cube left unsolved without an error', () => {

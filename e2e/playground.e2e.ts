@@ -285,29 +285,37 @@ test('races a program, and shows the cubes it could not solve', async ({ page })
 		errors.push(e.message);
 	});
 	page.on('dialog', (dialog) => void dialog.accept());
-	// A short race (10 cubes), for tests.
-	await page.goto('./playground?instant&raceCount=10');
+	// A short race (20 cubes), for tests.
+	await page.goto('./playground?instant&raceCount=20');
 	const racing = page.getByTestId('racing');
 
 	// basic solves them all.
 	await racing.getByTestId('race').click();
-	await expect(racing.getByTestId('race-status')).toHaveText('Raced basic: 10 of 10 solved.', {
+	await expect(racing.getByTestId('race-status')).toHaveText('Raced basic: 20 of 20 solved.', {
 		timeout: 30_000
 	});
 	const mine = racing.getByTestId('race-mine');
 	await expect(mine).toHaveCount(1);
-	await expect(mine).toContainText('10 cubes');
+	await expect(mine).toContainText('20 cubes');
+	// Focus goes back to Race when it's over.
+	await expect(racing.getByTestId('race')).toBeFocused();
 	await expect(mine.getByTestId('race-unsolved')).toHaveCount(0);
 
-	// A program that does nothing solves none.
+	await expect(racing.getByTestId('race-bars')).toHaveAttribute(
+		'aria-label',
+		/^Moves to solve, from \d+ to \d+; most cubes/
+	);
+
+	// A program that does nothing solves none: the race stops early.
 	await page.getByTestId('new').click();
 	await source(page).fill('algo main goal solved(cube) {\n  do ()\n}\n');
 	await racing.getByTestId('race-seed').fill('7');
 	await racing.getByTestId('race').click();
 	await expect(racing.getByTestId('race-status')).toHaveText(
-		'Raced untitled: 0 of 10 solved, 10 not.'
+		'Stopped after 10 unsolved cubes in a row: untitled raced 0 of 10 solved, 10 not.'
 	);
 	await expect(mine).toHaveCount(2);
+	await expect(mine.first().getByTestId('race-stopped')).toBeVisible();
 	const unsolved = mine.first().getByTestId('race-unsolved');
 	await expect(unsolved).toHaveText(/^10/);
 	await unsolved.click();
@@ -318,6 +326,7 @@ test('races a program, and shows the cubes it could not solve', async ({ page })
 	// Load a cube it failed on, and run the program on it.
 	await failures.getByTestId('load-cube').nth(2).click();
 	await expect(history(page)).toContainText('Race cube 3 (seed 7)');
+	await expect(page.getByTestId('status')).toHaveText('Loaded cube 3 of seed 7: Run to watch it.');
 	await expect(page.getByTestId('solved')).toBeHidden();
 	await page.getByTestId('run').click();
 	await expect(page.getByTestId('error')).toContainText('Goal not reached: main');
@@ -338,5 +347,6 @@ test('a race can be cancelled', async ({ page }) => {
 	await expect(racing.getByTestId('race-progress')).toBeVisible();
 	await racing.getByTestId('race-cancel').click();
 	await expect(racing.getByTestId('race-status')).toHaveText('Race cancelled.');
+	await expect(racing.getByTestId('race')).toBeFocused();
 	await expect(racing.getByTestId('race-mine')).toHaveCount(0);
 });

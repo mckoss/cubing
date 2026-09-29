@@ -131,6 +131,9 @@ export interface RaceResult {
 	date: string;
 	// One of the site's own benchmarks (benchmarks.json).
 	builtIn?: boolean;
+	// Why the race stopped before its last cube, if it did (its stats are
+	// of the cubes raced).
+	stopped?: string;
 }
 
 // A short hash of text (32-bit FNV-1a, as 8 hex digits).
@@ -145,11 +148,12 @@ export function shortHash(text: string): string {
 // Solves one cube, from its start.
 type SolveCube = (start: Permutation) => CubeResult;
 
-// Why a run failed: a Rubikon error with where it is ("12:3 Goal not
-// reached: First Face"), or any other error's message.
-function failureOf(e: unknown): string {
+// Why a run failed, or why a race couldn't start: a Rubikon error with
+// where it is ("12:3: Goal not reached: First Face"), or any other error's
+// message.
+export function describeError(e: unknown): string {
 	if (e instanceof ProgramError) {
-		return e.where === '' ? e.message : `${e.where} ${e.message}`;
+		return e.where === '' ? e.message : `${e.where}: ${e.message}`;
 	}
 	return e instanceof Error ? e.message : String(e);
 }
@@ -184,7 +188,7 @@ export function prepareRacer(racer: Racer): {
 				try {
 					solver.solve(start, moveList);
 				} catch (e) {
-					failure = failureOf(e);
+					failure = describeError(e);
 				}
 				return finish(start, moveList, failure);
 			}
@@ -211,7 +215,7 @@ export function prepareRacer(racer: Racer): {
 			try {
 				runProgram(program, start, recorder.listener);
 			} catch (e) {
-				failure = failureOf(e);
+				failure = describeError(e);
 			} finally {
 				recorder.finish();
 			}
@@ -265,8 +269,15 @@ export function raceStats(results: readonly CubeResult[]): RaceStats {
 	};
 }
 
+// A race stops when this many cubes in a row aren't solved: the program
+// is surely broken, and a program that runs to the step limit takes
+// many seconds a cube.
+export const MAX_UNSOLVED_IN_A_ROW = 10;
+
 export interface RaceOptions {
 	count?: number;
+	// Stop after this many unsolved cubes in a row.
+	maxUnsolvedInARow?: number;
 	// Called after each cube: how many are done, of how many.
 	onProgress?: (done: number, count: number) => void;
 	now?: () => number;
@@ -276,13 +287,27 @@ export interface RaceOptions {
 // Race a solver on a seed's scrambles.  Throws a ProgramError if a program
 // can't be run at all; a cube it can't solve is a failure in the stats.
 export function race(racer: Racer, seed: number, options: RaceOptions = {}): RaceResult {
-	const { count = RACE_COUNT, onProgress, now = Date.now, date = (): Date => new Date() } = options;
+	const {
+		count = RACE_COUNT,
+		maxUnsolvedInARow = MAX_UNSOLVED_IN_A_ROW,
+		onProgress,
+		now = Date.now,
+		date = (): Date => new Date()
+	} = options;
 	const started = now();
 	const { name, hash, solve } = prepareRacer(racer);
 	const results: CubeResult[] = [];
+	let inARow = 0;
+	let stopped: string | undefined;
 	for (let i = 0; i < count; i++) {
-		results.push(solve(applyMoves(Permutation.identity(), raceScramble(seed, i))));
+		const result = solve(applyMoves(Permutation.identity(), raceScramble(seed, i)));
+		results.push(result);
 		onProgress?.(i + 1, count);
+		inARow = result.failure === null ? 0 : inARow + 1;
+		if (inARow >= maxUnsolvedInARow && i + 1 < count) {
+			stopped = `Stopped after ${inARow} unsolved cubes in a row`;
+			break;
+		}
 	}
 	return {
 		name,
@@ -292,6 +317,7 @@ export function race(racer: Racer, seed: number, options: RaceOptions = {}): Rac
 		generator: RACE_GENERATOR,
 		stats: raceStats(results),
 		ms: now() - started,
-		date: date().toISOString()
+		date: date().toISOString(),
+		...(stopped === undefined ? {} : { stopped })
 	};
 }
