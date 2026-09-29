@@ -324,6 +324,24 @@ describe('statements', () => {
 		});
 	});
 
+	it('reads trace: text, {expressions}, and doubled braces', () => {
+		const [t] = body('trace("after {t}: {{cube}} is {cube}, cross {solved(df dr)}")');
+		expect(strip(t)).toEqual({
+			kind: 'trace',
+			parts: [
+				'after ',
+				name('t'),
+				': {cube} is ',
+				name('cube'),
+				', cross ',
+				{ kind: 'call', module: null, name: 'solved', args: [seq(place('df'), place('dr'))] }
+			]
+		});
+		expect(strip(first(body('trace("")')))).toEqual({ kind: 'trace', parts: [] });
+		expect(syntaxError('algo { trace("a } b") }').message).toMatch(/^1:17:/);
+		expect(() => parseRubikon('let trace = R')).toThrow(RubikonSyntaxError);
+	});
+
 	it('reads algos in every form', () => {
 		const file = parseRubikon(`
 			algo lift(p: Pattern) "Lift a piece to the top" { do R }

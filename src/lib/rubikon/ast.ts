@@ -152,7 +152,15 @@ export interface Until {
 	loc: Loc;
 }
 
-export type Statement = Let | Fun | Algo | Do | Return | If | Match | Search | Each | Until;
+// `trace("after {t}: cube is {cube}")`: text, and the expressions whose
+// values are printed in it (`{{` and `}}` are already single braces).
+export interface Trace {
+	kind: 'trace';
+	parts: (string | Expr)[];
+	loc: Loc;
+}
+
+export type Statement = Let | Fun | Algo | Do | Return | If | Match | Search | Each | Until | Trace;
 
 // --- Expressions (values) ---
 
