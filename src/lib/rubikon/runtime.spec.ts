@@ -198,8 +198,24 @@ describe('statements', () => {
 		// A face turn really turns.
 		expect(made(runBody('each U { do R }'))).toBe('R U R U R U R U');
 		// A whole cube turn changes the frame: each pass sees another side.
-		const result = runBody("each y { if not solved(fr) { do R U R' } }", after('U'));
-		expect(brief(result.events).filter((e) => e.endsWith('(frame)'))).toHaveLength(4);
+		// After F, fr and fl are out, br and bl are home: each y sees fr, br,
+		// bl, then fl.
+		const result = runBody(
+			'each y { if solved(fr) { trace("home") } else { trace("out") } }',
+			after('F')
+		);
+		expect(brief(result.events)).toEqual([
+			'enter main',
+			'trace out',
+			'y (frame)',
+			'trace home',
+			'y (frame)',
+			'trace home',
+			'y (frame)',
+			'trace out',
+			'y (frame)',
+			'leave'
+		]);
 		expect(runError(() => runBody('each U2 { }')).message).toMatch(/each takes a quarter turn/);
 	});
 
@@ -229,16 +245,61 @@ describe('search', () => {
 			throw new Error('no search');
 		}
 		const generators = s.generators.flatMap((g) => evaluateMoves(g, new Map()));
-		return searchCandidates(generators).map((c) => formatMoves(engineMoves(c)) || '()');
+		return [...searchCandidates(generators)].map((c) => formatMoves(engineMoves(c)) || '()');
 	};
 
 	it('tries the fewest turns first', () => {
 		expect(turns('U*')).toEqual(['()', 'U', "U'", 'U2']);
 		expect(turns("U'*")).toEqual(['()', 'U', "U'", 'U2']);
 		expect(turns('U2*')).toEqual(['()', 'U2']);
-		const both = turns('y* U*');
-		expect(both.slice(0, 8)).toEqual(['()', 'U', "U'", 'U2', 'y', "y'", 'y2', 'y U']);
-		expect(both).toHaveLength(16);
+		// Fewest turns first; among as many, y varies slowest.
+		expect(turns('y* U*')).toEqual([
+			'()',
+			'U',
+			"U'",
+			'U2',
+			'y',
+			"y'",
+			'y2',
+			'y U',
+			"y U'",
+			'y U2',
+			"y' U",
+			"y' U'",
+			"y' U2",
+			'y2 U',
+			"y2 U'",
+			'y2 U2'
+		]);
+		// Among as many turns, the generators left to right, each none,
+		// clockwise, counterclockwise, then half: y D before U D before U y.
+		expect(turns('U* y* D*').slice(10, 25)).toEqual([
+			'y D',
+			"y D'",
+			'y D2',
+			"y' D",
+			"y' D'",
+			"y' D2",
+			'y2 D',
+			"y2 D'",
+			'y2 D2',
+			'U D',
+			"U D'",
+			'U D2',
+			'U y',
+			"U y'",
+			'U y2'
+		]);
+	});
+
+	it('makes candidates one at a time, so the step limit stops a big search', () => {
+		const generators = 'U* D* R* L* F* B* M* E* S* U* D* R* L* F* B* M* E* S*';
+		const error = runError(() =>
+			runBody(`search ${generators} as t { case uf is /urf/ -> do t }`, SOLVED, '', {
+				maxSteps: 1000
+			})
+		);
+		expect(error.message).toMatch(/Too many steps \(more than 1000\)/);
 	});
 
 	it('names the turns found, and makes them only where written', () => {
@@ -372,6 +433,21 @@ describe('whole cube turns', () => {
 		expect(formatMoves(physicalMoves(result.events))).toBe('y R');
 	});
 
+	it('renames shown turns after a frame change too', () => {
+		const start = after("R U F' D L2 B");
+		for (const source of ['do y show(x) R', 'do y show(x) y R', "do x show(y) z R U show(z')"]) {
+			const result = runBody(source, start);
+			const shown = physicalMoves(result.events);
+			const hidden = result.events.flatMap((e) =>
+				e.kind === 'move' && !e.move.visible ? [e.move.move] : []
+			);
+			// The cube as shown, turned by the frame changes, is the cube as held.
+			expect(applyMoves(applyMoves(start, shown), hidden).equals(result.state), source).toBe(true);
+		}
+		// Held after a y, x turns about the axis through the shown B face.
+		expect(formatMoves(physicalMoves(runBody('do y show(x)').events))).toBe("z'");
+	});
+
 	it('renames every move through every frame', () => {
 		for (const frame of ['x', 'y', 'z', "x y'", 'z2 x']) {
 			const f = permutationOf(parseMoves(frame));
@@ -388,6 +464,12 @@ describe('whole cube turns', () => {
 });
 
 describe('trace', () => {
+	it('runs in a fun, once per call', () => {
+		const defs = 'fun g(): Moves { trace("in g") return R }';
+		const result = runBody('do (g())2', SOLVED, defs);
+		expect(brief(result.events)).toEqual(['enter main', 'trace in g', 'R', 'R', 'leave']);
+	});
+
 	it('prints values into the event stream, in order', () => {
 		const result = runBody('do R  trace("after R: {cube}, {{uf}} is {uf}, {solved(uf)}")  do U');
 		expect(brief(result.events)).toEqual([
@@ -418,6 +500,23 @@ describe('errors and limits', () => {
 		expect(steps.message).toMatch(/Too many steps \(more than 10\)/);
 		const deep = runError(() => runFile('algo loop { do loop }\nalgo main { do loop }'));
 		expect(deep.message).toMatch(/Algos nested too deep/);
+	});
+
+	it('stops repeats too big to make', () => {
+		expect(runError(() => runBody('let c = (uf ur ub)  let big = (c)2000')).message).toBe(
+			'2:43: Repeat count too large (at most 1000)'
+		);
+		expect(runError(() => runBody('let a = (R U)1000  let big = (a)1000')).message).toBe(
+			'2:42: Too many moves in one value (more than 100000)'
+		);
+		expect(runError(() => runBody('let a = (R U)1000  let big = (a)50 a')).message).toMatch(
+			/Too many moves in one value/
+		);
+	});
+
+	it('reads a solved cube at the top level, whatever cube is run', () => {
+		const source = 'let c = cube\nlet ok = solved(uf)\nalgo main { trace("{c} {ok}") }';
+		expect(brief(runFile(source, after('F')).events)).toContain('trace () true');
 	});
 
 	it('needs main, and its modules', () => {

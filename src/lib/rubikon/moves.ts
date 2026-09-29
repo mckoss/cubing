@@ -128,6 +128,31 @@ function lookUp(name: Name, env: Env): Moves {
 // and would run out of memory.
 const MAX_REPEAT = 1000;
 
+// Longer than any run may play (the runtime's default limit), so surely a
+// mistake: repeats of repeats would otherwise run out of memory first.
+const MAX_LENGTH = 100_000;
+
+// Moves, checked for length.
+export function limited(moves: Moves, loc: Loc): Moves {
+	if (moves.length > MAX_LENGTH) {
+		throw new RubikonEvalError(`Too many moves in one value (more than ${MAX_LENGTH})`, loc);
+	}
+	return moves;
+}
+
+// A repeat's count, checked (for moves or a permutation).
+export function checkRepeat(times: number, loc: Loc): void {
+	if (times > MAX_REPEAT) {
+		throw new RubikonEvalError(`Repeat count too large (at most ${MAX_REPEAT})`, loc);
+	}
+}
+
+// Moves played `times` times over.
+export function repeatMoves(moves: Moves, times: number, loc: Loc): Moves {
+	checkRepeat(times, loc);
+	return limited(Array.from({ length: times }, () => moves).flat(), loc);
+}
+
 // What an expression that isn't moves is, for error messages.
 const NOT_MOVES: Readonly<Record<'location' | 'pattern' | 'cycle', string>> = {
 	location: 'a location',
@@ -143,23 +168,24 @@ export function evaluateMoves(expr: Expr, env: Env): Moves {
 			return [{ move, visible: !isRotation(move.name) }];
 		}
 		case 'seq':
-			return expr.items.flatMap((item) => evaluateMoves(item, env));
+			return limited(
+				expr.items.flatMap((item) => evaluateMoves(item, env)),
+				expr.loc
+			);
 		case 'name':
 			return lookUp(expr, env);
 		case 'identity':
 			return [];
 		case 'inverse':
 			return invertTagged(evaluateMoves(expr.of, env));
-		case 'repeat': {
-			if (expr.times > MAX_REPEAT) {
-				throw new RubikonEvalError(`Repeat count too large (at most ${MAX_REPEAT})`, expr.loc);
-			}
-			const once = evaluateMoves(expr.of, env);
-			return Array.from({ length: expr.times }, () => once).flat();
-		}
+		case 'repeat':
+			return repeatMoves(evaluateMoves(expr.of, env), expr.times, expr.loc);
 		case 'conjugate': {
 			const wrapper = evaluateMoves(expr.wrapper, env);
-			return [...wrapper, ...evaluateMoves(expr.body, env), ...invertTagged(wrapper)];
+			return limited(
+				[...wrapper, ...evaluateMoves(expr.body, env), ...invertTagged(wrapper)],
+				expr.loc
+			);
 		}
 		case 'call':
 			return evaluateCall(expr, env);
@@ -196,7 +222,7 @@ function evaluateCall(call: Call, env: Env): Moves {
 			const [a, b] = args(call, 2);
 			const am = evaluateMoves(a, env);
 			const bm = evaluateMoves(b, env);
-			return [...am, ...bm, ...invertTagged(am), ...invertTagged(bm)];
+			return limited([...am, ...bm, ...invertTagged(am), ...invertTagged(bm)], call.loc);
 		}
 		case 'inverse':
 			return invertTagged(evaluateMoves(args(call, 1)[0], env));

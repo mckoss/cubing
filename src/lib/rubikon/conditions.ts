@@ -21,8 +21,17 @@ import {
 	type FaceLetter,
 	type Location
 } from '../cube/types';
-import type { Call, Cell, Cond, Expr, FacePicture, Is, Loc, Name } from './ast';
-import { BUILT_INS, engineMoves, evaluateMoves, invertTagged, type Moves } from './moves';
+import type { Call, Cell, Cond, Expr, FacePicture, Is, Loc, Name, Repeat } from './ast';
+import {
+	BUILT_INS,
+	checkRepeat,
+	engineMoves,
+	evaluateMoves,
+	invertTagged,
+	limited,
+	repeatMoves,
+	type Moves
+} from './moves';
 import {
 	bind,
 	describeKind,
@@ -337,19 +346,15 @@ class Evaluator {
 			case 'seq':
 				return this.seq(
 					expr.items.map((item) => this.value(item)),
-					expr.items
+					expr.items,
+					expr.loc
 				);
 			case 'inverse': {
 				const of = this.value(expr.of);
 				return this.inverse(of, expr.of);
 			}
-			case 'repeat': {
-				const of = this.value(expr.of);
-				if (of.kind === 'permutation') {
-					return { kind: 'permutation', perm: of.perm.power(expr.times) };
-				}
-				return { kind: 'moves', moves: evaluateMoves(expr, this.env) };
-			}
+			case 'repeat':
+				return this.repeat(this.value(expr.of), expr);
 			case 'move':
 			case 'conjugate':
 				return { kind: 'moves', moves: evaluateMoves(expr, this.env) };
@@ -391,6 +396,18 @@ class Evaluator {
 		throw new RubikonConditionError(`Unknown function: ${nameKey(call)}(…)`, call.loc);
 	}
 
+	// Moves or a permutation, repeated (evaluated once).
+	private repeat(of: Value, expr: Repeat): Value {
+		if (of.kind === 'moves') {
+			return { kind: 'moves', moves: repeatMoves(of.moves, expr.times, expr.loc) };
+		}
+		if (of.kind === 'permutation') {
+			checkRepeat(expr.times, expr.loc);
+			return { kind: 'permutation', perm: of.perm.power(expr.times) };
+		}
+		throw new RubikonConditionError(`Can't repeat ${describeKind(of.kind)}`, expr.of.loc);
+	}
+
 	private inverse(of: Value, expr: Expr): Value {
 		if (of.kind === 'moves') {
 			return { kind: 'moves', moves: invertTagged(of.moves) };
@@ -403,9 +420,15 @@ class Evaluator {
 
 	// Items side by side: moves in order, places as a list, or permutations
 	// one after another (moves among them count as their permutations).
-	private seq(values: Value[], items: Expr[]): Value {
+	private seq(values: Value[], items: Expr[], loc: Loc): Value {
 		if (values.every((v) => v.kind === 'moves')) {
-			return { kind: 'moves', moves: values.flatMap((v) => v.moves) };
+			return {
+				kind: 'moves',
+				moves: limited(
+					values.flatMap((v) => v.moves),
+					loc
+				)
+			};
 		}
 		if (values.every((v) => v.kind === 'location' || v.kind === 'places')) {
 			return {
@@ -419,7 +442,7 @@ class Evaluator {
 			if (next === undefined) {
 				throw new RubikonConditionError(
 					`Expected a permutation, not ${describeKind(value.kind)}`,
-					items[i]?.loc ?? { line: 0, column: 0 }
+					items[i]?.loc ?? loc
 				);
 			}
 			perm = perm.compose(next);

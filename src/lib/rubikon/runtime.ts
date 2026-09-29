@@ -182,21 +182,39 @@ function generatorTurns(move: Move): Turns[] {
 }
 
 // Every candidate of a search's generators, fewest turns first; among as
-// many turns, the first generator varies slowest.
-export function searchCandidates(generators: readonly TaggedMove[]): Moves[] {
-	let combos: Moves[] = [[]];
-	for (const { move, visible } of generators) {
-		const options: Moves[] = [
-			[],
-			...generatorTurns(move).map((turns): Moves => [{ move: { name: move.name, turns }, visible }])
-		];
-		combos = combos.flatMap((prefix) => options.map((option) => [...prefix, ...option]));
+// many turns, the first generator varies slowest.  Made one at a time, so
+// the step limit stops a search with many generators before its 4^n
+// candidates run out of memory.
+export function* searchCandidates(generators: readonly TaggedMove[]): Generator<Moves> {
+	const options = generators.map(({ move, visible }): Moves[] => [
+		[],
+		...generatorTurns(move).map((turns): Moves => [{ move: { name: move.name, turns }, visible }])
+	]);
+	for (let length = 0; length <= options.length; length++) {
+		yield* ofLength(options, length);
 	}
-	// A stable sort keeps the nested order among candidates of one length.
-	return combos
-		.map((moves, i) => ({ moves, i }))
-		.sort((a, b) => a.moves.length - b.moves.length || a.i - b.i)
-		.map(({ moves }) => moves);
+}
+
+// The candidates with exactly `length` turns, the first generator varying
+// slowest.
+function* ofLength(options: readonly Moves[][], length: number): Generator<Moves> {
+	const [first, ...rest] = options;
+	if (first === undefined) {
+		if (length === 0) {
+			yield [];
+		}
+		return;
+	}
+	if (length > options.length) {
+		return;
+	}
+	for (const option of first) {
+		if (option.length <= length) {
+			for (const tail of ofLength(rest, length - option.length)) {
+				yield [...option, ...tail];
+			}
+		}
+	}
 }
 
 // --- Frames ---
@@ -227,7 +245,9 @@ export function renameMove(frame: Permutation, move: Move): Move {
 
 // The moves a run shows, in the frame the cube is shown in: frame changes
 // (whole cube turns not shown) left out, and the moves after them renamed.
-// Shown whole cube turns stay, as they turn the cube on screen too.
+// Shown whole cube turns stay, renamed too, as they turn the cube on screen:
+// they turn the frame shown and the frame held alike, so the frame between
+// them doesn't change.
 export function physicalMoves(events: readonly RunEvent[]): Move[] {
 	let frame = Permutation.identity();
 	const result: Move[] = [];
@@ -238,8 +258,6 @@ export function physicalMoves(events: readonly RunEvent[]): Move[] {
 		const { move, visible } = event.move;
 		if (isRotation(move.name) && !visible) {
 			frame = frame.compose(perm(move.name, move.turns));
-		} else if (isRotation(move.name)) {
-			result.push(move);
 		} else {
 			result.push(renameMove(frame, move));
 		}
@@ -713,7 +731,9 @@ class Runner {
 	}
 
 	private definitions(defs: readonly Definition[], scope: Scope): void {
-		const ctx: Context = { algo: null, fun: null };
+		// Importing a file never runs anything: its lets read a solved cube
+		// (as a fun reads the cube it's called on), whatever cube is run.
+		const ctx: Context = { algo: null, fun: { state: Permutation.identity() } };
 		for (const def of defs) {
 			if (def.kind === 'algo') {
 				if (def.name === null) {
