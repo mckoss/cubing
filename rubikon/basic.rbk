@@ -9,6 +9,22 @@
 
 from cfop import sexy, sune          # well-known sequences (cfop.rbk)
 
+# Lift a piece to the top without disturbing the rest of the bottom, by
+# where it is now.  Edge and corner places never match the same piece,
+# so one list covers both.  Called with do, like a macro; other files can
+# import it (from basic import lift).
+algo lift(p: Pattern) "Lift a piece to the top" {
+  match {
+    case df  is p -> do F2          case fr  is p -> do R<U>
+    case dr  is p -> do R2          case br  is p -> do R'<U>
+    case db  is p -> do B2          case bl  is p -> do L<U>
+    case dl  is p -> do L2          case fl  is p -> do L'<U>
+    case dfr is p -> do R<U>        case dbl is p -> do L<U>
+    case drb is p -> do R'<U'>      case dlf is p -> do L'<U'>
+    otherwise     -> ()                       # already in the top layer
+  }
+}
+
 algo main "The Basic Modern Solution" goal solved(cube) {
 
   # The sequences from the notes, written to show how they work, each with
@@ -51,21 +67,6 @@ algo main "The Basic Modern Solution" goal solved(cube) {
                        # (urf)- (dr fr db) (dfr)- (dbl)+ (drb)+
   let twistCornerBack  = twistCorner'
                        # (urf)+ (dr db fr) (dfr)+ (dbl)- (drb)-
-
-  # Lift a piece to the top without disturbing the rest of the bottom, by
-  # where it is now.  Edge and corner places never match the same piece,
-  # so one list covers both.  Called with do, like a macro.
-  algo lift(p: Pattern) "Lift a piece to the top" {
-    match {
-      case df  is p -> do F2          case fr  is p -> do R<U>
-      case dr  is p -> do R2          case br  is p -> do R'<U>
-      case db  is p -> do B2          case bl  is p -> do L<U>
-      case dl  is p -> do L2          case fl  is p -> do L'<U>
-      case dfr is p -> do R<U>        case dbl is p -> do L<U>
-      case drb is p -> do R'<U'>      case dlf is p -> do L'<U'>
-      otherwise     -> ()                       # already in the top layer
-    }
-  }
 
   algo "First Face" goal solved(layer(D)) {
 
