@@ -46,12 +46,11 @@ algo main "David Singmaster's solution (1981)" goal solved(cube) {
   let swapCornersAcross = (R' B2)<(commutator(F, R))3>
                         # (urf bul) (ufl ubr)
 
-  # Twist the front right top corner in place.  The bottom is scrambled
-  # too, and the other top corners' twists put it back.
+  # Twist the front right top corner a third of a turn clockwise, in
+  # place (twistCorner' twists it back).  The bottom is scrambled too, and
+  # the other top corners' twists put it back.
   let twistCorner       = (commutator(F, D))2
                         # (urf)+ (df rf dl) (dfr)+ (dlf)- (dbl)-
-  let twistCornerBack   = twistCorner'
-                        # (urf)- (df dl rf) (dfr)- (dlf)+ (dbl)+
 
   algo "Solve U Edges" goal solved(uf ur ub ul) {
     each y {
@@ -129,7 +128,7 @@ algo main "David Singmaster's solution (1981)" goal solved(cube) {
     each U {
       match {
         case urf is /u__/ -> ()                      # top color up: already right
-        case urf is /_u_/ -> do twistCornerBack      # facing right: counterclockwise
+        case urf is /_u_/ -> do twistCorner'         # facing right: counterclockwise
         case urf is /__u/ -> do twistCorner          # facing front: clockwise
       }
     }
