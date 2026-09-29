@@ -12,7 +12,7 @@
 // The constructor takes a list of cycles.  E.g.:
 // (a b c)(d e) -> new Permutation([["a", "b", "c"], ["d", "e"]]);
 
-import { rotateName, type Location } from './types';
+import { LOCATIONS, parseLocation, rotateName, type Location } from './types';
 
 export { Permutation };
 
@@ -21,6 +21,101 @@ export type Path = (Location | '')[];
 
 // Suffixes for cycles that return a piece rotated (twisted or flipped).
 const ROTATION_SUFFIX: readonly string[] = ['', '+', '-'];
+
+// Every piece, in the order cycles are printed: the U layer (edges, then
+// corners), the D layer, the middle layer, and the centers.
+const PIECE_ORDER: readonly Location[] = [
+	'uf',
+	'ur',
+	'ub',
+	'ul',
+	'urf',
+	'ufl',
+	'ulb',
+	'ubr',
+	'df',
+	'dr',
+	'db',
+	'dl',
+	'dfr',
+	'dlf',
+	'dbl',
+	'drb',
+	'fr',
+	'fl',
+	'br',
+	'bl',
+	'u',
+	'd',
+	'f',
+	'b',
+	'l',
+	'r'
+];
+
+// Each location's piece, as named in PIECE_ORDER: HOME.get('rfu') is 'urf'.
+const HOME: ReadonlyMap<Location, Location> = new Map(
+	LOCATIONS.map((loc) => [
+		loc,
+		PIECE_ORDER.find((piece) => rotationsBetween(piece, loc) !== undefined) ?? loc
+	])
+);
+
+function homeOf(loc: Location): Location {
+	return HOME.get(loc) ?? loc;
+}
+
+function rotate(loc: Location, times: number): Location {
+	for (let i = 0; i < times; i++) {
+		loc = rotateName(loc);
+	}
+	return loc;
+}
+
+// How well a name reads: best from the U or D face, then (for a middle
+// edge) from F or B.
+function readability(loc: Location): number {
+	const face = loc.charAt(0);
+	if (face === 'u' || face === 'd') {
+		return 2;
+	}
+	return loc.length === 2 && (face === 'f' || face === 'b') ? 1 : 0;
+}
+
+// The spelling of a cycle to print.  The same cycle can be written from
+// any of its pieces, and with every name rotated alike; choose the one
+// with the most names read from U or D (F or B for middle edges), then one
+// whose first name is, then the one starting from the earliest piece.
+// `names` is the cycle as found, and `turns` how far its first piece comes
+// back rotated.
+function spellCycle(names: Location[], turns: number): string {
+	let best: Location[] = names;
+	let bestScore = -Infinity;
+	const length = names[0]?.length ?? 1;
+	for (let k = 0; k < length; k++) {
+		const rotated = names.map((loc) => rotate(loc, k));
+		for (let i = 0; i < rotated.length; i++) {
+			// Starting later in the cycle, the names passed come back rotated.
+			const spelling = [
+				...rotated.slice(i),
+				...rotated.slice(0, i).map((loc) => rotate(loc, turns))
+			];
+			const first = spelling[0] ?? names[0];
+			if (first === undefined) {
+				continue;
+			}
+			const score =
+				spelling.reduce((sum, loc) => sum + readability(loc), 0) * 1000 +
+				readability(first) * 100 -
+				PIECE_ORDER.indexOf(homeOf(first));
+			if (score > bestScore) {
+				best = spelling;
+				bestScore = score;
+			}
+		}
+	}
+	return '(' + best.join(' ') + ')' + (ROTATION_SUFFIX[turns] ?? '');
+}
 
 // How many times a must be rotated to equal b (or undefined if never).
 function rotationsBetween(a: Location, b: Location): number | undefined {
@@ -137,31 +232,52 @@ class Permutation {
 	// Cycle notation, e.g. "(uf ur ub) (urf)+", or "()" for the identity.  A
 	// "+" or "-" means the pieces in the cycle come back rotated (clockwise
 	// or counterclockwise).
+	// The same permutation always prints the same way (see spellCycle), and
+	// the text can be read back with Permutation.parse.
 	toString(): string {
-		const marked = new Set<Location>();
-		const mark = (loc: Location): void => {
-			for (let rot = 0; rot < loc.length; rot++) {
-				marked.add(loc);
-				loc = rotateName(loc);
-			}
-		};
-
+		const done = new Set<Location>();
 		const cycles: string[] = [];
-		for (const init of this.map.keys()) {
-			if (marked.has(init)) {
+		for (const piece of PIECE_ORDER) {
+			if (done.has(piece) || this.apply(piece) === piece) {
 				continue;
 			}
-			let cycle = '(' + init;
-			mark(init);
-			let elem = this.apply(init);
-			while (!marked.has(elem)) {
-				cycle += ' ' + elem;
-				mark(elem);
-				elem = this.apply(elem);
+			const names: Location[] = [piece];
+			done.add(piece);
+			let loc = this.apply(piece);
+			while (homeOf(loc) !== piece) {
+				names.push(loc);
+				done.add(homeOf(loc));
+				loc = this.apply(loc);
 			}
-			cycle += ')' + (ROTATION_SUFFIX[rotationsBetween(init, elem) ?? 0] ?? '');
-			cycles.push(cycle);
+			cycles.push(spellCycle(names, rotationsBetween(piece, loc) ?? 0));
 		}
 		return cycles.length === 0 ? '()' : cycles.join(' ');
+	}
+
+	// Read cycle notation, as toString writes it: "(uf ur ub) (urf)+", or
+	// "()" for the identity.  Corners must be named clockwise.
+	static parse(text: string): Permutation {
+		const result = new Permutation();
+		const trimmed = text.trim();
+		if (trimmed === '()') {
+			return result;
+		}
+		const cycle = /\(([a-z]+(?: [a-z]+)*)\)([+-]?)\s*/y;
+		let match: RegExpExecArray | null;
+		while (cycle.lastIndex < trimmed.length && (match = cycle.exec(trimmed)) !== null) {
+			const names = (match[1] ?? '').split(' ').map(parseLocation);
+			const turns = ROTATION_SUFFIX.indexOf(match[2] ?? '');
+			names.forEach((from, i) => {
+				const next = names[i + 1];
+				const first = names[0];
+				if (first !== undefined) {
+					result.addMap(from, next ?? rotate(first, turns));
+				}
+			});
+		}
+		if (cycle.lastIndex !== trimmed.length || trimmed.length === 0) {
+			throw new Error(`Not cycle notation: ${text}`);
+		}
+		return result;
 	}
 }

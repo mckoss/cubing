@@ -27,7 +27,7 @@ test('starts solved', async ({ page }) => {
 test('move buttons turn the cube and show the permutation', async ({ page }) => {
 	await open(page);
 	await page.getByTestId('move-R').click();
-	await expect(permutation(page)).toHaveText('(rfu rub rbd rdf) (ru rb rd rf)');
+	await expect(permutation(page)).toHaveText('(ur br dr fr) (urf bru drb frd)');
 	await expect(history(page)).toContainText('R');
 	await page.getByTestId('move-R-prime').click();
 	await expect(permutation(page)).toHaveText('Solved');
