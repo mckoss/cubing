@@ -1,5 +1,5 @@
 // Make the site's icons from its own 3D cube: the solved cube seen from its
-// usual corner (three faces), on black.
+// usual corner (three faces), with its shadow, on a transparent background.
 //
 //   npm run build:favicon
 //
@@ -13,7 +13,7 @@ import sharp from 'sharp';
 import { spawn } from 'node:child_process';
 
 const port = 4174;
-const url = `http://localhost:${port}/cubing/`;
+const url = `http://localhost:${port}/cubing/?shadow`;
 
 // Serve the build, and wait until it answers.
 const server = spawn('npx', ['vite', 'preview', '--port', String(port), '--strictPort'], {
@@ -55,22 +55,30 @@ const shot = await page.locator('canvas').first().screenshot({ omitBackground: t
 await browser.close();
 process.kill(-server.pid);
 
-// Trim to the cube, square it with a margin, and put it on black.
-const cube = await sharp(shot).trim().png().toBuffer();
+// Trim to the cube and its shadow (the shadow is in the alpha), and center
+// it in a square, as large as it fits.
+const cube = await sharp(shot).trim({ threshold: 4 }).png().toBuffer();
 const { width = 0, height = 0 } = await sharp(cube).metadata();
-const side = Math.round(Math.max(width, height) * 1.12);
-const square = await sharp({
-	create: { width: side, height: side, channels: 4, background: '#000000' }
+const side = Math.max(width, height);
+const clear = await sharp({
+	create: { width: side, height: side, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } }
 })
 	.composite([{ input: cube, gravity: 'center' }])
 	.png()
 	.toBuffer();
+// iOS shows a transparent touch icon on black anyway, and wants it opaque.
+const margin = Math.round(side * 0.06);
+const black = await sharp(clear)
+	.extend({ top: margin, bottom: margin, left: margin, right: margin, background: '#000000' })
+	.flatten({ background: '#000000' })
+	.png()
+	.toBuffer();
 
-for (const [name, size] of [
-	['favicon.png', 32],
-	['favicon-192.png', 192],
-	['apple-touch-icon.png', 180]
+for (const [name, size, image] of [
+	['favicon.png', 32, clear],
+	['favicon-192.png', 192, clear],
+	['apple-touch-icon.png', 180, black]
 ]) {
-	await sharp(square).resize(size, size).png().toFile(`static/${name}`);
+	await sharp(image).resize(size, size).png().toFile(`static/${name}`);
 	console.log(`static/${name}`);
 }

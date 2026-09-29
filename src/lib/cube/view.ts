@@ -101,10 +101,13 @@ export class CubeView {
 	private disposables: { dispose(): void }[] = [];
 
 	// Instant: moves (and flips) happen at once, without turning, for tests.
+	// Shadow: the cube casts a soft shadow on an invisible floor (for the
+	// icons, scripts/favicon.js).
 	constructor(
 		private canvas: HTMLCanvasElement,
 		private size = 3,
-		private instant = false
+		private instant = false,
+		shadow = false
 	) {
 		this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -138,12 +141,48 @@ export class CubeView {
 
 		this.buildCubies();
 		this.buildLabels();
+		if (shadow) {
+			this.addShadow();
+		}
 
 		this.resizeObserver = new ResizeObserver(() => this.resize());
 		this.resizeObserver.observe(canvas);
 		this.resize();
 
 		this.frame = requestAnimationFrame(this.render);
+	}
+
+	// A floor that shows only the shadow on it (its alpha), lit from above
+	// by a light that adds no light of its own.
+	private addShadow(): void {
+		this.renderer.shadowMap.enabled = true;
+		this.renderer.shadowMap.type = THREE.PCFShadowMap;
+		const light = new THREE.DirectionalLight(0xffffff, 0);
+		light.position.set(-1.5, 10, -1);
+		light.castShadow = true;
+		light.shadow.mapSize.set(512, 512);
+		light.shadow.radius = 10;
+		const reach = this.size * 2;
+		Object.assign(light.shadow.camera, {
+			left: -reach,
+			right: reach,
+			top: reach,
+			bottom: -reach,
+			near: 1,
+			far: 30
+		});
+		this.scene.add(light);
+
+		this.cube.traverse((object) => {
+			object.castShadow = true;
+		});
+		const floorMaterial = new THREE.ShadowMaterial({ opacity: 0.45 });
+		const floor = new THREE.Mesh(new THREE.PlaneGeometry(reach * 3, reach * 3), floorMaterial);
+		floor.rotation.x = -Math.PI / 2;
+		floor.position.y = -this.size / 2 - 0.02;
+		floor.receiveShadow = true;
+		this.scene.add(floor);
+		this.disposables.push(floor.geometry, floorMaterial);
 	}
 
 	get busy(): boolean {
