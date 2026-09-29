@@ -332,8 +332,10 @@ describe('==', () => {
 		);
 	});
 
-	it('leaves moves to the moves evaluator', () => {
-		expect(() => check("cube == R U R' U'", SOLVED)).toThrow(/Not yet/);
+	it('compares moves as the permutation they make', () => {
+		expect(check("cube == R U R' U'", SOLVED)).toBe(false);
+		expect(check("cube == R U R' U'", after("R U R' U'"))).toBe(true);
+		expect(check("(R U R' U')6 == ()", SOLVED)).toBe(true);
 	});
 });
 

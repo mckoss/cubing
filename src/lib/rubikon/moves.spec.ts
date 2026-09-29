@@ -3,14 +3,14 @@ import { parseRubikon } from './parse';
 import type { Algo, Expr, Let } from './ast';
 import {
 	engineMoves,
-	evaluateLets,
-	evaluateModule,
 	evaluateMoves,
 	formatTaggedMoves,
 	RubikonEvalError,
 	type Env,
 	type Moves
 } from './moves';
+import { evaluateLets, evaluateModule } from './runtime';
+import { movesValue, RubikonError, type Value } from './values';
 import { formatMoves, isRotation, MOVE_NAMES, parseMoves, permutationOf } from '../cube/moves';
 import { Permutation } from '../cube/permutation';
 import { LOCATIONS, type Location } from '../cube/types';
@@ -25,6 +25,11 @@ function expr(source: string): Expr {
 		throw new Error('not a let');
 	}
 	return def.value;
+}
+
+// The moves a name is bound to (none if it isn't bound to moves).
+function movesOf(value: Value | undefined): Moves {
+	return value?.kind === 'moves' ? value.moves : [];
 }
 
 function evaluate(source: string, env: Env = new Map()): Moves {
@@ -76,7 +81,7 @@ describe('evaluateMoves', () => {
 		expect(text('F<commutator(R, U)>')).toBe(formatMoves(parseMoves("F R U R' U' F'")));
 		expect(text("F<R U>'")).toBe("F U' R' F'");
 		expect(text('(F<R U>)2')).toBe("F R U F' F R U F'");
-		expect(text('t<F<D>>', new Map([['t', evaluate('U2')]]))).toBe("U2 F D F' U2");
+		expect(text('t<F<D>>', new Map([['t', movesValue(evaluate('U2'))]]))).toBe("U2 F D F' U2");
 	});
 
 	it("makes commutators in cubers' order", () => {
@@ -86,8 +91,8 @@ describe('evaluateMoves', () => {
 
 	it('looks up names, bare and qualified', () => {
 		const env = new Map([
-			['sexy', evaluate("R U R' U'")],
-			['cfop.sune', evaluate("R U R' U R U2 R'")]
+			['sexy', movesValue(evaluate("R U R' U'"))],
+			['cfop.sune', movesValue(evaluate("R U R' U R U2 R'"))]
 		]);
 		expect(text("sexy'", env)).toBe("U R U' R'");
 		expect(text('F<cfop.sune>', env)).toBe("F R U R' U R U2 R' F'");
@@ -224,19 +229,20 @@ describe('the example files', () => {
 			it(`${file}: ${name} makes ${comment}`, () => {
 				const moves = env.get(name);
 				expect(moves).toBeDefined();
-				expect(permutationOf(engineMoves(moves ?? [])).toString()).toBe(comment);
+				expect(permutationOf(engineMoves(movesOf(moves))).toString()).toBe(comment);
 			});
 		}
 	}
 
 	it('evaluates to the expected moves', () => {
-		const get = (env: Env, name: string): string => formatMoves(engineMoves(env.get(name) ?? []));
+		const get = (env: Env, name: string): string =>
+			formatMoves(engineMoves(movesOf(env.get(name))));
 		expect(text("twistCorner'", basic)).toBe("R' D' R D R' D' R D");
 		expect(get(cfop.exports, 'hPerm')).toBe('M2 U M2 U2 M2 U M2');
 		expect(get(cfop.exports, 'sune')).toBe("R U R' U R U2 R'");
 		expect(get(basic, 'insertRight')).toBe("U R U' R' U' F' U F");
 		expect(get(basic, 'insertLeft')).toBe("U' L' U L U F U' F'");
-		expect(formatTaggedMoves(cfop.exports.get('aPerm') ?? [])).toBe(
+		expect(formatTaggedMoves(movesOf(cfop.exports.get('aPerm')))).toBe(
 			"show(x) R' U R' D2 R U' R' D2 R2 show(x')"
 		);
 	});
@@ -254,7 +260,7 @@ describe('evaluateModule', () => {
 	it('imports modules qualified, renamed, and by name', () => {
 		const file = parseRubikon("import cfop as c\nfrom cfop import sune as s\nlet v = c.sexy s'");
 		const { scope, exports } = evaluateModule(file, modules);
-		expect(formatMoves(engineMoves(scope.get('v') ?? []))).toBe("R U R' U' R U2 R' U' R U' R'");
+		expect(formatMoves(engineMoves(movesOf(scope.get('v'))))).toBe("R U R' U' R U2 R' U' R U' R'");
 		expect(scope.has('cfop.sexy')).toBe(false);
 		expect([...exports.keys()]).toEqual(['v']);
 	});
@@ -264,7 +270,7 @@ describe('evaluateModule', () => {
 			try {
 				evaluateModule(parseRubikon(source), modules);
 			} catch (e) {
-				if (e instanceof RubikonEvalError) {
+				if (e instanceof RubikonError) {
 					return e.message;
 				}
 				throw e;
@@ -283,7 +289,7 @@ describe('evaluateModule', () => {
 
 	it('lets a later milestone bind names, like a search variable', () => {
 		const lets = parseRubikon("let v = t F2 t'").defs.filter((d): d is Let => d.kind === 'let');
-		const env = evaluateLets(lets, new Map([['t', evaluate('U')]]));
-		expect(formatMoves(engineMoves(env.get('v') ?? []))).toBe("U F2 U'");
+		const env = evaluateLets(lets, new Map([['t', movesValue(evaluate('U'))]]));
+		expect(formatMoves(engineMoves(movesOf(env.get('v'))))).toBe("U F2 U'");
 	});
 });

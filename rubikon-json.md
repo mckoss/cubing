@@ -55,6 +55,7 @@ A block (`{ … }`) is an array of statements.
 | `search` | `generators` (moves), `as`, `cases`, `otherwise`, `else` (a search or `null`) | `search y* U* as t { … } else search …` |
 | `each`   | `turn` (a move), `body`                                                       | `each y { … }`                          |
 | `until`  | `cond` (a condition, or `{ "kind": "goal" }`), `max`, `body`                  | `until goal max 2 { … }`                |
+| `trace`  | `parts`: strings (text) and expressions (printed), in order                   | `trace("after {t}: {cube}")`            |
 
 - **Types:** `{ "name": "Pattern", "arg": null }`; `Set(Location)` is
   `{ "name": "Set", "arg": "Location" }`.
@@ -64,6 +65,10 @@ A block (`{ … }`) is an array of statements.
 - **`else if`** is an `else` holding a one-statement block with the `if`.
 - **Cases:** `{ "kind": "case", "cond": …, "action": … }`. An action is a
   `do` statement, or `{ "kind": "nothing" }` for `-> ()`.
+- **Trace:** `trace("after {t}: {{x}}")` is
+  `{ "kind": "trace", "parts": [ "after ", { "kind": "name", … }, ": {x}" ] }`:
+  each `{expr}` is an expression, `{{` and `}}` are already single braces
+  in the text, and adjacent text is one string.
 
 ## Expressions
 

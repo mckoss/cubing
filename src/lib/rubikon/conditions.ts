@@ -11,6 +11,7 @@
 // in a raw permutation) change nothing but the frame.
 
 import { Permutation } from '../cube/permutation';
+import { permutationOf } from '../cube/moves';
 import {
 	CORNERS,
 	EDGES,
@@ -20,37 +21,34 @@ import {
 	type FaceLetter,
 	type Location
 } from '../cube/types';
-import type { Call, Cell, Cond, Expr, FacePicture, Is, Loc, Name } from './ast';
+import type { Call, Cell, Cond, Expr, FacePicture, Is, Loc, Name, Repeat } from './ast';
+import {
+	BUILT_INS,
+	checkRepeat,
+	engineMoves,
+	evaluateMoves,
+	invertTagged,
+	limited,
+	repeatMoves,
+	type Moves
+} from './moves';
+import {
+	bind,
+	describeKind,
+	EMPTY_ENV,
+	nameKey,
+	RubikonError,
+	type Env,
+	type Value
+} from './values';
 
-// A value a name can be bound to (a parameter, a `let`).
-export type Value =
-	| { kind: 'pattern'; cells: readonly Cell[]; anyRotation: boolean }
-	| { kind: 'location'; name: Location }
-	| { kind: 'permutation'; perm: Permutation };
-
-// Resolves names: `p` in `algo lift(p: Pattern)`, bound by the caller.
-// Undefined means the name isn't bound.
-export type Env = (name: Name) => Value | undefined;
-
-// No names bound.
-export const EMPTY_ENV: Env = () => undefined;
-
-// An Env from a record of names ("p", or "cfop.p" for a module's name).
-export function envOf(values: Readonly<Record<string, Value>>): Env {
-	const map = new Map(Object.entries(values));
-	return (name) => map.get(name.module === null ? name.name : `${name.module}.${name.name}`);
-}
+export { EMPTY_ENV, envOf, type Env, type Value } from './values';
 
 // An error evaluating a condition, with where the node is in the source.
-export class RubikonConditionError extends Error {
-	readonly line: number;
-	readonly column: number;
-
+export class RubikonConditionError extends RubikonError {
 	constructor(message: string, loc: Loc) {
-		super(`${loc.line}:${loc.column}: ${message}`);
+		super(message, loc);
 		this.name = 'RubikonConditionError';
-		this.line = loc.line;
-		this.column = loc.column;
 	}
 }
 
@@ -169,16 +167,25 @@ function layerPlaces(name: string, loc: Loc): Location[] {
 }
 
 // Evaluate a condition on a cube state.  env resolves names (patterns
-// bound to parameters); the name `cube`, unless bound, is the state.
+// bound to parameters, moves bound by `let`); the name `cube` is the state.
 export function evaluateCondition(cond: Cond, state: Permutation, env: Env = EMPTY_ENV): boolean {
-	return new Evaluator(new CubeView(state), env).cond(cond);
+	return new Evaluator(state, env).cond(cond);
+}
+
+// Evaluate an expression to a value of any kind: moves, a permutation, a
+// place, places, a pattern, or a Bool.  The name `cube` is the state.
+export function evaluateValue(expr: Expr, state: Permutation, env: Env = EMPTY_ENV): Value {
+	return new Evaluator(state, env).value(expr);
 }
 
 class Evaluator {
-	constructor(
-		private readonly cube: CubeView,
-		private readonly env: Env
-	) {}
+	private readonly cube: CubeView;
+	private readonly env: Env;
+
+	constructor(state: Permutation, env: Env) {
+		this.cube = new CubeView(state);
+		this.env = bind(env, 'cube', { kind: 'permutation', perm: state });
+	}
 
 	cond(cond: Cond): boolean {
 		switch (cond.kind) {
@@ -214,7 +221,7 @@ class Evaluator {
 		const pattern = this.value(cond.pattern);
 		if (pattern.kind !== 'pattern') {
 			throw new RubikonConditionError(
-				`Not yet: \`is\` needs a pattern, not a ${pattern.kind}`,
+				`Not yet: \`is\` needs a pattern, not ${describeKind(pattern.kind)}`,
 				cond.pattern.loc
 			);
 		}
@@ -241,77 +248,74 @@ class Evaluator {
 		);
 	}
 
-	// A value used as a condition: solved(…), placed(…).
-	private test(value: Expr): boolean {
-		if (value.kind !== 'call' || value.module !== null) {
-			throw new RubikonConditionError('Not a condition', value.loc);
+	// A value used as a condition: solved(…), placed(…), a Bool name or
+	// function.
+	private test(expr: Expr): boolean {
+		const value = this.value(expr);
+		if (value.kind !== 'bool') {
+			throw new RubikonConditionError(
+				`Not a condition: this is ${describeKind(value.kind)}`,
+				expr.loc
+			);
 		}
-		switch (value.name) {
-			case 'solved':
-				return this.solved(value);
-			case 'placed':
-				return this.places(value).every((place) => this.cube.isHome(place, true));
-			default:
-				throw new RubikonConditionError(`Not yet: ${value.name}(…) as a condition`, value.loc);
-		}
+		return value.value;
 	}
 
-	// solved(cube), or solved(places…).
+	// solved(cube) (or any permutation: solved however it's held), or
+	// solved(places…).
 	private solved(call: Call): boolean {
-		const [arg] = call.args;
-		if (call.args.length === 1 && arg !== undefined && this.isCube(arg)) {
-			return PIECES.every((piece) => this.cube.isHome(piece, false));
+		const value = this.value(this.onlyArg(call));
+		const perm = asPermutation(value);
+		if (perm !== undefined) {
+			const view = new CubeView(perm);
+			return PIECES.every((piece) => view.isHome(piece, false));
 		}
-		return this.places(call).every((place) => this.cube.isHome(place, false));
+		return this.placesOf(value, call).every((place) => this.cube.isHome(place, false));
 	}
 
-	private isCube(expr: Expr): boolean {
-		return (
-			expr.kind === 'name' &&
-			expr.module === null &&
-			expr.name === 'cube' &&
-			this.env(expr) === undefined
-		);
-	}
-
-	// The places a call's one argument names: places, layers, or a mix.
-	private places(call: Call): Location[] {
+	private onlyArg(call: Call): Expr {
 		const [arg] = call.args;
 		if (call.args.length !== 1 || arg === undefined) {
 			throw new RubikonConditionError(`${call.name}() takes one list of places`, call.loc);
 		}
-		return this.placesOf(arg);
+		return arg;
 	}
 
-	private placesOf(expr: Expr): Location[] {
-		if (expr.kind === 'seq') {
-			return expr.items.flatMap((item) => this.placesOf(item));
+	// The places a value names: one place, or a list.
+	private placesOf(value: Value, call: Call): readonly Location[] {
+		if (value.kind === 'location') {
+			return [value.name];
 		}
-		if (expr.kind === 'call' && expr.module === null && expr.name === 'layer') {
-			const [face] = expr.args;
-			if (
-				expr.args.length !== 1 ||
-				face === undefined ||
-				face.kind !== 'move' ||
-				face.turns !== 1
-			) {
-				throw new RubikonConditionError('layer() takes a face: layer(D)', expr.loc);
-			}
-			return layerPlaces(face.name, face.loc);
+		if (value.kind === 'places') {
+			return value.names;
 		}
-		return [this.location(expr)];
+		throw new RubikonConditionError(
+			`${call.name}() takes places, not ${describeKind(value.kind)}`,
+			call.loc
+		);
+	}
+
+	private layer(call: Call): Value {
+		const [face] = call.args;
+		if (call.args.length !== 1 || face === undefined || face.kind !== 'move' || face.turns !== 1) {
+			throw new RubikonConditionError('layer() takes a face: layer(D)', call.loc);
+		}
+		return { kind: 'places', names: layerPlaces(face.name, face.loc) };
 	}
 
 	private location(expr: Expr): Location {
 		const value = this.value(expr);
 		if (value.kind !== 'location') {
-			throw new RubikonConditionError(`Expected a place, not a ${value.kind}`, expr.loc);
+			throw new RubikonConditionError(
+				`Expected a place, not ${describeKind(value.kind)}`,
+				expr.loc
+			);
 		}
 		return value.name;
 	}
 
-	// The value of an expression, as far as conditions need them.
-	private value(expr: Expr): Value {
+	// The value of an expression.  Moves are left to the moves evaluator.
+	value(expr: Expr): Value {
 		switch (expr.kind) {
 			case 'location':
 				if (!isLocation(expr.name)) {
@@ -322,16 +326,12 @@ class Evaluator {
 				// The parser has checked the faces.
 				return { kind: 'pattern', cells: expr.cells, anyRotation: expr.anyRotation };
 			case 'name': {
-				const bound = this.env(expr);
-				if (bound !== undefined) {
-					checkBound(bound, expr);
-					return bound;
+				const bound = this.env.get(nameKey(expr));
+				if (bound === undefined) {
+					throw new RubikonConditionError(`Unknown name: ${nameKey(expr)}`, expr.loc);
 				}
-				if (this.isCube(expr)) {
-					return { kind: 'permutation', perm: this.cube.state };
-				}
-				const qualified = expr.module === null ? expr.name : `${expr.module}.${expr.name}`;
-				throw new RubikonConditionError(`Unknown name: ${qualified}`, expr.loc);
+				checkBound(bound, expr);
+				return bound;
 			}
 			case 'cycle':
 				return {
@@ -342,28 +342,112 @@ class Evaluator {
 					)
 				};
 			case 'identity':
-				return { kind: 'permutation', perm: Permutation.identity() };
-			case 'seq': {
-				// Cycles side by side: one after another.
-				let perm = Permutation.identity();
-				for (const item of expr.items) {
-					const value = this.value(item);
-					if (value.kind !== 'permutation') {
-						throw new RubikonConditionError(
-							`Expected a permutation, not a ${value.kind}`,
-							item.loc
-						);
-					}
-					perm = perm.compose(value.perm);
-				}
-				return { kind: 'permutation', perm };
-			}
-			default:
-				throw new RubikonConditionError(
-					`Not yet: a ${expr.kind} in a condition (needs the moves evaluator)`,
+				return { kind: 'moves', moves: [] };
+			case 'seq':
+				return this.seq(
+					expr.items.map((item) => this.value(item)),
+					expr.items,
 					expr.loc
 				);
+			case 'inverse': {
+				const of = this.value(expr.of);
+				return this.inverse(of, expr.of);
+			}
+			case 'repeat':
+				return this.repeat(this.value(expr.of), expr);
+			case 'move':
+			case 'conjugate':
+				return { kind: 'moves', moves: evaluateMoves(expr, this.env) };
+			case 'call':
+				return this.call(expr);
 		}
+	}
+
+	private call(call: Call): Value {
+		if (call.module === null) {
+			switch (call.name) {
+				case 'solved':
+					return { kind: 'bool', value: this.solved(call) };
+				case 'placed': {
+					const places = this.placesOf(this.value(this.onlyArg(call)), call);
+					return { kind: 'bool', value: places.every((place) => this.cube.isHome(place, true)) };
+				}
+				case 'layer':
+					return this.layer(call);
+				case 'inverse': {
+					const arg = this.onlyArg(call);
+					return this.inverse(this.value(arg), arg);
+				}
+			}
+			if (BUILT_INS.has(call.name)) {
+				return { kind: 'moves', moves: evaluateMoves(call, this.env) };
+			}
+		}
+		const bound = this.env.get(nameKey(call));
+		if (bound?.kind === 'fun') {
+			return bound.apply(call, this.env);
+		}
+		if (bound?.kind === 'algo') {
+			throw new RubikonConditionError(
+				`${nameKey(call)} is an algo: it can't be used in a condition`,
+				call.loc
+			);
+		}
+		throw new RubikonConditionError(`Unknown function: ${nameKey(call)}(…)`, call.loc);
+	}
+
+	// Moves or a permutation, repeated (evaluated once).
+	private repeat(of: Value, expr: Repeat): Value {
+		if (of.kind === 'moves') {
+			return { kind: 'moves', moves: repeatMoves(of.moves, expr.times, expr.loc) };
+		}
+		if (of.kind === 'permutation') {
+			checkRepeat(expr.times, expr.loc);
+			return { kind: 'permutation', perm: of.perm.power(expr.times) };
+		}
+		throw new RubikonConditionError(`Can't repeat ${describeKind(of.kind)}`, expr.of.loc);
+	}
+
+	private inverse(of: Value, expr: Expr): Value {
+		if (of.kind === 'moves') {
+			return { kind: 'moves', moves: invertTagged(of.moves) };
+		}
+		if (of.kind === 'permutation') {
+			return { kind: 'permutation', perm: of.perm.inverse() };
+		}
+		throw new RubikonConditionError(`Can't invert ${describeKind(of.kind)}`, expr.loc);
+	}
+
+	// Items side by side: moves in order, places as a list, or permutations
+	// one after another (moves among them count as their permutations).
+	private seq(values: Value[], items: Expr[], loc: Loc): Value {
+		if (values.every((v) => v.kind === 'moves')) {
+			return {
+				kind: 'moves',
+				moves: limited(
+					values.flatMap((v) => v.moves),
+					loc
+				)
+			};
+		}
+		if (values.every((v) => v.kind === 'location' || v.kind === 'places')) {
+			return {
+				kind: 'places',
+				names: values.flatMap((v) => (v.kind === 'location' ? [v.name] : v.names))
+			};
+		}
+		let perm = Permutation.identity();
+		values.forEach((value, i) => {
+			const next = asPermutation(value);
+			if (next === undefined) {
+				throw new RubikonConditionError(
+					`Expected a permutation, not ${describeKind(value.kind)}`,
+					items[i]?.loc ?? loc
+				);
+			}
+			perm = perm.compose(next);
+		});
+		return { kind: 'permutation', perm };
 	}
 
 	private parseCycles(text: string, loc: Loc): Permutation {
@@ -375,14 +459,20 @@ class Evaluator {
 	}
 
 	// `==`: same place and facing, same pattern (a cubie with its
-	// orientation; with /r, the same up to rotation), or same permutation.
-	// Values of different kinds are an error.
+	// orientation; with /r, the same up to rotation), same Bool, or same
+	// permutation (moves compare as the permutation they make).  Values of
+	// different kinds are an error.
 	private equals(a: Value, b: Value, loc: Loc): boolean {
 		if (a.kind === 'location' && b.kind === 'location') {
 			return a.name === b.name;
 		}
-		if (a.kind === 'permutation' && b.kind === 'permutation') {
-			return a.perm.equals(b.perm);
+		if (a.kind === 'bool' && b.kind === 'bool') {
+			return a.value === b.value;
+		}
+		const pa = asPermutation(a);
+		const pb = asPermutation(b);
+		if (pa !== undefined && pb !== undefined) {
+			return pa.equals(pb);
 		}
 		if (a.kind === 'pattern' && b.kind === 'pattern') {
 			if (a.anyRotation !== b.anyRotation || a.cells.length !== b.cells.length) {
@@ -397,8 +487,24 @@ class Evaluator {
 			}
 			return false;
 		}
-		throw new RubikonConditionError(`Can't compare a ${a.kind} with a ${b.kind}`, loc);
+		const kind = (v: Value): string => describeKind(v.kind === 'moves' ? 'permutation' : v.kind);
+		throw new RubikonConditionError(`Can't compare ${kind(a)} with ${kind(b)}`, loc);
 	}
+}
+
+// The permutation a value makes: a permutation, or moves.
+function asPermutation(value: Value): Permutation | undefined {
+	if (value.kind === 'permutation') {
+		return value.perm;
+	}
+	if (value.kind === 'moves') {
+		return movesPermutation(value.moves);
+	}
+	return undefined;
+}
+
+function movesPermutation(moves: Moves): Permutation {
+	return permutationOf(engineMoves(moves));
 }
 
 // A value bound in the environment, checked as the parser checks literals.
