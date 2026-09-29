@@ -5,9 +5,21 @@
 #   import cfop            # then cfop.sune
 # Under each is the permutation it makes, as the engine prints it.
 #
+# Background.  CFOP is an acronym for the four steps, in order, of the
+# widely used 3x3 speedcubing method (also known as the Fridrich method):
+#   C - Cross: solve the four edges of the bottom layer to form a cross
+#       lined up with the centers next to them.
+#   F - F2L (First Two Layers): solve the four corner-edge pairs together,
+#       completing the first two layers.
+#   O - OLL (Orientation of the Last Layer): turn every piece of the top
+#       layer so the whole top face shows one color (57 standard
+#       algorithms).
+#   P - PLL (Permutation of the Last Layer): move the top layer's pieces
+#       to their solved places without changing their orientation (21
+#       standard algorithms).
+#
 # Provenance, as the sources cited say (checked September 2026).  Most of
-# these are in CFOP, the speedcubing method, also called the Fridrich
-# method.  Its steps' proposers, per the Speedsolving wiki: the cross,
+# these sequences come from CFOP.  Its steps' proposers, per the Speedsolving wiki: the cross,
 # Donald Taylor (first known publication, 1978, per research by James
 # Straughan); F2L, René Schoof, John Conway, David Benson, and David Seal;
 # OLL and PLL, independently Hans Dockhorn, Kurt Dockhorn, and Anneke Treep
