@@ -1,115 +1,18 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { Permutation } from '$lib/cube/permutation';
-	import { applyMoves, formatMoves, permutationOf } from '$lib/cube/moves';
-	import type { Cube, Face, Move, MoveName } from '$lib/cube/types';
-	import { MoveList } from '$lib/cube/move-list';
+	import { formatMoves, permutationOf } from '$lib/cube/moves';
+	import type { Face, Move, MoveName } from '$lib/cube/types';
 	import { CATALOG, type CatalogEntry } from '$lib/cube/catalog';
 	import { SOLVERS } from '$lib/cube/solvers';
 	import { SEQUENCES } from '$lib/cube/beginner';
-	import { CubeView, SPEED_NAMES, type Speed } from '$lib/cube/view';
-	import HistoryBlock from '$lib/components/HistoryBlock.svelte';
+	import { Player } from '$lib/cube/player.svelte';
+	import CubePlayer from '$lib/components/CubePlayer.svelte';
+	import MoveHistory from '$lib/components/MoveHistory.svelte';
 	import TopCrossSteps from '$lib/components/TopCrossSteps.svelte';
 	import CaseDiagram, { type Case } from '$lib/components/CaseDiagram.svelte';
 
-	const moveList = new MoveList();
-	let canvas: HTMLCanvasElement;
-	let view: CubeView | undefined = $state();
-
-	// The arrangement shown (updated as each move finishes turning).
-	let perm: Cube = $state(new Permutation());
-	// The move (a quarter turn) now turning, if any.
-	let turning: Move | undefined = $state();
-	// Bumped whenever the move list changes, to update the page.
-	let version = $state(0);
-	let speed: Speed = $state('Slow');
+	const player = new Player();
 	let solverName: string = $state(SOLVERS[0]?.name ?? '');
-	let showLabels = $state(true);
 	let error: string = $state('');
-
-	// Read `version` so these update when the move list changes.
-	const history = $derived.by(() => {
-		void version;
-		return moveList.history();
-	});
-	const pendingCount = $derived.by(() => {
-		void version;
-		return moveList.pending.length;
-	});
-	const solved = $derived(perm.isIdentity());
-	const idle = $derived(pendingCount === 0 && turning === undefined);
-
-	$effect(() => {
-		if (view) view.speed = speed;
-	});
-	$effect(() => {
-		if (view) view.showLabels = showLabels;
-	});
-
-	let noWebGL = $state(false);
-
-	onMount(() => {
-		try {
-			view = new CubeView(canvas);
-		} catch (e) {
-			// Without WebGL, moves still work; they just aren't drawn.
-			console.warn(e);
-			noWebGL = true;
-		}
-		void animate();
-		return (): void => view?.dispose();
-	});
-
-	// Add moves, optionally as a named block.
-	function play(moves: Move[], blockName?: string): void {
-		const block = blockName ? moveList.openBlock(blockName) : undefined;
-		moveList.add(moves);
-		block?.close();
-		version++;
-		void animate();
-	}
-
-	// Stepping through moves: when paused, only `steps` more moves are made.
-	let stepThrough = $state(false);
-	let paused = $state(false);
-	let steps = 0;
-
-	let animating = false;
-	// Changed by Reset, so a move that was turning is dropped.
-	let generation = 0;
-	async function animate(): Promise<void> {
-		if (animating || (!view && !noWebGL)) return;
-		animating = true;
-		const current = generation;
-		let next: Move | undefined;
-		while (
-			current === generation &&
-			(!paused || steps > 0) &&
-			(next = moveList.nextMove()) !== undefined
-		) {
-			if (paused) steps--;
-			turning = next;
-			version++;
-			await view?.turn(next);
-			if (current !== generation) break;
-			perm = applyMoves(perm, [next]);
-			turning = undefined;
-		}
-		animating = false;
-		version++;
-		// Moves may have been added after a reset.
-		if (current !== generation) void animate();
-	}
-
-	// The arrangement once all queued moves are made.
-	function finalPerm(): Cube {
-		return applyMoves(perm, [...(turning ? [turning] : []), ...moveList.pending]);
-	}
-
-	function move(name: MoveName, counterclockwise: boolean): void {
-		const m: Move = { name, turns: counterclockwise ? 3 : 1 };
-		play([m]);
-	}
 
 	// Scramble with 25 random face turns, never the same face twice in a row
 	// (as in 2003).
@@ -129,60 +32,8 @@
 			}
 			moves.push({ name, turns: Math.random() < 0.5 ? 3 : 1 });
 		}
-		moveList.clear();
-		paused = false;
-		steps = 0;
-		play(moves, 'Scramble');
-	}
-
-	// Where we are in the moves being played (for stepping through them),
-	// counting a half turn as one move, as the history does.
-	// The block being played, and which of its moves.
-	interface Stage {
-		name: string;
-		move: number;
-		of: number;
-	}
-
-	const stage = $derived.by((): Stage | undefined => {
-		void version;
-		if (moveList.pending.length === 0 && turning === undefined) return undefined;
-		const position = moveList.played - (turning ? 1 : 0);
-		const block = moveList.blockAt(position);
-		if (block === undefined) return undefined;
-		const end = block.end ?? moveList.moves.length;
-		const count = (from: number, to: number): number => moveList.movesBetween(from, to).length;
-		return {
-			name: block.name,
-			move: count(block.start, position) + 1,
-			of: count(block.start, end)
-		};
-	});
-
-	function play_pause(): void {
-		paused = !paused;
-		steps = 0;
-		void animate();
-	}
-
-	function nextMove(): void {
-		paused = true;
-		// A half turn is the same quarter turn twice in a row: play both.
-		const [first, second] = moveList.pending;
-		steps =
-			first !== undefined &&
-			second !== undefined &&
-			first.name === second.name &&
-			first.turns === second.turns
-				? 2
-				: 1;
-		void animate();
-	}
-
-	function nextStage(): void {
-		paused = true;
-		steps = moveList.nextBoundary(moveList.played) - moveList.played;
-		void animate();
+		player.clearHistory();
+		player.play(moves, 'Scramble');
 	}
 
 	function solve(): void {
@@ -192,66 +43,13 @@
 			return;
 		}
 		error = '';
-		paused = stepThrough;
-		steps = 0;
+		player.startSolution();
 		try {
-			solver.solve(finalPerm(), moveList);
+			solver.solve(player.finalPerm(), player.moveList);
 		} catch (e) {
 			error = e instanceof Error ? e.message : String(e);
 		}
-		version++;
-		void animate();
-	}
-
-	function reset(): void {
-		generation++;
-		paused = false;
-		steps = 0;
-		moveList.clear();
-		view?.reset();
-		perm = new Permutation();
-		turning = undefined;
-		version++;
-	}
-
-	// The key for each move: its letter, in lower case (with Shift for
-	// counterclockwise).
-	type MoveKey = Lowercase<MoveName>;
-	const KEYS: Readonly<Record<MoveKey, MoveName>> = {
-		u: 'U',
-		d: 'D',
-		l: 'L',
-		r: 'R',
-		f: 'F',
-		b: 'B',
-		m: 'M',
-		e: 'E',
-		s: 'S',
-		x: 'x',
-		y: 'y',
-		z: 'z'
-	};
-
-	function isMoveKey(key: string): key is MoveKey {
-		return Object.hasOwn(KEYS, key);
-	}
-
-	function onKeydown(ev: KeyboardEvent): void {
-		const target = ev.target;
-		if (
-			ev.ctrlKey ||
-			ev.metaKey ||
-			ev.altKey ||
-			(target instanceof Element && target.closest('input, select, textarea'))
-		) {
-			return;
-		}
-		const key = ev.key.toLowerCase();
-		const name = isMoveKey(key) ? KEYS[key] : undefined;
-		if (name !== undefined) {
-			ev.preventDefault();
-			move(name, ev.shiftKey);
-		}
+		player.changed();
 	}
 
 	const PAD: readonly { name: MoveName; label: string }[] = [
@@ -368,7 +166,7 @@
 	}));
 </script>
 
-<svelte:window onkeydown={onKeydown} />
+<svelte:window onkeydown={(ev): void => player.keydown(ev)} />
 
 <svelte:head>
 	<title>Rubik's Cube Simulator</title>
@@ -385,62 +183,19 @@
 
 <main>
 	<section class="stage">
-		<div class="canvas-wrap">
-			<canvas bind:this={canvas} aria-label="Rubik's Cube" data-testid="cube"></canvas>
-			{#if noWebGL}
-				<p class="no-webgl">This browser can't show the cube in 3D (WebGL is off).</p>
-			{/if}
-			{#if solved && idle}
-				<span class="badge" data-testid="solved">Solved</span>
-			{/if}
-		</div>
-
-		<div class="toolbar">
-			<button class="primary" onclick={scramble} data-testid="scramble">Scramble</button>
-			<div class="solve">
-				<button class="primary" onclick={solve} data-testid="solve">Solve</button>
-				{#if SOLVERS.length > 1}
-					<select bind:value={solverName} aria-label="Solver">
-						{#each SOLVERS as s (s.name)}<option>{s.name}</option>{/each}
-					</select>
-				{/if}
-			</div>
-			<button
-				onclick={(): void => view?.flip()}
-				title="Turn the view upside down"
-				data-testid="flip">Flip</button
-			>
-			<button onclick={reset} data-testid="reset">Reset</button>
-			<div class="speed" role="group" aria-label="Speed">
-				{#each SPEED_NAMES as s (s)}
-					<button
-						class:selected={speed === s}
-						aria-pressed={speed === s}
-						onclick={(): void => {
-							speed = s;
-						}}>{s}</button
-					>
-				{/each}
-			</div>
-			<label class="labels"><input type="checkbox" bind:checked={showLabels} /> Labels</label>
-		</div>
-		<div class="stepper">
-			<label
-				><input type="checkbox" bind:checked={stepThrough} data-testid="step-through" /> Step through
-				solutions</label
-			>
-			{#if pendingCount > 0 || turning}
-				<button onclick={play_pause} data-testid="play-pause">{paused ? 'Play' : 'Pause'}</button>
-				<button onclick={nextMove} data-testid="next-move">Next move</button>
-				<button onclick={nextStage} data-testid="next-stage">Next stage</button>
-				{#if stage}
-					<span class="stage" data-testid="stage"
-						>{stage.name}: move {stage.move} of {stage.of}</span
-					>
-				{/if}
-			{/if}
-		</div>
-		<p class="hint">Drag to turn the cube around, and scroll to zoom.</p>
+		<CubePlayer {player} stepLabel="Step through solutions">
+			{#snippet actions()}
+				<button class="primary" onclick={scramble} data-testid="scramble">Scramble</button>
+				<div class="solve">
+					<button class="primary" onclick={solve} data-testid="solve">Solve</button>
+					{#if SOLVERS.length > 1}
+						<select bind:value={solverName} aria-label="Solver">
+							{#each SOLVERS as s (s.name)}<option>{s.name}</option>{/each}
+						</select>
+					{/if}
+				</div>
+			{/snippet}
+		</CubePlayer>
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
 	</section>
 
@@ -455,9 +210,10 @@
 			<div class="pad">
 				{#each PAD as { name, label } (name)}
 					<div class="pair" title={label}>
-						<button onclick={(): void => move(name, false)} data-testid="move-{name}">{name}</button
+						<button onclick={(): void => player.move(name, false)} data-testid="move-{name}"
+							>{name}</button
 						>
-						<button onclick={(): void => move(name, true)} data-testid="move-{name}-prime"
+						<button onclick={(): void => player.move(name, true)} data-testid="move-{name}-prime"
 							>{name}′</button
 						>
 					</div>
@@ -467,22 +223,12 @@
 
 		<section class="card">
 			<h2>Current Permutation</h2>
-			<p class="perm" data-testid="permutation">{solved ? 'Solved' : perm.toString()}</p>
+			<p class="perm" data-testid="permutation">
+				{player.solved ? 'Solved' : player.perm.toString()}
+			</p>
 		</section>
 
-		<section class="card history">
-			<h2>
-				History
-				{#if pendingCount > 0}<span class="pending">{pendingCount} to go</span>{/if}
-			</h2>
-			<div data-testid="history">
-				{#each history as block, i (i)}
-					<HistoryBlock {block} />
-				{:else}
-					<p class="note">No moves yet.</p>
-				{/each}
-			</div>
-		</section>
+		<MoveHistory {player} />
 	</aside>
 </main>
 
@@ -511,7 +257,8 @@
 						<td class="mono effect">{entry.effect}</td>
 						<td>
 							<button
-								onclick={(): void => play(entry.moves, `Try It: ${entry.label || entry.notation}`)}
+								onclick={(): void =>
+									player.play(entry.moves, `Try It: ${entry.label || entry.notation}`)}
 								>Try it</button
 							>
 						</td>
@@ -546,7 +293,7 @@
 							{#if look}<span class="look">{look}</span>{/if}
 							<span class="sequence-moves">
 								<code>{formatMoves(moves)}</code>
-								<button onclick={(): void => play(moves, `Try It: ${label}`)}>Try it</button>
+								<button onclick={(): void => player.play(moves, `Try It: ${label}`)}>Try it</button>
 							</span>
 						</div>
 					</div>
@@ -599,45 +346,6 @@
 </footer>
 
 <style>
-	:global(:root) {
-		--bg: #f6f7f9;
-		--surface: #ffffff;
-		--text: #1d2330;
-		--muted: #5f6b7d;
-		--border: #dde2ea;
-		--accent: #356eef;
-		--accent-text: #ffffff;
-		--stage: radial-gradient(circle at 50% 35%, #3b2a8f 0%, #1c1150 55%, #0e0930 100%);
-		--mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-		color-scheme: light dark;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		:global(:root) {
-			--bg: #0f1218;
-			--surface: #171b24;
-			--text: #e6e9ef;
-			--muted: #98a2b3;
-			--border: #2a3140;
-			--accent: #5b8cff;
-		}
-	}
-
-	:global(body) {
-		margin: 0;
-		background: var(--bg);
-		color: var(--text);
-		font:
-			16px/1.5 system-ui,
-			-apple-system,
-			'Segoe UI',
-			sans-serif;
-	}
-
-	:global(a) {
-		color: var(--accent);
-	}
-
 	header,
 	main,
 	.catalog,
@@ -676,139 +384,11 @@
 		}
 	}
 
-	.canvas-wrap {
-		position: relative;
-		aspect-ratio: 1;
-		border-radius: 16px;
-		overflow: hidden;
-		background: var(--stage);
-		box-shadow: 0 10px 30px rgb(0 0 0 / 0.18);
-	}
-
-	canvas {
-		display: block;
-		width: 100%;
-		height: 100%;
-		touch-action: none;
-		outline: none;
-	}
-
-	.no-webgl {
-		position: absolute;
-		inset: 40% 1rem auto;
-		margin: 0;
-		color: white;
-		text-align: center;
-	}
-
-	.badge {
-		position: absolute;
-		top: 12px;
-		left: 12px;
-		padding: 0.2rem 0.7rem;
-		border-radius: 999px;
-		background: rgb(57 166 59 / 0.9);
-		color: white;
-		font-size: 0.85rem;
-		font-weight: 600;
-	}
-
-	.toolbar {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-		align-items: center;
-		margin-top: 0.75rem;
-	}
-
 	.solve {
 		display: flex;
 		gap: 0.25rem;
 	}
 
-	button,
-	select {
-		font: inherit;
-		font-size: 0.95rem;
-		padding: 0.45rem 0.85rem;
-		border: 1px solid var(--border);
-		border-radius: 8px;
-		background: var(--surface);
-		color: var(--text);
-		cursor: pointer;
-	}
-
-	button:hover {
-		border-color: var(--accent);
-	}
-
-	button:focus-visible,
-	select:focus-visible {
-		outline: 2px solid var(--accent);
-		outline-offset: 2px;
-	}
-
-	button.primary {
-		background: var(--accent);
-		border-color: var(--accent);
-		color: var(--accent-text);
-		font-weight: 600;
-	}
-
-	.speed {
-		display: inline-flex;
-	}
-
-	.speed button {
-		border-radius: 0;
-		margin-left: -1px;
-	}
-
-	.speed button:first-child {
-		border-radius: 8px 0 0 8px;
-	}
-
-	.speed button:last-child {
-		border-radius: 0 8px 8px 0;
-	}
-
-	.speed button.selected {
-		background: var(--accent);
-		border-color: var(--accent);
-		color: var(--accent-text);
-	}
-
-	.stepper {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-		align-items: center;
-		min-height: 2.4rem;
-		margin-top: 0.5rem;
-	}
-
-	.stepper label {
-		display: inline-flex;
-		gap: 0.35rem;
-		align-items: center;
-		color: var(--muted);
-		font-size: 0.95rem;
-	}
-
-	.stage {
-		color: var(--muted);
-		font-size: 0.9rem;
-	}
-
-	.labels {
-		display: inline-flex;
-		gap: 0.35rem;
-		align-items: center;
-		color: var(--muted);
-		font-size: 0.95rem;
-	}
-
-	.hint,
 	.note {
 		color: var(--muted);
 		font-size: 0.875rem;
@@ -817,6 +397,7 @@
 
 	.error {
 		color: #c62828;
+		font-size: 0.9rem;
 	}
 
 	aside {
@@ -825,25 +406,12 @@
 		gap: 1rem;
 	}
 
-	.card {
-		background: var(--surface);
-		border: 1px solid var(--border);
-		border-radius: 12px;
-		padding: 0.9rem 1rem;
-	}
-
 	h2 {
 		display: flex;
 		gap: 0.75rem;
 		align-items: baseline;
 		margin: 0 0 0.5rem;
 		font-size: 1.05rem;
-	}
-
-	.pending {
-		color: var(--muted);
-		font-size: 0.8rem;
-		font-weight: 400;
 	}
 
 	.pad {
@@ -878,11 +446,6 @@
 		font-family: var(--mono);
 		font-size: 0.9rem;
 		overflow-wrap: anywhere;
-	}
-
-	.history div {
-		max-height: 22rem;
-		overflow-y: auto;
 	}
 
 	kbd {
