@@ -155,8 +155,14 @@ in the letter order of the place it's tested against:
 - **Identity:** `()`.
 - **Order:** the least common multiple of the cycle orders; a cycle of _n_
   pieces has order _n_, or 3*n* (corners) / 2*n* (edges) with a suffix.
-  E.g. `R U` is `(rfu)+ (rub rbd rdf flu lbu)- (ru rb rd rf fu lu bu)`,
-  order lcm(3, 15, 7) = 105.
+  E.g. `R U` is `(uf ul ub ur br dr fr) (urf)+ (ufl ulb ubr bdr dfr)-`,
+  order lcm(7, 3, 15) = 105.
+- **One spelling:** a cycle can be written from any of its pieces, and
+  with every name rotated alike, so the engine always prints the same
+  choice. Cycles come in order of their first piece (U edges, U
+  corners, D edges, D corners, middle edges, centers). Each is spelled with
+  as many names as possible read from U or D (F or B for middle edges),
+  then starting with such a name, then from the earliest piece.
 - A move, a sequence of moves, and a cube state are all permutations; a
   cube state is the permutation that takes a solved cube to it.
 

@@ -62,9 +62,9 @@ describe('Basic Modern Solution', () => {
 		// Each sequence does what the notes draw.
 		expect(permutationOf(SEQUENCES.insertRight).apply('fu')).toBe('fr');
 		expect(permutationOf(SEQUENCES.insertLeft).apply('fu')).toBe('fl');
-		expect(permutationOf(SEQUENCES.swapEdges).toString()).toContain('(ul uf)');
-		expect(permutationOf(SEQUENCES.cycleCorners).toString()).toBe('(ubr lbu luf)');
-		expect(permutationOf(SEQUENCES.cycleCornersBack).toString()).toBe('(ulb rub rfu)');
+		expect(permutationOf(SEQUENCES.swapEdges).toString()).toContain('(uf ul)');
+		expect(permutationOf(SEQUENCES.cycleCorners).toString()).toBe('(ufl bru bul)');
+		expect(permutationOf(SEQUENCES.cycleCornersBack).toString()).toBe('(urf bul bru)');
 	});
 
 	it('leaves a solved cube alone', () => {

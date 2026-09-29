@@ -46,7 +46,7 @@ describe('Permutation', () => {
 	});
 
 	it('shows twisted cycles', () => {
-		expect(permutationOf(alg("F U F' U'")).toString()).toBe('(flu dlf)+ (fl fu ru) (ubr fur)-');
+		expect(permutationOf(alg("F U F' U'")).toString()).toBe('(uf ur lf) (urf ubr)- (ufl fdl)+');
 		expect(permutationOf(alg('')).toString()).toBe('()');
 	});
 });
@@ -93,6 +93,36 @@ describe('moves', () => {
 	});
 });
 
+describe('cycle notation', () => {
+	it('prints the same permutation the same way, however it was made', () => {
+		const a = new Permutation([['ur', 'uf', 'ub']]);
+		const b = new Permutation([['fu', 'bu', 'ru']]);
+		expect(a.toString()).toBe('(uf ub ur)');
+		expect(b.toString()).toBe('(uf ub ur)');
+		expect(permutationOf(alg("R U R' U'")).toString()).toBe(
+			permutationOf(alg("R U R' U'")).inverse().inverse().toString()
+		);
+	});
+
+	it('reads names from U or D where it can', () => {
+		expect(permutationOf(alg('R U')).toString()).toBe(
+			'(uf ul ub ur br dr fr) (urf)+ (ufl ulb ubr bdr dfr)-'
+		);
+		expect(permutationOf(alg('R')).toString()).toBe('(ur br dr fr) (urf bru drb frd)');
+	});
+
+	it('reads back what it prints', () => {
+		for (const entry of CATALOG) {
+			const p = permutationOf(entry.moves);
+			expect(Permutation.parse(p.toString()).equals(p), entry.notation).toBe(true);
+		}
+		expect(Permutation.parse('()').isIdentity()).toBe(true);
+		expect(Permutation.parse('(urf)+').apply('urf')).toBe('rfu');
+		expect(() => Permutation.parse('(uf ur')).toThrow();
+		expect(() => Permutation.parse('(ufr)')).toThrow(/clockwise/);
+	});
+});
+
 describe('2003 compatibility', () => {
 	// The effects the 2003 simulator computed, recorded from it (with its
 	// moves written in standard notation).
@@ -100,14 +130,16 @@ describe('2003 compatibility', () => {
 		const expected = new Map(reference.catalog.map(([moves, , cycles]) => [moves, cycles]));
 		for (const entry of CATALOG) {
 			expect(permutationOf(entry.moves).toString(), entry.notation).toBe(
-				expected.get(entry.notation)
+				Permutation.parse(expected.get(entry.notation) ?? '').toString()
 			);
 		}
 	});
 
 	it('matches the 2003 simulator for single moves (ignoring centers)', () => {
 		for (const [moves, , cycles] of reference.extra) {
-			expect(centerlessCycles(permutationOf(parseMoves(moves)).toString()), moves).toBe(cycles);
+			expect(centerlessCycles(permutationOf(parseMoves(moves)).toString()), moves).toBe(
+				Permutation.parse(cycles).toString()
+			);
 		}
 	});
 
