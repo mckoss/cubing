@@ -78,7 +78,7 @@ solution basic for cube3 {
       }
     }
 
-    stage "Bottom Corners" goal solved(layer(D)) {
+    stage "Bottom Corners" goal solved(dfr drb dbl dlf) {
       each y {
         if not solved(dfr) {
           if location(/dfr/) not in layer(U) { do cornerUp(location(/dfr/)) }
@@ -92,7 +92,7 @@ solution basic for cube3 {
     }
   }
 
-  stage "Middle" goal solved(layer(D) layer(E)) {
+  stage "Middle" goal solved(fr fl br bl) {
     each y {                                        # each middle slot in turn
       # Stuck in the wrong middle slot: insert any edge there to lift it out.
       if location(/fr/) in layer(E) and not solved(fr) {

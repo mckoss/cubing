@@ -68,7 +68,7 @@ solution singmaster for cube3 {
     }
   }
 
-  stage "Solve U Corners" goal solved(layer(U)) {
+  stage "Solve U Corners" goal solved(urf ufl ulb ubr) {
     each y {
       search D* as t {
         case rdf is /urf/ -> do t commutator(D, F)
@@ -84,7 +84,7 @@ solution singmaster for cube3 {
 
   show z2                                    # turn the cube over (a visible turn)
 
-  stage "Solve Middle Edges" goal solved(layer(D) layer(E)) {
+  stage "Solve Middle Edges" goal solved(fr fl br bl) {
     each y {
       if not solved(rf) {                    # stuck in the middle: lift it out
         search E* as t {
