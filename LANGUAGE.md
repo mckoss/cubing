@@ -65,6 +65,7 @@ Every special character and its uses:
 | `'` `2`  | part of a move, `R'`, `U2`; `'` also inverts a name or a group: `t'`, `(R U)'`                   |
 | `N`      | a number after `)` repeats the group: `(R U R' U')3`                                             |
 | `( )`    | grouping `(R U)'`, `(R U R' U')3`; a cycle `(uf ur ub)`; the identity `()`; arguments `order(p)` |
+| `< >`    | a conjugate: `F<R U>` is `F R U F'`                                                              |
 | `+` `-`  | after a cycle: its pieces come back turned, `(urf)+`                                             |
 | `/ /`    | a pattern, `/u__/`; followed by `r`, any rotation, `/ulb/r`                                      |
 | `*`      | after a generator in a search: zero or more of that turn, `U*`, `y* U*`                          |
@@ -166,6 +167,7 @@ in the letter order of the place it's tested against:
 | `p q`       | Perm, Perm        | Perm     | p, then q (left to right, like moves; as in GAP)                |
 | `p(q)`      | Perm, Perm        | Perm     | q, then p (inside out, like functions)                          |
 | `p(uf)`     | Perm, Location    | Location | where the piece at uf ends up                                   |
+| `w<p>`      | Perm, Perm        | Perm     | the conjugate w p w': p set up with w, then put back            |
 | `p'`        | Perm              | Perm     | the inverse of p (a name or a group: `t'`, `(R U)'` is `U' R'`) |
 | `R'`, `R2`  | move              | Move     | part of a single move: `R'` is the inverse of R, `R2 == R R`    |
 | `p == q`    |                   | Bool     | same effect                                                     |
@@ -179,6 +181,13 @@ in the letter order of the place it's tested against:
   error). A name alone can't take a number (`sexy3` would be a different
   name), so it's written `(sexy)3`. The inverse is `'`: `(R U)'`, or
   `(R U)3'` for the inverse of three repeats.
+- **Conjugates:** `w<p>` is `w p w'`, read "p, set up with w". The
+  brackets say what is wrapped, and it reads in the order the moves happen.
+  The wrapper is one term: a move, a name, or a group, with any `'` or
+  repeat (`U'<R>`, `(R' B2)<(commutator(F, R))3>`, `t<F>`, `y<insertLeft>`);
+  `U R<L'>` is `U` then `R<L'>`. The whole conjugate is one term too:
+  `F<R U>'` is `F U' R' F'`, and `(F<R U>)2` repeats all of it. Conjugates
+  nest: `t<F<D>>` is `t F D F' t'`.
 - Applying a bare move (`R(U)`) is allowed but warned against: it reads
   backwards (`R(U(R'(U')))` is `U' R' U R`).
 - `==` never looks inside a place; `is` always does.
@@ -191,7 +200,6 @@ in the letter order of the place it's tested against:
 | `inverse(p)`       | `p'`                                                                                                        |
 | `legal(p)`         | whether some sequence of moves makes p (flip parity, twist sum, permutation parity)                         |
 | `commutator(a, b)` | `a b a' b'` (cubers' order): `commutator(R, U)` is `R U R' U'`                                              |
-| `conjugate(a, b)`  | `a b a'`: `conjugate(F, commutator(R, U))` is `F R U R' U' F'`                                              |
 | `reflect(p, M)`    | p seen in a mirror through the M slice (likewise `E`, `S`): `reflect(U R U', M)` is `U' L' U`               |
 | `solved(x …)`      | for places, each holds its own piece the right way round (`x is /x/`); for a cube, solved however it's held |
 | `placed(x …)`      | each place holds its own piece, however twisted (`x is /x/r`)                                               |
@@ -199,8 +207,11 @@ in the letter order of the place it's tested against:
 | `cubie(x)`         | the physical piece in place x now (a Cubie value, to follow through turns)                                  |
 | `slot(x)`          | the place's home name, ignoring facing: `slot(fu) == uf`, `slot(fur) == urf`                                |
 
-`commutator` and `conjugate` follow cubers' convention; GAP's `Comm(a, b)`
-is `a' b' a b` and its `a^b` is `b' a b`, the other way round.
+`commutator` follows cubers' convention; GAP's `Comm(a, b)` is `a' b' a b`.
+Its arguments aren't a thing and a wrapper: swapping them gives the
+inverse (`commutator(b, a)` is `commutator(a, b)'`). A commutator does
+contain a conjugate, though: `a b a' b'` is `a<b>` then `b'`. (GAP's
+conjugate `a^b` is `b' a b`, the wrapper on the other side.)
 
 `reflect(p, M)` mirrors p through the plane of the M slice, between L
 and R. The faces on either side swap (R and L), and every turn goes the
@@ -356,8 +367,8 @@ or the move list.
    (current), restrict application to names (`R(U)` an error), drop `p(q)`
    for permutations and keep function syntax for functions only (a
    reviewer's recommendation), or add a forward keyword (`p then q`).
-3. _(Resolved: commutators and conjugates are functions, `commutator(a, b)`
-   and `conjugate(a, b)`, in cubers' order.)_
+3. _(Resolved: a commutator is a function, `commutator(a, b)` in cubers'
+   order; a conjugate is written `w<p>`.)_
 4. _(Resolved: `'` inverts names and groups, e.g. `t'`, `(R U)'`; a number
    after a group repeats it, `(R U)3`; there is no `^`.)_
 5. _(Resolved: `search U* as t { case … }`, shortest first, turns made only where written, nothing found is an error; see Searches. Still open: alternatives with a depth limit, `(U|D){0,3}`, and `U?`, until a method needs them.)_
@@ -404,6 +415,9 @@ or the move list.
 - **Patterns read in the place's letter order,** so some tests read
   backwards at first: `rfu is /u__/` means "yellow faces right" (reading
   the urf corner from its r sticker).
+- **`<` and `>` are taken by conjugates,** so comparisons of numbers
+  (`order(p) < 6`), if ever needed, will need words (`less than`) rather
+  than symbols.
 - **The 2003 quirks** the TypeScript solvers keep for move-for-move
   compatibility (half turns always clockwise, `U2 U` written out, quarter
   turns recorded in the 2003 directions) don't belong in the language.
@@ -412,6 +426,8 @@ or the move list.
 
 | Idea                                                                                        | Why                                                                                                                  |
 | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `conjugate(a, b)` as a function                                                             | Which argument is the wrapper has to be remembered, and nesting gets hard to read; `F<R U>` shows it                 |
+| An infix conjugate (`p^w`, `p @ w`, `p ~ w`)                                                | Without brackets, it's unclear how much of `R U ~ F` is wrapped; `^` reads as a power                                |
 | The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations)                         | Replaced everywhere by standard notation                                                                             |
 | Upper case piece names (`URF`)                                                              | Reads as moves U R F; Singmaster used lower case                                                                     |
 | Corner names in either winding (`ufr` as well as `urf`)                                     | Six spellings per corner; clockwise only gives exactly three, one per sticker                                        |
@@ -459,10 +475,11 @@ code:
 
 Notes:
 
-- Basic's sequences are written as commutators, conjugates, and mirrors
-  (`insertRight = commutator(U, R) commutator(U', F')`,
-  `insertLeft = reflect(insertRight, M)`), each with its moves in a
-  comment. Every identity was checked on the TypeScript cube.
+- Both solutions name their sequences and write them as commutators,
+  conjugates, inverses, and mirrors (`insertRight = commutator(U, R)
+commutator(U', F')`, `insertLeft = reflect(insertRight, M)`,
+  `swapRight = B'<U'<(R2 U2)3>>`), each with its moves in a comment. Every
+  identity was checked on the TypeScript cube.
 - Basic's twist stage is simpler than the TypeScript: a pattern on colors
   (`rfu is /u__/`) instead of finding which corner is at the front right.
 - Basic's first-face case places could be derived from the sequences

@@ -12,43 +12,44 @@ solution basic for cube3 {
   # The sequences from the notes, written to show how they work.
   #
   # A commutator a b a' b' changes little beyond where a and b overlap; a
-  # conjugate a b a' does b somewhere else (set up with a, then put back).
+  # conjugate w<p> is w p w': p done somewhere else (set up with w, then
+  # put back).
   # reflect(p, M) is p seen in a mirror through the M slice: left and right
   # swap and every turn goes the other way (see LANGUAGE.md).
 
   # Take an edge from the top down into the front right slot: two
   # commutators with U, one on each side of the slot.
-  let insertRight      = commutator(U, R) commutator(U', F')    # U R U' R' U' F' U F
-  let insertLeft       = reflect(insertRight, M)                # U' L' U L U F U' F'
+  let insertRight      = commutator(U, R) commutator(U', F')  # U R U' R' U' F' U F
+  let insertLeft       = reflect(insertRight, M)           # U' L' U L U F U' F'
 
   # Flip up two top edges: the commutator R U R' U', set up by F.
-  let topCross         = conjugate(F, commutator(R, U))         # F R U R' U' F'
+  let topCross         = F<commutator(R, U)>               # F R U R' U' F'
 
   # Swap the front and left top edges: Sune, then put the top back.
-  let sune             = conjugate(R, U) U conjugate(R, U2)     # R U R' U R U2 R'
+  let sune             = R<U> U R<U2>                      # R U R' U R U2 R'
   let swapEdges        = sune U
 
   # Cycle three top corners: a commutator of a right face turn set up by U
   # (U R U') and a left face turn.
-  let cycleCorners     = commutator(conjugate(U, R), L')        # U R U' L' U R' U' L
-  let cycleCornersBack = reflect(cycleCorners, M)               # U' L' U R U' L U R'
+  let cycleCorners     = commutator(U<R>, L')              # U R U' L' U R' U' L
+  let cycleCornersBack = reflect(cycleCorners, M)          # U' L' U R U' L U R'
 
   # Twist the front right top corner (a third of a turn) using the
   # commutator of R' and D'; it scrambles the bottom as it goes, but once
   # every top corner is twisted the bottom's twists add up to nothing.
-  let twistCorner      = (commutator(R', D'))2                  # (R' D' R D)2
-  let twistCornerBack  = twistCorner'                           # (D' R' D R)2
+  let twistCorner      = (commutator(R', D'))2             # (R' D' R D)2
+  let twistCornerBack  = twistCorner'                      # (D' R' D R)2
 
   # Moving a piece up to the top without disturbing the bottom.
   fn edgeUp(x) = match slot(x) {
-    case df -> F2           case fr -> conjugate(R, U)     # R U R'
-    case dr -> R2           case br -> conjugate(R', U)    # R' U R
-    case db -> B2           case bl -> conjugate(L, U)     # L U L'
-    case dl -> L2           case fl -> conjugate(L', U)    # L' U L
+    case df -> F2           case fr -> R<U>       # R U R'
+    case dr -> R2           case br -> R'<U>      # R' U R
+    case db -> B2           case bl -> L<U>       # L U L'
+    case dl -> L2           case fl -> L'<U>      # L' U L
   }
   fn cornerUp(x) = match slot(x) {
-    case dfr -> conjugate(R, U)       case dbl -> conjugate(L, U)
-    case drb -> conjugate(R', U')     case dlf -> conjugate(L', U')
+    case dfr -> R<U>        case dbl -> L<U>
+    case drb -> R'<U'>      case dlf -> L'<U'>
   }
 
   stage "First Face" goal solved(layer(D)) {
@@ -58,8 +59,8 @@ solution basic for cube3 {
         if not solved(df) {
           if location(/df/) not in layer(U) { do edgeUp(location(/df/)) }
           search U* as t {
-            case uf is /df/ -> do t F2                 # its bottom color up
-            case fu is /df/ -> do t U' conjugate(R', F)   # its bottom color in front: U' R' F R
+            case uf is /df/ -> do t F2                    # its bottom color up
+            case fu is /df/ -> do t U' R'<F>              # its bottom color in front
           }
         }
       }
@@ -70,10 +71,9 @@ solution basic for cube3 {
         if not solved(dfr) {
           if location(/dfr/) not in layer(U) { do cornerUp(location(/dfr/)) }
           search U* as t {
-            case rfu is /dfr/ -> do t conjugate(R, U)       # bottom color facing right
-            case fur is /dfr/ -> do t conjugate(F', U')     # bottom color facing front
-            case urf is /dfr/ -> do t conjugate(R, U2) U' conjugate(R, U)
-                                                            # bottom color up: R U2 R' U' R U R'
+            case rfu is /dfr/ -> do t R<U>                # bottom color facing right
+            case fur is /dfr/ -> do t F'<U'>              # bottom color facing front
+            case urf is /dfr/ -> do t R<U2> U' R<U>       # bottom color up
           }
         }
       }
@@ -86,15 +86,15 @@ solution basic for cube3 {
       if location(/fr/) in layer(E) and not solved(fr) {
         match slot(location(/fr/)) {
           case fr -> do insertRight
-          case br -> do conjugate(y, insertRight)     # y insertRight y'
-          case bl -> do conjugate(y2, insertRight)
-          case fl -> do conjugate(y', insertRight)
+          case br -> do y<insertRight>              # y insertRight y'
+          case bl -> do y2<insertRight>
+          case fl -> do y'<insertRight>
         }
       }
       if not solved(fr) {
         search U* as t {
           case fu is /fr/ -> do t insertRight          # front color in front
-          case ur is /fr/ -> do t conjugate(y, insertLeft)   # right color on the right
+          case ur is /fr/ -> do t y<insertLeft>        # right color on the right
         }
       }
     }

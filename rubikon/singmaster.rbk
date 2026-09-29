@@ -8,17 +8,45 @@
 
 solution singmaster for cube3 {
 
+  # The sequences, written to show how they work: w<p> is w p w' (p set up
+  # with w, then put back), commutator(a, b) is a b a' b'.
+
+  # Flip two top edges: a commutator set up by B.
+  let flipLeft          = B<commutator(L, U)>                    # B L U L' U' B'
+  let flipFront         = B<commutator(U, L)>                    # B U L U' L' B'
+
+  # Swap an edge into the middle layer: (R2 U2)3 swaps two edges on the
+  # right, set up by U' and then B'.
+  let swapRight         = B'<U'<(R2 U2)3>>                       # B' U' R2 U2 R2 U2 R2 U2 U B
+  let swapLeft          = L<U'<(F2 U2)3>>                        # L U' F2 U2 F2 U2 F2 U2 U L'
+
+  # Cycle three top edges, set up by R2 then D'.
+  let cycleEdges        = R2<D'<U2 (R' L)<F2>>>                  # R2 D' U2 R' L F2 R L' D R2
+  let cycleEdgesBack    = cycleEdges'                            # R2 D' R' L F2 R L' U2 D R2 (L and R commute)
+  let swapEdgePairs     = R2<D2<B2<D<(L2 F2)3>>>>                # R2 D2 B2 D L2 F2 L2 F2 L2 F2 D' B2 D2 R2
+
+  # Cycle three top corners, or swap two pairs of them.
+  let cycleCorners      = L'<commutator(U, R)> commutator(R, U)  # L' U R U' R' L R U R' U'
+  let cycleCornersBack  = cycleCorners'                          # U R U' R' L' R U R' U' L
+  let swapCornerPairs   = B<(commutator(L, U))3>                 # B (L U L' U')3 B'
+  let swapCornersAcross = (R' B2)<(commutator(F, R))3>           # R' B2 (F R F' R')3 B2 R
+
+  # Twist the front right top corner in place (and the bottom, which the
+  # other corners' twists put back).
+  let twistCorner       = (commutator(F, D))2                    # (F D F' D')2
+  let twistCornerBack   = twistCorner'                           # (D F D' F')2
+
   stage "Solve U Edges" goal solved(uf ur ub ul) {
     each y {
       search D* as t {
         case df is /uf/ -> do t F2
         case fd is /uf/ -> do t F' U' R U
       } else search E* as t {                 # in the middle layer
-        case lf is /uf/ -> do t F t'
-        case rf is /uf/ -> do t F' t'
+        case lf is /uf/ -> do t<F>
+        case rf is /uf/ -> do t<F'>
       } else search U* as t {                 # in the top layer: park it,
-        case uf is /uf/ -> do t F2 t' F2      #   turn the top back, put it in
-        case fu is /uf/ -> do t F t' U' R U
+        case uf is /uf/ -> do t<F2> F2         #   turn the top back, put it in
+        case fu is /uf/ -> do t<F> U' R U
       }
     }
   }
@@ -26,13 +54,13 @@ solution singmaster for cube3 {
   stage "Solve U Corners" goal solved(layer(U)) {
     each y {
       search D* as t {
-        case rdf is /urf/ -> do t D F D' F'
-        case frd is /urf/ -> do t D' R' D R
-        case dfr is /urf/ -> do t F D' F' R' D2 R
+        case rdf is /urf/ -> do t commutator(D, F)
+        case frd is /urf/ -> do t commutator(D', R')
+        case dfr is /urf/ -> do t F<D'> R'<D2>
       } else search U* as t {
-        case urf is /urf/ -> do t F D F' t' F D' F'
-        case rfu is /urf/ -> do t R' D2 R t' F D2 F'
-        case fur is /urf/ -> do t F D2 F' t' R' D2 R
+        case urf is /urf/ -> do t<F<D>> F<D'>
+        case rfu is /urf/ -> do t<R'<D2>> F<D2>
+        case fur is /urf/ -> do t<F<D2>> R'<D2>
       }
     }
   }
@@ -43,13 +71,13 @@ solution singmaster for cube3 {
     each y {
       if not solved(rf) {                    # stuck in the middle: lift it out
         search E* as t {
-          case rf is /rf/ -> do t B' U' R2 U2 R2 U2 R2 U2 U B t'
-          case fr is /rf/ -> do t L U' F2 U2 F2 U2 F2 U2 U L' t'
+          case rf is /rf/ -> do t<swapRight>
+          case fr is /rf/ -> do t<swapLeft>
         }
       }
       search U* as t {
-        case ub is /rf/ -> do t B' U' R2 U2 R2 U2 R2 U2 U B
-        case lu is /rf/ -> do t L U' F2 U2 F2 U2 F2 U2 U L'
+        case ub is /rf/ -> do t swapRight
+        case lu is /rf/ -> do t swapLeft
       }
     }
   }
@@ -57,35 +85,35 @@ solution singmaster for cube3 {
   stage "Orient D Edges" goal face U [_u_ / uuu / _u_] {   # the new top
     search y* as t {
       case face U [_u_  / uuu   / _u_ ] -> do t
-      case face U [_!u_ / uuu   / _!u_] -> do t B L U L' U' B'
-      case face U [_!u_ / !uuu  / _u_ ] -> do t B U L U' L' B'         # front and right
-      case face U [_!u_ / !uu!u / _!u_] -> do t B L U L' U' B' y2 B U L U' L' B'
+      case face U [_!u_ / uuu   / _!u_] -> do t flipLeft
+      case face U [_!u_ / !uuu  / _u_ ] -> do t flipFront          # front and right
+      case face U [_!u_ / !uu!u / _!u_] -> do t flipLeft y2 flipFront
     }
   }
 
   stage "Place D Edges" goal solved(uf ur ub ul) {
     search y* U* as t {                      # cycles of the top edges
-      case cube has (uf ur ub)      -> do t R2 D' U2 R' L F2 R L' D R2
-      case cube has (uf ub ur)      -> do t R2 D' R' L F2 R L' U2 D R2
-      case cube has (uf ur) (ul ub) -> do t R2 D2 B2 D L2 F2 L2 F2 L2 F2 D' B2 D2 R2
+      case cube has (uf ur ub)      -> do t cycleEdges
+      case cube has (uf ub ur)      -> do t cycleEdgesBack
+      case cube has (uf ur) (ul ub) -> do t swapEdgePairs
       case solved(uf ur ub ul)      -> do t
     }
   }
 
   stage "Place D Corners" goal placed(urf ufl ulb ubr) {
     search y* as t {                         # positions only, twists ignored
-      case positions(cube) has (ufl ulb ubr)       -> do t L' U R U' R' L R U R' U'
-      case positions(cube) has (ufl ubr ulb)       -> do t U R U' R' L' R U R' U' L
-      case positions(cube) has (ufl urf) (ulb ubr) -> do t B (L U L' U')3 B'
-      case positions(cube) has (ufl ubr) (urf ulb) -> do t R' B2 (F R F' R')3 B2 R
+      case positions(cube) has (ufl ulb ubr)       -> do t cycleCorners
+      case positions(cube) has (ufl ubr ulb)       -> do t cycleCornersBack
+      case positions(cube) has (ufl urf) (ulb ubr) -> do t swapCornerPairs
+      case positions(cube) has (ufl ubr) (urf ulb) -> do t swapCornersAcross
     }
   }
 
   stage "Orient D Corners" goal solved(cube) {
     each U {
       match {
-        case rfu is /u__/ -> do (D F D' F')2      # counterclockwise
-        case fur is /u__/ -> do (F D F' D')2      # clockwise
+        case rfu is /u__/ -> do twistCornerBack      # counterclockwise
+        case fur is /u__/ -> do twistCorner          # clockwise
         case urf is /u__/ -> ()
       }
     }
