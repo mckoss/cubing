@@ -279,7 +279,7 @@ be used as a permutation, not the reverse), Int, Bool.
 | `otherwise -> …`                         | when nothing matches                                                                                                                                                                                                                   |
 | `until <cond> max n { … }`               | retry a block; `until goal max n` repeats until the algo's goal holds                                                                                                                                                                  |
 | `if <cond> { … }`                        | plain condition                                                                                                                                                                                                                        |
-| `fn name(p) = …`                         | small helper returning a sequence                                                                                                                                                                                                      |
+| `fn name(p) { … }`                       | a helper: its body is a block, and its value is the block's last expression (a sequence, for `do`)                                                                                                                                     |
 
 ### Searches
 
@@ -509,6 +509,7 @@ or the move list.
 | Well-known sequences built in (always defined)                                              | Where a name comes from would be a mystery; they're a module, imported by name                                       |
 | `solution basic for cube3 { … }` and `stage "…" goal … { … }`                               | One construct for both: `algo [name] ["Description"] [goal …] { … }`, nested for stages                              |
 | `slot(x)` and `match slot(x) { case df -> … }`                                              | Asking which place holds a piece is a pattern test, `df is /df/r`; `match` takes only conditions                     |
+| `fn name(p) = …`                                                                            | A body on several lines reads badly after `=`; a function's body is a block, `fn name(p) { … }`                      |
 | The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations)                         | Replaced everywhere by standard notation                                                                             |
 | Upper case piece names (`URF`)                                                              | Reads as moves U R F; Singmaster used lower case                                                                     |
 | Corner names in either winding (`ufr` as well as `urf`)                                     | Six spellings per corner; clockwise only gives exactly three, one per sticker                                        |
