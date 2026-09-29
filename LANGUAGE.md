@@ -367,16 +367,21 @@ sequences (Sune, the sexy move, the PLLs), with where each was published.
 
 As in Python, there's never a mystery about where a name comes from:
 
-| Written                       | Then                                      |
-| ----------------------------- | ----------------------------------------- |
-| `from cfop import sune`       | `sune` can be used bare                   |
-| `from cfop import sexy, sune` | several names, listed                     |
-| `import cfop`                 | its names are used qualified: `cfop.sune` |
+| Written                           | Then                                      |
+| --------------------------------- | ----------------------------------------- |
+| `from cfop import sune`           | `sune` can be used bare                   |
+| `from cfop import sexy, sune`     | several names, listed                     |
+| `from cfop import sune as mySune` | `sune`, used under another name: `mySune` |
+| `import cfop`                     | its names are used qualified: `cfop.sune` |
+| `import cfop as c`                | the module, renamed: `c.sune`             |
 
 - **No `from cfop import *`.** Every bare name is defined in the file or
   listed in a `from … import` line.
 - **No shadowing:** a name defined in the file and also imported, or
-  imported from two modules, is an error.
+  imported from two modules, is an error. `as` resolves a clash
+  (`from other import sune as otherSune`). Renaming with `as` works in
+  both forms of import, and the import line still shows where each name
+  comes from; the name before `as` can't be used.
 - **Only what a module defines can be imported from it,** not what it
   imported itself: `sune` always comes from `cfop`, however it reached the
   module that uses it.
@@ -438,12 +443,11 @@ or the move list.
     names; face pictures for triangles; a sticker-numbered engine (as GAP
     does) under the names.
 17. **Modules:** Is there a standard library, found without being next to
-    the importing file? (`cfop` is the obvious first member.) Is a shorter
-    qualifier (`import cfop as c`) worth having, or is it a second name for
-    the same thing? Should a module declare its puzzle (`for cube3`)? Should
-    provenance be data (a `source "…"` clause the page can show) rather
-    than a comment? And `.` now marks a module's names, so question 16's
-    `uf.1` for places would need another mark.
+    the importing file? (`cfop` is the obvious first member.) Should a
+    module declare its puzzle (`for cube3`)? Should provenance be data (a
+    `source "…"` clause the page can show) rather than a comment? And `.`
+    now marks a module's names, so question 16's `uf.1` for places would
+    need another mark.
 
 ## Problems with the current design
 
