@@ -4,8 +4,8 @@
 	import { resolve } from '$app/paths';
 	import { Player } from '$lib/cube/player.svelte';
 	import CubePlayer from '$lib/components/CubePlayer.svelte';
+	import CurrentPermutation from '$lib/components/CurrentPermutation.svelte';
 	import MoveHistory from '$lib/components/MoveHistory.svelte';
-	import { Permutation } from '$lib/cube/permutation';
 	import { formatTaggedMoves } from '$lib/rubikon/moves';
 	import { RunRecorder, applyEvents } from '$lib/rubikon/record';
 	import type { RunEvent } from '$lib/rubikon/events';
@@ -72,7 +72,6 @@
 	let playLine = $state('');
 	let playError: ProgramError | undefined = $state();
 	let showTrace = $state(true);
-	let fromSolved = $state(true);
 
 	let textarea: HTMLTextAreaElement;
 	let gutter: HTMLElement;
@@ -107,9 +106,6 @@
 
 	// Record events on the player, and play them.
 	function run(events: RunEvent[]): void {
-		if (fromSolved) {
-			player.reset();
-		}
 		player.startSolution();
 		applyEvents(events, player.moveList);
 		player.changed();
@@ -124,8 +120,7 @@
 	// Run the program's algo main on the cube (solved, or as it is), showing
 	// the moves, algos, and trace lines in the history as they come.
 	function runMain(evaluated: EvaluatedProgram): void {
-		const start = fromSolved ? new Permutation() : player.finalPerm();
-		if (fromSolved) player.reset();
+		const start = player.finalPerm();
 		player.startSolution();
 		const recorder = new RunRecorder(player.moveList);
 		try {
@@ -156,12 +151,6 @@
 			return;
 		}
 		play(entry);
-	}
-
-	// A scramble to solve: Run then plays on from it.
-	function scramble(): void {
-		fromSolved = false;
-		player.scramble();
 	}
 
 	function playTyped(ev: SubmitEvent): void {
@@ -424,27 +413,6 @@
 				data-testid="source"></textarea>
 		</div>
 
-		<div class="run-bar">
-			<button class="primary" onclick={runChosen} title="Ctrl+Enter" data-testid="run">Run</button>
-			{#if program && (program.hasMain || program.lets.length > 0)}
-				<select
-					value={runWhat}
-					onchange={(ev): void => {
-						runChoice = ev.currentTarget.value;
-					}}
-					aria-label="What to run"
-					data-testid="run-what"
-				>
-					{#if program.hasMain}<option value="main">main</option>{/if}
-					{#if program.lets.length > 0}<option value="last">the last let</option>{/if}
-					{#each program.lets as entry, i (i)}
-						<option value={String(i)}>{letLabel(entry)}</option>
-					{/each}
-				</select>
-			{/if}
-			<label class="check"><input type="checkbox" bind:checked={fromSolved} /> From solved</label>
-		</div>
-
 		{#if error}
 			<p class="error" role="alert" data-testid="error">
 				{#if error.line !== null}
@@ -483,8 +451,8 @@
 			</details>
 		{/if}
 		<p class="note">
-			Run runs the program's <code>algo main</code> on the cube (or plays a let). Imports come from the
-			library, by name.
+			Run (under the cube, or Ctrl+Enter here) runs the program's <code>algo main</code> on the cube as
+			it is (or plays a let); Reset first to start from solved. Imports come from the library, by name.
 		</p>
 	</section>
 
@@ -492,7 +460,27 @@
 		<section class="player">
 			<CubePlayer {player}>
 				{#snippet actions()}
-					<button onclick={scramble} data-testid="scramble">Scramble</button>
+					<button onclick={(): void => player.scramble()} data-testid="scramble">Scramble</button>
+					<button class="primary" onclick={runChosen} title="Ctrl+Enter" data-testid="run"
+						>Run</button
+					>
+					{#if program && (program.hasMain || program.lets.length > 0)}
+						<select
+							class="run-what"
+							value={runWhat}
+							onchange={(ev): void => {
+								runChoice = ev.currentTarget.value;
+							}}
+							aria-label="What to run"
+							data-testid="run-what"
+						>
+							{#if program.hasMain}<option value="main">main</option>{/if}
+							{#if program.lets.length > 0}<option value="last">the last let</option>{/if}
+							{#each program.lets as entry, i (i)}
+								<option value={String(i)}>{letLabel(entry)}</option>
+							{/each}
+						</select>
+					{/if}
 				{/snippet}
 			</CubePlayer>
 			<form class="play-line" onsubmit={playTyped}>
@@ -514,6 +502,8 @@
 				</p>
 			{/if}
 		</section>
+
+		<CurrentPermutation {player} />
 
 		<MoveHistory {player} {showTrace}>
 			{#snippet controls()}
@@ -613,14 +603,18 @@
 		}
 	}
 
+	/* A let's label can be long: keep the toolbar within the screen. */
+	.run-what {
+		max-width: 14rem;
+	}
+
 	.side {
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
 	}
 
-	.file-bar,
-	.run-bar {
+	.file-bar {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.5rem;

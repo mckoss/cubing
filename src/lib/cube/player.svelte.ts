@@ -5,7 +5,7 @@
 import { Permutation } from './permutation';
 import { applyMoves, randomScramble } from './moves';
 import type { Cube, Move, MoveName } from './types';
-import { MoveList } from './move-list';
+import { MoveList, type Playhead } from './move-list';
 import { CubeView, type Speed } from './view';
 
 // Where we are in the moves being played (for stepping through them),
@@ -69,6 +69,16 @@ export class Player {
 	});
 	readonly solved = $derived(this.perm.isIdentity());
 	readonly idle = $derived(this.pendingCount === 0 && this.turning === undefined);
+	// Where playback is, for showing it in the history.
+	readonly playhead = $derived.by((): Playhead => {
+		void this.version;
+		const taken = this.moveList.played;
+		const done = Math.max(0, taken - (this.turning ? 1 : 0));
+		return { taken, done, current: this.idle || taken === 0 ? undefined : taken - 1 };
+	});
+	// Bumped when moves are added or playback is started or stepped, so the
+	// history goes back to following the move being played.
+	cue = $state(0);
 
 	readonly stage = $derived.by((): Stage | undefined => {
 		void this.version;
@@ -110,6 +120,7 @@ export class Player {
 	// Show changes made to the move list, and play the moves added.
 	changed(): void {
 		this.version++;
+		this.cue++;
 		void this.animate();
 	}
 
@@ -173,12 +184,14 @@ export class Player {
 	}
 
 	playPause(): void {
+		this.cue++;
 		this.paused = !this.paused;
 		this.steps = 0;
 		void this.animate();
 	}
 
 	nextMove(): void {
+		this.cue++;
 		this.paused = true;
 		// A half turn is the same quarter turn twice in a row: play both.
 		const [first, second] = this.moveList.pending;
@@ -192,7 +205,10 @@ export class Player {
 		void this.animate();
 	}
 
-	nextStage(): void {
+	// Play on to the next place a block starts or ends: the next algo
+	// (including one called by another, like lift), or the rest of this one.
+	nextAlgo(): void {
+		this.cue++;
 		this.paused = true;
 		this.steps = this.moveList.nextBoundary(this.moveList.played) - this.moveList.played;
 		void this.animate();
