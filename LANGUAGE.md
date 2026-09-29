@@ -421,8 +421,9 @@ move sequence accomplishes what.
   description is what the page shows; without one, the name is shown.
 
 **Algos with parameters are like macros.** An algo with a parameter list
-is defined where it's written, not run there; it runs where another algo
-calls it with `do`, as if its body were written at the call. The trace
+is defined at a file's top level, never inside another algo, and can be
+imported like any definition. It runs where another algo calls it with
+`do`, as if its body were written at the call. The trace
 shows the call as its own step, with its description:
 
 ```
@@ -437,8 +438,8 @@ algo lift(p: Pattern) "Lift a piece to the top" {
 do lift(/df/r)
 ```
 
-An algo without parameters inside another (a stage) runs where it's
-written. Only `do` moves the cube, whether it plays a sequence or runs an
+An algo inside another is a stage: it has no parameters, and runs where
+it's written. Only `do` moves the cube, whether it plays a sequence or runs an
 algo; a `fun` never does.
 
 **Running a file runs its `main`.** Algos at a file's top level are
@@ -619,6 +620,7 @@ or the move list.
 | `show z2` as a statement                                                                           | A visible turn couldn't be part of a `Moves` value; `show(x)` tags one turn, and `do` plays it                                                                    |
 | `Rotation` as the type of `x y z`                                                                  | They reorient the cube; `Orient` says so, and "rotation" is already a pattern's `r`                                                                               |
 | A file's top-level algo running when the file runs, or a top-level `do`                            | Implicit, and a top-level `do` would run on import; `algo main` names the entry point, and `do basic.main` runs it                                                |
+| Algos with parameters nested inside other algos                                                    | Nothing is gained by hiding them; at the top level they can be imported, and a nested algo is always a stage                                                      |
 | The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations)                                | Replaced everywhere by standard notation                                                                                                                          |
 | Upper case piece names (`URF`)                                                                     | Reads as moves U R F; Singmaster used lower case                                                                                                                  |
 | Corner names in either winding (`ufr` as well as `urf`)                                            | Six spellings per corner; clockwise only gives exactly three, one per sticker                                                                                     |
