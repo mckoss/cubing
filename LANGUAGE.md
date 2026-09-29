@@ -383,6 +383,9 @@ As in Python, there's never a mystery about where a name comes from:
 - Imports come first in a file. A module is found next to the importing
   file. Circular imports are an error.
 - A qualified name is used like any other: `cfop.sune'`, `F<cfop.sexy>`.
+- **An unused import is a warning:** each name in a `from … import` line
+  that the file never uses, and an `import cfop` with no `cfop.…` in the
+  file. The warning names the import, so it can be removed.
 
 ### Generalization
 
