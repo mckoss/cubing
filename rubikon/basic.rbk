@@ -9,7 +9,7 @@
 
 from cfop import sexy, sune          # well-known sequences (cfop.rbk)
 
-solution basic for cube3 {
+algo basic "The Basic Modern Solution" goal solved(cube) {
 
   # The sequences from the notes, written to show how they work, each with
   # the permutation it makes (in cycle notation) under it.
@@ -64,9 +64,9 @@ solution basic for cube3 {
     case drb -> R'<U'>      case dlf -> L'<U'>
   }
 
-  stage "First Face" goal solved(layer(D)) {
+  algo "First Face" goal solved(layer(D)) {
 
-    stage "Bottom Edges" goal solved(df dr db dl) {
+    algo "Bottom Edges" goal solved(df dr db dl) {
       each y {                                      # each bottom edge in turn
         if not solved(df) {
           if location(/df/) not in layer(U) { do edgeUp(location(/df/)) }
@@ -78,7 +78,7 @@ solution basic for cube3 {
       }
     }
 
-    stage "Bottom Corners" goal solved(dfr drb dbl dlf) {
+    algo "Bottom Corners" goal solved(dfr drb dbl dlf) {
       each y {
         if not solved(dfr) {
           if location(/dfr/) not in layer(U) { do cornerUp(location(/dfr/)) }
@@ -92,7 +92,7 @@ solution basic for cube3 {
     }
   }
 
-  stage "Middle" goal solved(fr fl br bl) {
+  algo "Middle" goal solved(fr fl br bl) {
     each y {                                        # each middle slot in turn
       # Stuck in the wrong middle slot: insert any edge there to lift it out.
       if location(/fr/) in layer(E) and not solved(fr) {
@@ -112,7 +112,7 @@ solution basic for cube3 {
     }
   }
 
-  stage "Top Cross" goal face U [_u_ / uuu / _u_] {
+  algo "Top Cross" goal face U [_u_ / uuu / _u_] {
     until goal max 4 {
       search U* as t {
         case face U [_!u_ / uuu   / _!u_] -> do t topCross   # line
@@ -122,7 +122,7 @@ solution basic for cube3 {
     }
   }
 
-  stage "Top Edges" goal solved(uf ur ub ul) {
+  algo "Top Edges" goal solved(uf ur ub ul) {
     until goal max 3 {
       search y* U* as t {
         case solved(uf ur ub ul)                          -> do t           # only the top turned
@@ -132,7 +132,7 @@ solution basic for cube3 {
     }
   }
 
-  stage "Top Corners" goal placed(urf ufl ulb ubr) {
+  algo "Top Corners" goal placed(urf ufl ulb ubr) {
     until goal max 3 {
       search y* as t {
         case urf is /urf/r and ubr is /ulb/r and ulb is /ufl/r and ufl is /ubr/r
@@ -144,7 +144,7 @@ solution basic for cube3 {
     }
   }
 
-  stage "Twist Corners" goal solved(cube) {
+  algo "Twist Corners" goal solved(urf ufl ulb ubr) {
     each U {                                        # turn the top, not the cube
       match {
         case rfu is /u__/ -> do twistCorner         # top color facing right

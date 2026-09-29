@@ -11,7 +11,7 @@ extension `.rbk`.
 ## Goal
 
 Replace the hand-written rule tables in `singmaster.ts` and `beginner.ts`
-with a small language for describing how a person solves the cube: stages,
+with a small language for describing how a person solves the cube: algos,
 the patterns to look for, and the sequences to apply. A solution file is
 compiled (a PEG grammar, with [Peggy](https://peggyjs.org), the successor
 of the PEG.js used in [Bolt](https://github.com/mckoss/bolt)) to JSON, and
@@ -72,15 +72,15 @@ Every special character and its uses:
 | `[ ]`    | a face picture, rows separated by `/`: `face U [_u_/uuu/_u_]`                                    |
 | `_`      | in a pattern or picture: any sticker                                                             |
 | `!`      | in a pattern or picture: any sticker but, `!u`                                                   |
-| `{ }`    | a block: `stage "…" goal … { … }`, `each y { … }`                                                |
+| `{ }`    | a block: `algo "…" goal … { … }`, `each y { … }`                                                 |
 | `->`     | a case and what to do: `case … -> do R U R'`                                                     |
 | `=` `==` | `let` binding; equality                                                                          |
 | `,`      | separates arguments, `commutator(R, U)`, and imported names, `from cfop import sexy, sune`       |
 | `.`      | a name from a module: `cfop.sune`                                                                |
 | `:`      | in `all c in …: …`                                                                               |
-| `" "`    | a string: stage names, captions                                                                  |
+| `" "`    | a string: an algo's description, captions                                                        |
 
-Keywords so far: `solution for stage goal let fn do show each match search
+Keywords so far: `algo goal let fn do show each match search
 as case otherwise else until max if not and or in is all has face import
 from`.
 
@@ -265,21 +265,21 @@ be used as a permutation, not the reverse), Int, Bool.
 
 ### Structure and control
 
-| Construct                        | Meaning                                                                                                                                                                                                                                |
-| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `solution basic for cube3 { … }` | a solution for a puzzle                                                                                                                                                                                                                |
-| `stage "Middle" goal … { … }`    | a named stage with its goal (see Stages)                                                                                                                                                                                               |
-| `let name = …`                   | single assignment                                                                                                                                                                                                                      |
-| `do R U R'`                      | play moves (the only thing that changes the cube)                                                                                                                                                                                      |
-| `each y { … }`                   | the block 4 times, always, turning y after each: "for every side". With a whole cube turn it makes no moves of its own; with a face turn (`each U`) it really turns between passes. (Unlike `search`, which stops at the first match.) |
-| `match { case … -> … }`          | first matching case wins; `-> ()` means "nothing to do"                                                                                                                                                                                |
-| `search U* as t { case … }`      | try the cases with zero turns, then after each further turn (see Searches); the turns found are named `t` and are made only where written: `do t F2`                                                                                   |
-| `… else search D* as t { … }`    | if the first search finds nothing, try another                                                                                                                                                                                         |
-| `show z2`                        | a visible whole cube turn (see Whole cube turns)                                                                                                                                                                                       |
-| `otherwise -> …`                 | when nothing matches                                                                                                                                                                                                                   |
-| `until <cond> max n { … }`       | retry a block; `until goal max n` repeats until the stage's goal holds                                                                                                                                                                 |
-| `if <cond> { … }`                | plain condition                                                                                                                                                                                                                        |
-| `fn name(p) = …`                 | small helper returning a sequence                                                                                                                                                                                                      |
+| Construct                                | Meaning                                                                                                                                                                                                                                |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `algo basic "…" goal solved(cube) { … }` | an algo: a name, a description, and a goal, each optional (see Algos)                                                                                                                                                                  |
+| `algo "Middle" goal … { … }`             | an algo inside another: a stage of it                                                                                                                                                                                                  |
+| `let name = …`                           | single assignment                                                                                                                                                                                                                      |
+| `do R U R'`                              | play moves (the only thing that changes the cube)                                                                                                                                                                                      |
+| `each y { … }`                           | the block 4 times, always, turning y after each: "for every side". With a whole cube turn it makes no moves of its own; with a face turn (`each U`) it really turns between passes. (Unlike `search`, which stops at the first match.) |
+| `match { case … -> … }`                  | first matching case wins; `-> ()` means "nothing to do"                                                                                                                                                                                |
+| `search U* as t { case … }`              | try the cases with zero turns, then after each further turn (see Searches); the turns found are named `t` and are made only where written: `do t F2`                                                                                   |
+| `… else search D* as t { … }`            | if the first search finds nothing, try another                                                                                                                                                                                         |
+| `show z2`                                | a visible whole cube turn (see Whole cube turns)                                                                                                                                                                                       |
+| `otherwise -> …`                         | when nothing matches                                                                                                                                                                                                                   |
+| `until <cond> max n { … }`               | retry a block; `until goal max n` repeats until the algo's goal holds                                                                                                                                                                  |
+| `if <cond> { … }`                        | plain condition                                                                                                                                                                                                                        |
+| `fn name(p) = …`                         | small helper returning a sequence                                                                                                                                                                                                      |
 
 ### Searches
 
@@ -316,64 +316,81 @@ search U* as t {
 - A cube state never contains a whole cube turn; names are relative to the
   frame, so `y` is a renaming of places, not a permutation of pieces.
 
-### Stages
+### Algos
 
-A stage names a sub-goal of the solution, **for documentation and
-display**: it shows which part of the move sequence accomplishes what.
+An algo is a named, described part of a method, with its goal:
 
-- The simulator's history groups moves by stage ("Top Cross: 14 moves"),
+```
+algo [name] ["Description"] [goal predicate] { … }
+```
+
+All three are optional. A method is an algo, and its stages are algos
+inside it:
+
+```
+algo basic "The Basic Modern Solution" goal solved(cube) {
+  algo "First Face" goal solved(layer(D)) {
+    algo "Bottom Edges" goal solved(df dr db dl) { … }
+    algo "Bottom Corners" goal solved(dfr drb dbl dlf) { … }
+  }
+  algo "Middle" goal solved(fr fl br bl) { … }
+  …
+}
+```
+
+Algos are **for documentation and display**: they show which part of the
+move sequence accomplishes what.
+
+- The simulator's history groups moves by algo ("Top Cross: 14 moves"),
   with turn counts for each, and "next stage" steps through them.
 - The file reads the way the method is taught: first face, middle layer,
   top cross, …
-- Stages don't change which moves are made: without them, a solution makes
-  exactly the same moves.
-- Stages nest (Bottom Edges inside First Face).
+- Algos don't change which moves are made: without the nesting, a method
+  makes exactly the same moves.
+- **Names:** a name (`basic`) lets the algo be referred to: by tests, in
+  the trace, and perhaps by other files (open question 17). The
+  description is what the page shows; without one, the name is shown.
 
-**Every stage states its goal**, an assertable invariant for the part of
-the solution it names:
+**Every algo's goal is an assertable invariant** for the part of the
+method it covers:
 
-```
-stage "Middle" goal solved(fr fl br bl) { … }
-```
-
-- **Checked at the end:** when the stage finishes, its goal must hold, or
-  the solve stops with an error naming the stage.
-- **Skipped when already true:** a stage whose goal holds at the start
-  is bypassed: its body doesn't run and it makes no moves (this replaces
-  `skip if`). The trace still lists the stage, marked as already done
-  ("Bottom Corners: already solved"), so every stage shows up in the
-  solution. So a stage needn't test for its own goal: a case that matches
-  only when the goal already holds is dead code, and the compiler can warn
-  about one it can see (e.g. a case whose pattern is the goal itself).
-- **Goals persist for the rest of the solution:** once a stage's goal is
-  reached, it must hold at the end of **every** later stage, nested or not,
-  until the solve is done. The runtime checks all of them at each stage's
-  end, and a failure names both the stage that broke the goal and the stage
-  that set it. A stage can still disturb earlier work along the way
-  (Twist Corners scrambles the bottom) as long as it's restored by the
-  stage's end. So the goals build up, and the last stage's goal (the cube
-  solved) is reached with every earlier one still true.
-- **So a goal states only what its stage adds:** Bottom Corners' goal is
+- **Checked at the end:** when the algo finishes, its goal must hold, or
+  the solve stops with an error naming the algo.
+- **Skipped when already true:** an algo whose goal holds at the start is
+  bypassed: its body doesn't run and it makes no moves (this replaces
+  `skip if`). The trace still lists it, marked as already done ("Bottom
+  Corners: already solved"), so every stage shows up in the solution. So
+  an algo needn't test for its own goal: a case that matches only when the
+  goal already holds is dead code, and the compiler can warn about one it
+  can see (e.g. a case whose pattern is the goal itself).
+- **Goals persist to the end of the method:** once an algo's goal
+  is reached, it must hold at the end of **every** later algo, nested or
+  not, until the whole method is done. The runtime checks all of them at
+  each algo's end, and a failure names both the algo that broke the goal
+  and the algo that set it. An algo can still disturb earlier work along
+  the way (Twist Corners scrambles the bottom) as long as it's restored by
+  its end. So the goals build up to the method's own goal.
+- **So a goal states only what its algo adds:** Bottom Corners' goal is
   `solved(dfr drb dbl dlf)`, not `solved(layer(D))`; the bottom edges are
-  already held by Bottom Edges' goal. A stage that groups others (First
-  Face) can state the whole of what they reach. The last stage's goal,
-  `solved(cube)`, is the exception worth keeping: it's the solution's
-  claim, and the one goal that allows any way of holding the cube.
+  already held by Bottom Edges' goal. An algo that groups others (First
+  Face) can state the whole of what they reach, and the method's goal,
+  `solved(cube)`, states the whole claim (and is the one goal that allows
+  any way of holding the cube).
 - A method that deliberately undoes earlier work would have to say so
-  (e.g. a `releases` clause on the stage); neither of ours does.
+  (e.g. a `releases` clause on the algo); neither of ours does.
 - **Goals keep their frame:** a goal is checked in the orientation the cube
-  had when its stage ran; the runtime accounts for later whole cube turns
+  had when its algo ran; the runtime accounts for later whole cube turns
   (Singmaster's `z2`), so "the top layer is solved" still means that layer
   after the cube is turned over.
-- **Each stage can be tested alone:** start from random cubes where the
-  earlier goals hold, run the stage, check its goal.
-- The page can show each stage's goal next to its moves.
+- **Each algo can be tested alone:** start from random cubes where the
+  earlier goals hold, run the algo, check its goal.
+- The page can show each algo's goal next to its moves.
 
 ### Modules and imports
 
 A file is a module, named by its file name: `cfop.rbk` is `cfop`. A module
-that isn't a solution holds only definitions (`let` and `fn`), each of which
-can be imported. [`rubikon/cfop.rbk`](rubikon/cfop.rbk) holds well-known
+holds definitions at its top level (`let`, `fn`, and named `algo`s); the
+`let` and `fn` definitions can be imported. [`rubikon/cfop.rbk`](rubikon/cfop.rbk) holds well-known
 sequences (Sune, the sexy move, the PLLs), with where each was published.
 
 As in Python, there's never a mystery about where a name comes from:
@@ -408,7 +425,7 @@ As in Python, there's never a mystery about where a name comes from:
 Keep a puzzle-independent core (permutations, patterns, control) and put
 everything puzzle-specific in a puzzle definition: face letters, place
 names, moves, whole-puzzle turns, face-picture reading order, color scheme,
-`legal`. `solution basic for cube3`. The parser must not hard-code `udfblr`
+`legal`. The parser must not hard-code `udfblr`
 or the move list.
 
 ## Open questions
@@ -455,7 +472,8 @@ or the move list.
     does) under the names.
 17. **Modules:** Is there a standard library, found without being next to
     the importing file? (`cfop` is the obvious first member.) Should a
-    module declare its puzzle (`for cube3`)? Should provenance be data (a
+    module or algo declare its puzzle (the old `solution basic for cube3`)?
+    Can a named algo be imported, or run from another (`do middle`)? Should provenance be data (a
     `source "…"` clause the page can show) rather than a comment? And `.`
     now marks a module's names, so question 16's `uf.1` for places would
     need another mark.
@@ -489,6 +507,7 @@ or the move list.
 | An infix conjugate (`p^w`, `p @ w`, `p ~ w`)                                                | Without brackets, it's unclear how much of `R U ~ F` is wrapped; `^` reads as a power                                |
 | `from cfop import *`                                                                        | A bare name could come from anywhere; names are listed, or written qualified (`cfop.sune`)                           |
 | Well-known sequences built in (always defined)                                              | Where a name comes from would be a mystery; they're a module, imported by name                                       |
+| `solution basic for cube3 { … }` and `stage "…" goal … { … }`                               | One construct for both: `algo [name] ["Description"] [goal …] { … }`, nested for stages                              |
 | The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations)                         | Replaced everywhere by standard notation                                                                             |
 | Upper case piece names (`URF`)                                                              | Reads as moves U R F; Singmaster used lower case                                                                     |
 | Corner names in either winding (`ufr` as well as `urf`)                                     | Six spellings per corner; clockwise only gives exactly three, one per sticker                                        |
@@ -508,7 +527,7 @@ or the move list.
 | `where(c)`                                                                                  | Sounds like a loop; now `location(p)`                                                                                |
 | `solvable(p)`                                                                               | Sounds like it returns moves; now `legal(p)` (a yes/no check)                                                        |
 | `sticker(x)`                                                                                | Replaced by patterns: `uf is /u_/`                                                                                   |
-| `skip if <cond>`                                                                            | A stage's goal: a stage whose goal already holds is skipped                                                          |
+| `skip if <cond>`                                                                            | An algo's goal: an algo whose goal already holds is skipped                                                          |
 | `around y`                                                                                  | Renamed `each y` (open)                                                                                              |
 | `search U { … }`, `using U match`, `using y, U match`, `find /uf/ by U as t { at uf -> … }` | One construct: `search U* as t { case uf is /uf/ -> … }`                                                             |
 | Search turns made implicitly (before a case's moves)                                        | Explicit is better: `do t F2`                                                                                        |
@@ -544,7 +563,7 @@ Notes:
   in a comment under it. Every identity and every cycle was checked on the
   TypeScript cube. A compiler could check those comments, or they could
   become assertions.
-- Basic's twist stage is simpler than the TypeScript: a pattern on colors
+- Basic's Twist Corners is simpler than the TypeScript: a pattern on colors
   (`rfu is /u__/`) instead of finding which corner is at the front right.
 - Basic's first-face case places could be derived from the sequences
   (`inverse(F2)(df)` is `uf`) and checked by the compiler.
