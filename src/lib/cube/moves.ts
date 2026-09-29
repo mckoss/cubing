@@ -29,7 +29,7 @@ export function isRotation(name: MoveName): name is Rotation {
 	return ROTATIONS.some((r) => r === name);
 }
 
-function isMoveName(name: string): name is MoveName {
+export function isMoveName(name: string): name is MoveName {
 	return MOVE_NAMES.some((m) => m === name);
 }
 
