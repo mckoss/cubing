@@ -109,9 +109,22 @@ describe('Library', () => {
 		expect(names(new Library(storage, SEEDS))).toEqual(['ok']);
 	});
 
+	it('says whether changes reach storage', () => {
+		const storage = new FakeStorage();
+		const library = new Library(storage, SEEDS);
+		expect(library.persisted).toBe(true);
+		storage.setItem = (): void => {
+			throw new Error('QuotaExceededError');
+		};
+		library.save('big', 'U');
+		expect(library.persisted).toBe(false);
+		expect(library.get('big')?.source).toBe('U');
+	});
+
 	it('works in memory without storage, or when storage refuses', () => {
 		for (const storage of [undefined, broken]) {
 			const library = new Library(storage, SEEDS);
+			expect(library.persisted).toBe(false);
 			library.save('mine', 'U');
 			library.rename('mine', 'yours');
 			library.lastOpen = 'yours';

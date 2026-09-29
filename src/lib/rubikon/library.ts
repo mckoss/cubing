@@ -38,6 +38,9 @@ function isProgram(value: unknown): value is Program {
 export class Library {
 	private programs = new Map<string, Program>();
 	private lastOpenName: string | null = null;
+	// Whether the last change reached storage (false: kept in memory only,
+	// and lost when the page closes).
+	persisted: boolean;
 
 	// seeds: programs to start with when nothing has been saved yet.
 	constructor(
@@ -45,6 +48,7 @@ export class Library {
 		seeds: readonly { name: string; source: string }[] = [],
 		private readonly now: () => number = Date.now
 	) {
+		this.persisted = storage !== undefined;
 		const stored = this.read(PROGRAMS_KEY);
 		let loaded = false;
 		if (stored !== null) {
@@ -147,8 +151,10 @@ export class Library {
 	private write(): void {
 		try {
 			this.storage?.setItem(PROGRAMS_KEY, JSON.stringify(this.list()));
+			this.persisted = this.storage !== undefined;
 		} catch {
 			// Full or refused: kept in memory only.
+			this.persisted = false;
 		}
 	}
 }

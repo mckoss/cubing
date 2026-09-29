@@ -36,8 +36,9 @@ test('plays a let, and moves typed in', async ({ page }) => {
 	await source(page).fill("let sexy = R U R' U'\nlet six = (sexy)6\n");
 	await page.getByTestId('run').click();
 	await expect(page.getByTestId('lets')).toContainText("R U R' U'");
-	// Six times is nothing: back to solved.
-	await expect(page.getByTestId('solved')).toBeVisible();
+	// Run plays the last let; six times is nothing: back to solved.
+	await expect(history(page)).toContainText('six');
+	await expect(page.getByTestId('solved')).toBeVisible({ timeout: 30_000 });
 	await page.getByRole('button', { name: 'Play sexy' }).click();
 	await expect(history(page)).toContainText("R U R' U'");
 	await expect(page.getByTestId('solved')).toBeHidden();
@@ -99,6 +100,20 @@ test('saves, pages through, renames, and deletes programs', async ({ page }) => 
 	await page.getByTestId('delete-cfop').click();
 	await expect(page.getByTestId('open-cfop')).toBeHidden();
 	await expect(page.getByTestId('position')).toHaveText('2 of 2');
+});
+
+test('asks before leaving unsaved changes', async ({ page }) => {
+	const asked: string[] = [];
+	page.on('dialog', (dialog) => {
+		asked.push(dialog.message());
+		void dialog.dismiss();
+	});
+	await page.goto('./playground');
+	await source(page).fill('let t = R U');
+	await page.getByRole('link', { name: "Rubik's Cube Simulator" }).first().click();
+	await expect.poll(() => asked).toEqual(['Discard the changes to basic?']);
+	await expect(page).toHaveTitle('Rubikon Playground');
+	await expect(source(page)).toHaveValue('let t = R U');
 });
 
 test('imports another program from the library', async ({ page }) => {

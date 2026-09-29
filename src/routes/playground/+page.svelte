@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
+	import { beforeNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { Player } from '$lib/cube/player.svelte';
 	import CubePlayer from '$lib/components/CubePlayer.svelte';
@@ -45,6 +46,10 @@
 		return saved === undefined
 			? source.trim() !== ''
 			: saved.source !== source || name !== openName;
+	});
+	const persisted = $derived.by(() => {
+		void libraryVersion;
+		return library.persisted;
 	});
 	const index = $derived(programs.findIndex((p) => p.name === openName));
 
@@ -190,6 +195,12 @@
 		return !dirty || confirm(`Discard the changes to ${name}?`);
 	}
 
+	// Leaving the page too: closing it or reloading asks with the browser's
+	// own question (which cancel() brings up), a link with ours.
+	beforeNavigate(({ type, cancel }) => {
+		if (dirty && (type === 'leave' || !mayLeave())) cancel();
+	});
+
 	function open(p: Program): void {
 		if (p.name === openName || !mayLeave()) return;
 		openName = p.name;
@@ -231,7 +242,9 @@
 		openName = saved.name;
 		name = saved.name;
 		library.lastOpen = saved.name;
-		status = `Saved ${saved.name}.`;
+		status = library.persisted
+			? `Saved ${saved.name}.`
+			: `Saved ${saved.name} for now: this browser won't store it, so it's gone when the page closes.`;
 		changedLibrary();
 	}
 
@@ -244,6 +257,7 @@
 		source = '';
 		program = undefined;
 		error = undefined;
+		runLet = -1;
 		status = '';
 		library.lastOpen = null;
 		changedLibrary();
@@ -462,7 +476,11 @@
 <div class="library">
 	<section class="card" data-testid="library">
 		<h2>Library</h2>
-		<p class="note">Saved in this browser only.</p>
+		<p class="note">
+			{persisted
+				? 'Saved in this browser only.'
+				: "This browser won't store the library: it's gone when the page closes."}
+		</p>
 		{#if programs.length === 0}
 			<p class="note">Nothing saved yet.</p>
 		{:else}
