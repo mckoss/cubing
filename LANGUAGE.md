@@ -81,11 +81,11 @@ Every special character and its uses:
 | `:`      | a type: `p: Pattern`, a function's result `fun f(…): Int`; in `all c in …: …`                    |
 | `" "`    | a string: an algo's description, captions                                                        |
 
-Keywords so far: `algo goal let fun return do show each match search
+Keywords so far: `algo goal let fun return do each match search
 as case otherwise else until max if not and or in is all has face import
 from`.
 Types are keywords too: `Location EdgeLocation CornerLocation
-CenterLocation Pattern Cubie Edge Corner Center Permutation Moves Face
+CenterLocation Pattern Cubie Edge Corner Center Permutation Moves Rotation Face
 Slice Set Int Bool`.
 
 ### Locations
@@ -228,6 +228,7 @@ in the letter order of the place it's tested against:
 | `location(p: Pattern): Location`        | where the piece matching a complete pattern is, facing so that it matches              |
 | `location(c: Cubie): Location`          | where that piece is, spelled so its orientation matches: `uf is location(c)` reads `c` |
 | `cubie(x: Location): Cubie`             | the physical piece in place x now (to follow through turns)                            |
+| `show(t: Rotation): Moves`              | the whole cube turn t, tagged to be shown when played (see Whole cube turns)           |
 
 `Location…` takes any number of places, and a `Set(Location)` counts as
 its members: `solved(df dr db dl)`, `solved(layer(D))`.
@@ -270,6 +271,7 @@ Types are keywords, written with a capital letter:
 | `Permutation`   | cycles, `(uf ur ub)`; a cube state is one (`cube`)                                                                                                        |
 | `Moves`         | a sequence of moves, `R U R' U'`: a permutation that remembers its moves, so it can be played (any `Moves` can be used as a permutation, not the reverse) |
 | `Face`          | `U D F B L R`, as in `layer(D)`                                                                                                                           |
+| `Rotation`      | one whole cube turn: `x`, `y'`, `z2`, as in `show(x)`                                                                                                     |
 | `Slice`         | `M E S`, as in `reflect(p, M)`                                                                                                                            |
 | `Set(Location)` | several places: `layer(D)`                                                                                                                                |
 | `Int`, `Bool`   | numbers and truth values; a condition (`uf is /df/`, a face picture) is a Bool                                                                            |
@@ -333,7 +335,7 @@ Location         uf  fu  urf  u
 | `match { case … -> … }`                  | the first true case does its action (`case br is /fr/r -> do y<insertRight>`); cases are conditions, with no subject. With no `otherwise`, nothing matching is an error, as in `search`. `-> ()` means "nothing to do"; cases never produce values |
 | `search U* as t { case … }`              | try the cases with zero turns, then after each further turn (see Searches); the turns found are named `t` and are made only where written: `do t F2`                                                                                               |
 | `… else search D* as t { … }`            | if the first search finds nothing, try another                                                                                                                                                                                                     |
-| `show z2`                                | a visible whole cube turn (see Whole cube turns)                                                                                                                                                                                                   |
+| `do show(z2)`                            | a visible whole cube turn (see Whole cube turns)                                                                                                                                                                                                   |
 | `otherwise -> …`                         | when nothing matches                                                                                                                                                                                                                               |
 | `until <cond> max n { … }`               | retry a block; `until goal max n` repeats until the algo's goal holds                                                                                                                                                                              |
 | `if <cond> { … }`                        | plain condition                                                                                                                                                                                                                                    |
@@ -370,8 +372,16 @@ search U* as t {
   output as `insertLeft` with its letters renamed (`U' F' U F U R U' R'`),
   with no `y`. This keeps playback steady: the cube never spins between
   steps.
-- **`show z2` makes a visible turn**, for when a method tells you to turn
-  the cube (Singmaster's "turn it over"), or when it's easier to follow.
+- **`show(x)` tags one turn as visible.** `show(t: Rotation): Moves` takes
+  a single whole cube turn (`x`, `y'`, `z2`) and gives it as a visible turn;
+  the tag stays with it, so it can be built into a sequence: `let aPerm =
+show(x) R' U R' D2 R U' R' D2 R2 show(x')`. When `do` plays moves, a
+  tagged turn is shown (the cube visibly turns, and the moves after it keep
+  their names), and an untagged one is a change of frame, as above. For
+  when a method tells you to turn the cube (Singmaster's "turn it over":
+  `do show(z2)`), or when a published alg turns it and a person would too.
+  Visible turns should be rare. `show(R)` and `show(x y)` are type errors:
+  face turns are always visible, and each shown turn is tagged by itself.
 - A cube state never contains a whole cube turn; names are relative to the
   frame, so `y` is a renaming of places, not a permutation of pieces.
 
@@ -533,7 +543,7 @@ or the move list.
    from the same file as the solver?
 9. **Statements vs. expressions:** keep `do` the only thing with an effect,
    and everything else pure?
-10. _(Resolved: whole cube turns are virtual (they change the frame; the moves come out renamed); `show` makes a visible turn. See Whole cube turns.)_
+10. _(Resolved: whole cube turns are virtual (they change the frame; the moves come out renamed); `show(x)` tags one turn as visible, inside any `Moves` value. See Whole cube turns.)_
 11. **Twist-agnostic cycles:** `/…/r` covers single places; Place D Corners
     needs "these corners cycle, ignoring twists". `positions(cube) has
 (ufl ulb ubr)`, or a flag on the cycle?
@@ -594,6 +604,7 @@ or the move list.
 | `fun f(p: T) -> T`                                                                                 | `->` is the case arrow; a result type is written like a parameter's, `fun f(p: T): T`                                                                             |
 | Functions whose value is their last expression, cases that produce values (`case fr is p -> R<U>`) | `match` would mean two things; actions are algos (`-> do …`), and a `fun` says `return`                                                                           |
 | `Sequence` as a type name                                                                          | A sequence of what? `Moves` says it                                                                                                                               |
+| `show z2` as a statement                                                                           | A visible turn couldn't be part of a `Moves` value; `show(x)` tags one turn, and `do` plays it                                                                    |
 | The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations)                                | Replaced everywhere by standard notation                                                                                                                          |
 | Upper case piece names (`URF`)                                                                     | Reads as moves U R F; Singmaster used lower case                                                                                                                  |
 | Corner names in either winding (`ufr` as well as `urf`)                                            | Six spellings per corner; clockwise only gives exactly three, one per sticker                                                                                     |
