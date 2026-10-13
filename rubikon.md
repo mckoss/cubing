@@ -724,8 +724,8 @@ edge is over df, F2."
 - **`as t` places them yourself.** With `as t`, nothing is made
   implicitly: the turns are named `t` (a `Moves` value) and made only
   where the action writes them. That is how a setup is undone, as a
-  conjugate: `do t<F>` is `t F t'`, which turns the top, makes F, and turns
-  the top back. Write `as t` only when the action needs `t` somewhere other
+  conjugate: `do t<F>` is `t F t'`, which turns the layer, makes F, and turns
+  it back. Write `as t` only when the action needs `t` somewhere other
   than first.
 - **Nothing found is an error**, unless there is an `otherwise` case, or
   an `else using` to try next. `otherwise` has no turns to make.
@@ -781,10 +781,10 @@ name, a pattern as written, a `Bool` as `true` or `false`. `{{` and `}}`
 are a literal brace.
 
 ```
-using U* as t {
-  case fu is /df/ -> do t F2
+using U* {
+  case fu is /df/ -> do F2
 }
-trace("after {t}: cube is {cube}, uf is {uf}, cross {solved(df dr db dl)}")
+trace("cube is {cube}, uf is {uf}, cross {solved(df dr db dl)}")
 ```
 
 `trace` doesn't move the cube, doesn't count as a move, and doesn't

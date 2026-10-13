@@ -308,7 +308,7 @@ Location         uf  fu  urf  u
 - Where a `Face` or `Slice` is expected, a move letter names the face or
   slice, not the turn: `layer(D)`, `reflect(p, M)`.
 - A `let` may state its type (`let t: Moves = …`) but needn't: it's the
-  type of what it's given. A search's `as t` is of type `Moves`.
+  type of what it's given. The turns a `using … as t` names are of type `Moves`.
 - A **Pattern** is read relative to the centers: after `y`, `/fr/` is the
   piece that now belongs at the front right.
 - A **Cubie** is a piece with an orientation. Written as a pattern
@@ -635,7 +635,7 @@ or the move list.
 | `Rotation` as the type of `x y z`                                                                             | They reorient the cube; `Orient` says so, and "rotation" is already a pattern's `r`                                                                               |
 | A file's top-level algo running when the file runs, or a top-level `do`                                       | Implicit, and a top-level `do` would run on import; `algo main` names the entry point, and `do basic.main` runs it                                                |
 | Algos with parameters nested inside other algos                                                               | Nothing is gained by hiding them; at the top level they can be imported, and a nested algo is always a stage                                                      |
-| `each U*`, `for t in U* { do t … }`                                                                           | `U*` means "fewest first" in `search`; `each` steps through all four and returns, which a `for` would leave to the writer                                         |
+| `each U*`, `for t in U* { do t … }`                                                                           | `U*` means "fewest first" in `using`; `each` steps through all four and returns, which a `for` would leave to the writer                                          |
 | The 2003 notation (`ruRU`: lower case clockwise; `i j k` rotations)                                           | Replaced everywhere by standard notation                                                                                                                          |
 | Upper case piece names (`URF`)                                                                                | Reads as moves U R F; Singmaster used lower case                                                                                                                  |
 | Corner names in either winding (`ufr` as well as `urf`)                                                       | Six spellings per corner; clockwise only gives exactly three, one per sticker                                                                                     |

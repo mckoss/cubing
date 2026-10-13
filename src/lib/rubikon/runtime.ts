@@ -16,7 +16,7 @@
 // - `until cond max n` tests the condition before each pass, and stops as
 //   soon as it holds (so it may run no passes).  If it still doesn't hold
 //   after n passes, that's an error.
-// - `using` searches: it tries candidates with the fewest turns first; among those with
+// - `using` tries candidates with the fewest turns first; among those with
 //   as many, the first generator varies slowest, and each generator's own
 //   turns go clockwise, counterclockwise, then half.  So `y* U*` tries
 //   (), U, U', U2, y, y', y2, then y U, y U', …
