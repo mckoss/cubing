@@ -6,7 +6,7 @@
 
 {{
   const KEYWORDS = new Set([
-    'algo', 'goal', 'let', 'fun', 'return', 'do', 'each', 'match', 'search',
+    'algo', 'goal', 'let', 'fun', 'return', 'do', 'each', 'match', 'using',
     'as', 'case', 'otherwise', 'else', 'until', 'max', 'if', 'not', 'and',
     'or', 'in', 'is', 'all', 'has', 'face', 'import', 'from', 'trace'
   ]);
@@ -57,7 +57,7 @@ TopDef = Let / Fun / Algo
 
 // ---------------------------------------------------------------- Statements
 
-Statement = Let / Fun / Algo / Do / Return / If / Match / Search / Each / Until / Trace
+Statement = Let / Fun / Algo / Do / Return / If / Match / Using / Each / Until / Trace
 
 Block = "{" _ body:(@Statement _)* "}" { return body; }
 
@@ -110,13 +110,15 @@ Action
   = Do
   / "(" _ ")" { return { kind: 'nothing', loc: here() }; }
 
-Search
-  = SEARCH _ generators:(@Generator _)+ AS _ as:Ident _
-    "{" _ cases:(@Case _)* otherwise:(@Otherwise _)? "}" next:(_ ELSE _ @Search)?
+// Without `as`, the turns found are made before the action; with `as t`,
+// only where the action writes them (`do t<F>`).
+Using
+  = USING _ generators:(@Generator _)+ as:(AS _ @Ident _)?
+    "{" _ cases:(@Case _)* otherwise:(@Otherwise _)? "}" next:(_ ELSE _ @Using)?
     {
       return {
-        kind: 'search', generators, as, cases, otherwise: otherwise ?? null,
-        else: next ?? null, loc: here()
+        kind: 'using', generators, as: as ?? null, cases,
+        otherwise: otherwise ?? null, else: next ?? null, loc: here()
       };
     }
 
@@ -280,7 +282,7 @@ RETURN    = "return"    !IdentChar
 DO        = "do"        !IdentChar
 EACH      = "each"      !IdentChar
 MATCH     = "match"     !IdentChar
-SEARCH    = "search"    !IdentChar
+USING     = "using"     !IdentChar
 AS        = "as"        !IdentChar
 CASE      = "case"      !IdentChar
 OTHERWISE = "otherwise" !IdentChar

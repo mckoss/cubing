@@ -42,9 +42,9 @@ algo main "The bottom cross" goal solved(df dr db dl) {
   each y {                            # each bottom edge in turn
     if not solved(df) {
       do lift(/df/r)                  # bring it to the top, either way round
-      search U* as t {                # turn the top until it's above df
-        case uf is /df/ -> do t insert        # bottom color up
-        case fu is /df/ -> do t U' R'<F>      # bottom color in front
+      using U* {                      # turn the top until it's above df
+        case uf is /df/ -> do insert          # bottom color up
+        case fu is /df/ -> do U' R'<F>        # bottom color in front
       }
     }
   }
@@ -96,7 +96,7 @@ have **no** space:
 | before the `<` of a conjugate       | `R<U>`            | `R <U>` is an error            |
 | between a function name and `(`     | `commutator(R,U)` | `sexy (R)` is `sexy` then `R`  |
 | between an algo's name and `(`      | `algo lift(p: …)` | `algo lift (p: …)` is an error |
-| before a search generator's `*`     | `U*`              |                                |
+| before a `using` generator's `*`    | `U*`              |                                |
 | before a cycle's `+` or `-`         | `(urf)+`          |                                |
 | between a type and its argument `(` | `Set(Location)`   |                                |
 | inside a pattern                    | `/u__/`           | `/u _ _/` is an error          |
@@ -121,8 +121,8 @@ do not return
 until all is fun
 if each algo has face
 import goal from trace
-search in case
-as max and match
+as in case
+using max and match
 let otherwise
 or else
 ```
@@ -199,7 +199,7 @@ repeat count straight after `)` (`(R U)3`), and the bound of an `until`
 | `/`     | between the rows of a face picture                                                                                      |
 | `_`     | in a pattern or picture: any sticker                                                                                    |
 | `!`     | in a pattern or picture: any sticker but, `!u`                                                                          |
-| `*`     | after a search generator: zero or more of that turn, `U*`                                                               |
+| `*`     | after a `using` generator: zero or more of that turn, `U*`                                                              |
 | `[ ]`   | a face picture                                                                                                          |
 | `{ }`   | a block                                                                                                                 |
 | `->`    | between a case and its action                                                                                           |
@@ -385,7 +385,7 @@ let t: Moves = R U R' U'
 let sexy = commutator(R, U)            # Moves
 ```
 
-A search's `as t` is of type `Moves`.
+The turns a `using … as t` names are of type `Moves`.
 
 ## 5. Move expressions
 
@@ -657,7 +657,7 @@ and the result have types.
 
 ```
 do R U R' U'
-do t F2 t' F2          # a search's turns, then undone
+do t F2 t' F2          # the turns found by using … as t, then undone
 do show(z2)
 do lift(/df/r)         # an algo with parameters
 do basic.main          # another file's method
@@ -690,22 +690,24 @@ first that holds runs its action, and no others. `otherwise` comes last
 and runs when nothing else holds. **If no case holds and there is no
 `otherwise`, it is an error.** Cases never produce values.
 
-### `search`
+### `using`
 
 ```
-search U* as t {
-  case uf is /df/ -> do t F2
-  case fu is /df/ -> do t U' R' F R
+using U* {
+  case uf is /df/ -> do F2
+  case fu is /df/ -> do U' R' F R
 }
 ```
 
-A search looks for the fewest turns after which a case holds.
+`using` searches for the fewest turns after which a case holds, makes
+them, then runs that case's action. Read it as "using U turns: when the
+edge is over df, F2."
 
 - **Generators.** `U*` means zero or more U turns. Its candidates are
   tried **shortest first**: none, then the quarter turns (clockwise
   before counterclockwise), then the half turn: `()`, `U`, `U'`, `U2`.
-  So `U*` and `U'*` are the same search. A generator's order bounds it, so
-  every search is finite and repeatable.
+  So `U*` and `U'*` are the same. A generator's order bounds it, so every
+  search is finite and repeatable.
 - **Several generators.** `y* U*` also tries candidates with the fewest
   turns first, counting every turn (a whole cube turn too). Among
   candidates with as many turns, the generators are compared left to
@@ -716,22 +718,27 @@ A search looks for the fewest turns after which a case holds.
 - **Testing.** For each candidate, the cases are tested as if its turns
   had been made. The first case to hold, for the first candidate that has
   one, wins.
-- **Nothing is done implicitly.** The candidate's turns are named by
-  `as t` (a `Moves` value) and are made only where the action writes
-  them: `do t F2`. So an undo is visible too: `do t F2 t' F2`. With whole
-  cube turns (`y* U*`), `t` changes the frame as `y` does anywhere.
+- **The turns are made first.** The candidate's turns are made, then the
+  action runs. `-> ()` makes only the turns. Whole cube turns (`y* U*`)
+  change the frame as `y` does anywhere.
+- **`as t` places them yourself.** With `as t`, nothing is made
+  implicitly: the turns are named `t` (a `Moves` value) and made only
+  where the action writes them. That is how a setup is undone, as a
+  conjugate: `do t<F>` is `t F t'`, which turns the top, makes F, and turns
+  the top back. Write `as t` only when the action needs `t` somewhere other
+  than first.
 - **Nothing found is an error**, unless there is an `otherwise` case, or
-  an `else search` to try next:
+  an `else using` to try next. `otherwise` has no turns to make.
 
 ```
-search D* as t {
-  case df is /uf/ -> do t F2
-} else search E* as t {                 # in the middle layer
+using D* {
+  case df is /uf/ -> do F2
+} else using E* as t {                  # in the middle layer
   case lf is /uf/ -> do t<F>
 }
 ```
 
-The generator is a move followed directly by `*`; `as t` is required.
+The generator is a move followed directly by `*`.
 
 ### `each`
 
@@ -746,13 +753,13 @@ each of three quarter turns. A fourth turn at the end brings the cube
 back to where it started. With a whole cube turn (`each y`) it makes no
 moves of its own; with a face turn (`each U`) it really turns between
 passes. There is no `as t`: the body doesn't know which pass it's on.
-Unlike `search`, it doesn't stop at a match.
+Unlike `using`, it doesn't stop at a match.
 
 ### `until`
 
 ```
 until goal max 4 {
-  search U* as t { … }
+  using U* { … }
 }
 ```
 
@@ -774,7 +781,7 @@ name, a pattern as written, a `Bool` as `true` or `false`. `{{` and `}}`
 are a literal brace.
 
 ```
-search U* as t {
+using U* as t {
   case fu is /df/ -> do t F2
 }
 trace("after {t}: cube is {cube}, uf is {uf}, cross {solved(df dr db dl)}")
@@ -956,7 +963,7 @@ Import      = "from" Ident "import" ImportedName ("," ImportedName)*
 ImportedName= Ident ("as" Ident)?
 TopDef      = Let | Fun | Algo
 
-Statement   = Let | Fun | Algo | Do | Return | If | Match | Search | Each | Until | Trace
+Statement   = Let | Fun | Algo | Do | Return | If | Match | Using | Each | Until | Trace
 Block       = "{" Statement* "}"
 Let         = "let" Ident (":" Type)? "=" Expr
 Fun         = "fun" Ident Params ":" Type Block
@@ -971,7 +978,7 @@ Match       = "match" "{" Case* Otherwise? "}"
 Case        = "case" Cond "->" Action
 Otherwise   = "otherwise" "->" Action
 Action      = Do | "(" ")"
-Search      = "search" Generator+ "as" Ident "{" Case* Otherwise? "}" ("else" Search)?
+Using       = "using" Generator+ ("as" Ident)? "{" Case* Otherwise? "}" ("else" Using)?
 Generator   = Move "*"
 Each        = "each" Move Block
 Until       = "until" ("goal" | Cond) "max" Int Block
@@ -1030,7 +1037,7 @@ language yet:
 - **Twist-agnostic cycles** (open question 11): `positions(cube)`, used
   by Singmaster's Place D Corners, and how several cycles after `has`
   combine.
-- **Search alternatives** with a depth limit (`(U|D){0,3}`, `U?`) (open
+- **`using` alternatives** with a depth limit (`(U|D){0,3}`, `U?`) (open
   question 5).
 - **Other puzzles, a standard library, a module's puzzle declaration,
   and provenance as data** (open questions 16 and 17).

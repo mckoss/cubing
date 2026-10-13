@@ -5,6 +5,16 @@ each page's title. It follows [semantic versioning](https://semver.org):
 the major version changes when something a user relies on changes, the
 minor version for new features, and the patch for fixes.
 
+## 3.0.0 (2026-10-13)
+
+- Rubikon: `search` is now `using`, and makes the turns it finds before
+  the case's action, so `search U* as t { case … -> do t F2 }` is now
+  `using U* { case … -> do F2 }`. Write `as t` to place the turns yourself,
+  as in a conjugate (`do t<F>`); then nothing is made implicitly. A
+  program that still says `search` won't parse: rename it, and drop
+  `as t` and the leading `t` where the turns come first.
+- The keyword poem in rubikon.md, rewritten for `using`.
+
 ## 2.1.0 (2026-09-29)
 
 - Cube Racing, at the bottom of the playground: race a program's

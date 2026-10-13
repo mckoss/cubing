@@ -3,8 +3,9 @@
 #
 # A sketch for review: nothing runs this yet (see LANGUAGE.md).  It solves
 # the top layer first, turns the cube over, and finishes the other layers.
-# A search that finds nothing is an error unless `else` names another
-# search to try.
+# A `using` that finds nothing is an error unless `else` names another to
+# try.  Where an action needs its turns other than first (a conjugate,
+# t<F>, to put the top back), `as t` names them.
 
 algo main "David Singmaster's solution (1981)" goal solved(cube) {
 
@@ -54,13 +55,13 @@ algo main "David Singmaster's solution (1981)" goal solved(cube) {
 
   algo "Solve U Edges" goal solved(uf ur ub ul) {
     each y {
-      search D* as t {
-        case df is /uf/ -> do t F2
-        case fd is /uf/ -> do t F' U' R U
-      } else search E* as t {                 # in the middle layer
+      using D* {
+        case df is /uf/ -> do F2
+        case fd is /uf/ -> do F' U' R U
+      } else using E* as t {                  # in the middle layer
         case lf is /uf/ -> do t<F>
         case rf is /uf/ -> do t<F'>
-      } else search U* as t {                 # in the top layer: park it,
+      } else using U* as t {                  # in the top layer: park it,
         case uf is /uf/ -> do t<F2> F2         #   turn the top back, put it in
         case fu is /uf/ -> do t<F> U' R U
       }
@@ -69,11 +70,11 @@ algo main "David Singmaster's solution (1981)" goal solved(cube) {
 
   algo "Solve U Corners" goal solved(urf ufl ulb ubr) {
     each y {
-      search D* as t {
-        case rdf is /urf/ -> do t commutator(D, F)
-        case frd is /urf/ -> do t commutator(D', R')
-        case dfr is /urf/ -> do t F<D'> R'<D2>
-      } else search U* as t {
+      using D* {
+        case rdf is /urf/ -> do commutator(D, F)
+        case frd is /urf/ -> do commutator(D', R')
+        case dfr is /urf/ -> do F<D'> R'<D2>
+      } else using U* as t {
         case urf is /urf/ -> do t<F<D>> F<D'>
         case rfu is /urf/ -> do t<R'<D2>> F<D2>
         case fur is /urf/ -> do t<F<D2>> R'<D2>
@@ -86,41 +87,41 @@ algo main "David Singmaster's solution (1981)" goal solved(cube) {
   algo "Solve Middle Edges" goal solved(fr fl br bl) {
     each y {
       if not solved(rf) {                    # stuck in the middle: lift it out
-        search E* as t {
+        using E* as t {
           case rf is /rf/ -> do t<swapRight>
           case fr is /rf/ -> do t<swapLeft>
         }
       }
-      search U* as t {
-        case ub is /rf/ -> do t swapRight
-        case lu is /rf/ -> do t swapLeft
+      using U* {
+        case ub is /rf/ -> do swapRight
+        case lu is /rf/ -> do swapLeft
       }
     }
   }
 
   algo "Orient D Edges" goal face U [_u_ / uuu / _u_] {   # the new top
-    search y* as t {
-      case face U [_!u_ / uuu   / _!u_] -> do t flipLeft
-      case face U [_!u_ / !uuu  / _u_ ] -> do t flipFront          # front and right
-      case face U [_!u_ / !uu!u / _!u_] -> do t flipLeft y2 flipFront
+    using y* {
+      case face U [_!u_ / uuu   / _!u_] -> do flipLeft
+      case face U [_!u_ / !uuu  / _u_ ] -> do flipFront            # front and right
+      case face U [_!u_ / !uu!u / _!u_] -> do flipLeft y2 flipFront
     }
   }
 
   algo "Place D Edges" goal solved(uf ur ub ul) {
-    search y* U* as t {                      # cycles of the top edges
-      case cube has (uf ur ub)      -> do t cycleEdges
-      case cube has (uf ub ur)      -> do t cycleEdgesBack
-      case cube has (uf ur) (ul ub) -> do t swapEdgePairs
-      case solved(uf ur ub ul)      -> do t       # only the top turned
+    using y* U* {                            # cycles of the top edges
+      case cube has (uf ur ub)      -> do cycleEdges
+      case cube has (uf ub ur)      -> do cycleEdgesBack
+      case cube has (uf ur) (ul ub) -> do swapEdgePairs
+      case solved(uf ur ub ul)      -> ()         # only the top turned
     }
   }
 
   algo "Place D Corners" goal placed(urf ufl ulb ubr) {
-    search y* as t {                         # positions only, twists ignored
-      case positions(cube) has (ufl ubr ulb)       -> do t cycleCorners
-      case positions(cube) has (ufl ulb ubr)       -> do t cycleCornersBack
-      case positions(cube) has (ufl urf) (ulb ubr) -> do t swapCornerPairs
-      case positions(cube) has (ufl ubr) (urf ulb) -> do t swapCornersAcross
+    using y* {                               # positions only, twists ignored
+      case positions(cube) has (ufl ubr ulb)       -> do cycleCorners
+      case positions(cube) has (ufl ulb ubr)       -> do cycleCornersBack
+      case positions(cube) has (ufl urf) (ulb ubr) -> do swapCornerPairs
+      case positions(cube) has (ufl ubr) (urf ulb) -> do swapCornersAcross
     }
   }
 

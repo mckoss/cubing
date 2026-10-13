@@ -295,15 +295,15 @@ describe('statements', () => {
 		expect(m).toMatchObject({ cases: [{ cond: { kind: 'and' } }] });
 	});
 
-	it('reads search with generators and else', () => {
-		const [s] = body(`search D* as t { case df is /uf/ -> do t F2 }
-			else search y* U* as t { case uf is /uf/ -> do t } `);
+	it('reads using with generators, as, and else', () => {
+		const [s] = body(`using D* as t { case df is /uf/ -> do t F2 }
+			else using y* U* { case uf is /uf/ -> () } `);
 		expect(strip(s)).toMatchObject({
-			kind: 'search',
+			kind: 'using',
 			generators: [move('D')],
 			as: 't',
 			otherwise: null,
-			else: { kind: 'search', generators: [move('y'), move('U')], else: null }
+			else: { kind: 'using', generators: [move('y'), move('U')], as: null, else: null }
 		});
 	});
 
