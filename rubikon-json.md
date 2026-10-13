@@ -43,19 +43,19 @@ const tree = parseRubikon(source); // throws RubikonSyntaxError (line, column)
 
 A block (`{ … }`) is an array of statements.
 
-| Kind     | Fields                                                                        | Source                                  |
-| -------- | ----------------------------------------------------------------------------- | --------------------------------------- |
-| `let`    | `name`, `type` (a type or `null`), `value` (expression)                       | `let t: Moves = R U`                    |
-| `fun`    | `name`, `params`, `result` (a type), `body`                                   | `fun f(p: Pattern): Int { return … }`   |
-| `algo`   | `name`, `params` (or `null`), `description`, `goal` (condition), `body`       | `algo lift(p: Pattern) "Lift" { … }`    |
-| `do`     | `value` (expression)                                                          | `do t F2`                               |
-| `return` | `value`                                                                       | `return R U`                            |
-| `if`     | `cond`, `then` (block), `else` (block or `null`)                              | `if … { } else if … { } else { }`       |
-| `match`  | `cases`, `otherwise` (an action or `null`)                                    | `match { case … -> … otherwise -> … }`  |
-| `search` | `generators` (moves), `as`, `cases`, `otherwise`, `else` (a search or `null`) | `search y* U* as t { … } else search …` |
-| `each`   | `turn` (a move), `body`                                                       | `each y { … }`                          |
-| `until`  | `cond` (a condition, or `{ "kind": "goal" }`), `max`, `body`                  | `until goal max 2 { … }`                |
-| `trace`  | `parts`: strings (text) and expressions (printed), in order                   | `trace("after {t}: {cube}")`            |
+| Kind     | Fields                                                                                                                                   | Source                                       |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `let`    | `name`, `type` (a type or `null`), `value` (expression)                                                                                  | `let t: Moves = R U`                         |
+| `fun`    | `name`, `params`, `result` (a type), `body`                                                                                              | `fun f(p: Pattern): Int { return … }`        |
+| `algo`   | `name`, `params` (or `null`), `description`, `goal` (condition), `body`                                                                  | `algo lift(p: Pattern) "Lift" { … }`         |
+| `do`     | `value` (expression)                                                                                                                     | `do t F2`                                    |
+| `return` | `value`                                                                                                                                  | `return R U`                                 |
+| `if`     | `cond`, `then` (block), `else` (block or `null`)                                                                                         | `if … { } else if … { } else { }`            |
+| `match`  | `cases`, `otherwise` (an action or `null`)                                                                                               | `match { case … -> … otherwise -> … }`       |
+| `using`  | `generators` (moves), `as` (a name, or `null`: the turns are made before the action), `cases`, `otherwise`, `else` (a `using` or `null`) | `using y* U* { … } else using E* as t { … }` |
+| `each`   | `turn` (a move), `body`                                                                                                                  | `each y { … }`                               |
+| `until`  | `cond` (a condition, or `{ "kind": "goal" }`), `max`, `body`                                                                             | `until goal max 2 { … }`                     |
+| `trace`  | `parts`: strings (text) and expressions (printed), in order                                                                              | `trace("after {t}: {cube}")`                 |
 
 - **Types:** `{ "name": "Pattern", "arg": null }`; `Set(Location)` is
   `{ "name": "Set", "arg": "Location" }`.

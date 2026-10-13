@@ -236,13 +236,13 @@ describe('statements', () => {
 	});
 });
 
-describe('search', () => {
+describe('using', () => {
 	const turns = (source: string): string[] => {
-		const file = parseRubikon(`algo main { search ${source} as t { } }`);
+		const file = parseRubikon(`algo main { using ${source} { } }`);
 		const main = file.defs[0] as Algo;
 		const s = main.body[0];
-		if (s?.kind !== 'search') {
-			throw new Error('no search');
+		if (s?.kind !== 'using') {
+			throw new Error('no using');
 		}
 		const generators = s.generators.flatMap((g) => evaluateMoves(g, new Map()));
 		return [...searchCandidates(generators)].map((c) => formatMoves(engineMoves(c)) || '()');
@@ -295,7 +295,7 @@ describe('search', () => {
 	it('makes candidates one at a time, so the step limit stops a big search', () => {
 		const generators = 'U* D* R* L* F* B* M* E* S* U* D* R* L* F* B* M* E* S*';
 		const error = runError(() =>
-			runBody(`search ${generators} as t { case uf is /urf/ -> do t }`, SOLVED, '', {
+			runBody(`using ${generators} { case uf is /urf/ -> () }`, SOLVED, '', {
 				maxSteps: 1000
 			})
 		);
@@ -303,37 +303,41 @@ describe('search', () => {
 	});
 
 	it('names the turns found, and makes them only where written', () => {
-		const search = "search U* as t { case solved(uf ur ub ul) -> do t F t' }";
+		const search = "using U* as t { case solved(uf ur ub ul) -> do t F t' }";
 		// U' is found before U2 or U: the fewest quarter turns, clockwise first.
 		expect(made(runBody(search, after('U')))).toBe("U' F U");
 		expect(made(runBody(search, after('U2')))).toBe('U2 F U2');
 		expect(made(runBody(search))).toBe('F');
 	});
 
-	it('tries else search, then otherwise (with no turns)', () => {
-		const source = `search U* as t { case solved(df) -> do t }
-			else search D* as t { case solved(df dr) -> do t R }`;
+	it('without as, makes the turns found before the action', () => {
+		const using = 'using U* { case solved(uf ur ub ul) -> do F }';
+		expect(made(runBody(using, after('U')))).toBe("U' F");
+		expect(made(runBody(using))).toBe('F');
+		expect(made(runBody('using U* { case solved(uf ur ub ul) -> () }', after('U2')))).toBe('U2');
+	});
+
+	it('tries else using, then otherwise (with no turns)', () => {
+		const source = `using U* { case solved(df) -> () }
+			else using D* { case solved(df dr) -> do R }`;
 		expect(made(runBody(source, after('D')))).toBe("D' R");
-		const other = 'search U* as t { case uf is /df/ -> do t  otherwise -> do t L }';
+		const other = 'using U* as t { case uf is /df/ -> do t  otherwise -> do t L }';
 		expect(made(runBody(other))).toBe('L');
-		const error = runError(() => runBody('search U* as t { case uf is /df/ -> do t }'));
-		expect(error.message).toBe('2:13: Search found nothing, and there is no otherwise');
+		const error = runError(() => runBody('using U* { case uf is /df/ -> () }'));
+		expect(error.message).toBe('2:13: using found nothing, and there is no otherwise');
 	});
 
 	it('tests cases on the cube after the candidate turns, with cube and funs', () => {
 		const defs = 'fun topDone(): Bool { return solved(uf ur ub ul) }';
-		const source = 'search U* as t { case topDone() -> do t }';
+		const source = 'using U* { case topDone() -> () }';
 		expect(made(runBody(source, after('U'), defs))).toBe("U'");
-		expect(made(runBody('search U* as t { case cube == () -> do t }', after('U2')))).toBe('U2');
+		expect(made(runBody('using U* { case cube == () -> () }', after('U2')))).toBe('U2');
 	});
 
 	it('searches whole cube turns as frame changes', () => {
 		// After F, the top pieces at the back are untouched: a y turns two of
 		// them to the right.
-		const result = runBody(
-			'search y* as t { case urf is /urf/ and ur is /ur/ -> do t }',
-			after('F')
-		);
+		const result = runBody('using y* { case urf is /urf/ and ur is /ur/ -> () }', after('F'));
 		expect(brief(result.events)).toEqual(['enter main', 'y (frame)', 'leave']);
 	});
 });
@@ -350,6 +354,11 @@ describe('fun', () => {
 	it('never moves the cube', () => {
 		expect(runError(() => runBody('fun g(): Moves { do R  return R } do g()')).message).toMatch(
 			/A fun cannot move the cube/
+		);
+		const using = 'fun g(): Moves { using U* { case solved(uf) -> () }  return R } do g()';
+		expect(made(runBody(using))).toBe('R');
+		expect(runError(() => runBody(using, after('U'))).message).toMatch(
+			/A fun cannot move the cube \(using without as\)/
 		);
 		expect(runError(() => runBody('fun g(): Moves { let m = R } do g()')).message).toMatch(
 			/g ended without a return/

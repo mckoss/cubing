@@ -16,7 +16,7 @@
 // - `until cond max n` tests the condition before each pass, and stops as
 //   soon as it holds (so it may run no passes).  If it still doesn't hold
 //   after n passes, that's an error.
-// - `search` tries candidates with the fewest turns first; among those with
+// - `using` tries candidates with the fewest turns first; among those with
 //   as many, the first generator varies slowest, and each generator's own
 //   turns go clockwise, counterclockwise, then half.  So `y* U*` tries
 //   (), U, U', U2, y, y', y2, then y U, y U', …
@@ -43,7 +43,7 @@ import type {
 	Loc,
 	Param,
 	RubikonFile,
-	Search,
+	Using,
 	Statement,
 	Trace,
 	TypeRef
@@ -562,8 +562,8 @@ class Runner {
 				this.action(action, scope, ctx);
 				return undefined;
 			}
-			case 'search':
-				this.search(s, scope, ctx);
+			case 'using':
+				this.using(s, scope, ctx);
 				return undefined;
 			case 'each':
 				this.each(s.turn, s.body, scope, ctx);
@@ -621,27 +621,43 @@ class Runner {
 		return value?.kind === 'algo' ? value : undefined;
 	}
 
-	private search(s: Search, scope: Env, ctx: Context): void {
+	private using(s: Using, scope: Env, ctx: Context): void {
 		const generators = s.generators.flatMap((g) => evaluateMoves(g, scope));
 		for (const candidate of searchCandidates(generators)) {
 			this.step(s.loc);
 			const state = applyMoves(this.reading(ctx), engineMoves(candidate));
 			const found = s.cases.find((c) => this.test(c.cond, scope, ctx, state));
 			if (found !== undefined) {
-				this.searchAction(found.action, s.as, candidate, scope, ctx);
+				this.usingAction(found.action, s.as, candidate, scope, ctx);
 				return;
 			}
 		}
 		if (s.otherwise !== null) {
-			this.searchAction(s.otherwise, s.as, [], scope, ctx);
+			this.usingAction(s.otherwise, s.as, [], scope, ctx);
 		} else if (s.else !== null) {
-			this.search(s.else, scope, ctx);
+			this.using(s.else, scope, ctx);
 		} else {
-			throw new RubikonRuntimeError('Search found nothing, and there is no otherwise', s.loc);
+			throw new RubikonRuntimeError('using found nothing, and there is no otherwise', s.loc);
 		}
 	}
 
-	private searchAction(action: Action, as: string, turns: Moves, scope: Env, ctx: Context): void {
+	// With `as t`, the turns are named and made only where the action writes
+	// them; without, they are made first.
+	private usingAction(
+		action: Action,
+		as: string | null,
+		turns: Moves,
+		scope: Env,
+		ctx: Context
+	): void {
+		if (as === null) {
+			if (turns.length > 0 && ctx.fun !== null) {
+				throw new RubikonRuntimeError('A fun cannot move the cube (using without as)', action.loc);
+			}
+			this.play(turns, action.loc);
+			this.action(action, scope, ctx);
+			return;
+		}
 		const inner = new Scope(scope);
 		inner.define(as, { kind: 'moves', moves: turns }, action.loc);
 		this.action(action, inner, ctx);

@@ -74,9 +74,9 @@ algo main "The Basic Modern Solution" goal solved(cube) {
       each y {                                      # each bottom edge in turn
         if not solved(df) {
           do lift(/df/r)                            # either way round
-          search U* as t {
-            case uf is /df/ -> do t F2                    # its bottom color up
-            case fu is /df/ -> do t U' R'<F>              # its bottom color in front
+          using U* {
+            case uf is /df/ -> do F2                      # its bottom color up
+            case fu is /df/ -> do U' R'<F>                # its bottom color in front
           }
         }
       }
@@ -86,10 +86,10 @@ algo main "The Basic Modern Solution" goal solved(cube) {
       each y {
         if not solved(dfr) {
           do lift(/dfr/r)
-          search U* as t {
-            case rfu is /dfr/ -> do t R<U>                # bottom color facing right
-            case fur is /dfr/ -> do t F'<U'>              # bottom color facing front
-            case urf is /dfr/ -> do t R<U2> U' R<U>       # bottom color up
+          using U* {
+            case rfu is /dfr/ -> do R<U>                  # bottom color facing right
+            case fur is /dfr/ -> do F'<U'>                # bottom color facing front
+            case urf is /dfr/ -> do R<U2> U' R<U>         # bottom color up
           }
         }
       }
@@ -108,9 +108,9 @@ algo main "The Basic Modern Solution" goal solved(cube) {
           case fl is /fr/r -> do y'<insertRight>
           otherwise        -> ()                   # already in the top layer
         }
-        search U* as t {
-          case fu is /fr/ -> do t insertRight          # front color in front
-          case ur is /fr/ -> do t y<insertLeft>        # right color on the right
+        using U* {
+          case fu is /fr/ -> do insertRight            # front color in front
+          case ur is /fr/ -> do y<insertLeft>          # right color on the right
         }
       }
     }
@@ -118,31 +118,31 @@ algo main "The Basic Modern Solution" goal solved(cube) {
 
   algo "Top Cross" goal face U [_u_ / uuu / _u_] {
     until goal max 4 {
-      search U* as t {
-        case face U [_!u_ / uuu   / _!u_] -> do t topCross   # line
-        case face U [_u_  / uu!u  / _!u_] -> do t topCross   # L, at the back left
-        case face U [_!u_ / !uu!u / _!u_] -> do t topCross   # dot
+      using U* {
+        case face U [_!u_ / uuu   / _!u_] -> do topCross     # line
+        case face U [_u_  / uu!u  / _!u_] -> do topCross     # L, at the back left
+        case face U [_!u_ / !uu!u / _!u_] -> do topCross     # dot
       }
     }
   }
 
   algo "Top Edges" goal solved(uf ur ub ul) {
     until goal max 2 {                              # an opposite pair takes two
-      search y* U* as t {
-        case solved(uf ur ub ul)                          -> do t           # only the top turned
-        case uf is /ul/ and ul is /uf/ and solved(ub ur)  -> do t swapEdges   # front and left swapped
-        case uf is /ub/ and ub is /uf/ and solved(ul ur)  -> do t swapEdges   # across: swap, try again
+      using y* U* {
+        case solved(uf ur ub ul)                          -> ()             # only the top turned
+        case uf is /ul/ and ul is /uf/ and solved(ub ur)  -> do swapEdges     # front and left swapped
+        case uf is /ub/ and ub is /uf/ and solved(ul ur)  -> do swapEdges     # across: swap, try again
       }
     }
   }
 
   algo "Top Corners" goal placed(urf ufl ulb ubr) {
     until goal max 3 {
-      search y* as t {
+      using y* {
         case urf is /urf/r and ubr is /ulb/r and ulb is /ufl/r and ufl is /ubr/r
-            -> do t cycleCorners                            # front right in place
+            -> do cycleCorners                              # front right in place
         case ufl is /ufl/r and ulb is /ubr/r and ubr is /urf/r and urf is /ulb/r
-            -> do t cycleCornersBack                        # front left in place
+            -> do cycleCornersBack                          # front left in place
         otherwise -> do cycleCorners                        # none in place: cycle any three
       }
     }

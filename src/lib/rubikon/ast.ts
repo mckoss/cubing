@@ -125,14 +125,15 @@ export interface Match {
 	loc: Loc;
 }
 
-// `search U* y* as t { … } else search …`.
-export interface Search {
-	kind: 'search';
+// `using y* U* { … } else using …`: with `as t`, the turns found are named
+// and made only where written; without, they are made before the action.
+export interface Using {
+	kind: 'using';
 	generators: MoveToken[];
-	as: string;
+	as: string | null;
 	cases: Case[];
 	otherwise: Action | null;
-	else: Search | null;
+	else: Using | null;
 	loc: Loc;
 }
 
@@ -160,7 +161,7 @@ export interface Trace {
 	loc: Loc;
 }
 
-export type Statement = Let | Fun | Algo | Do | Return | If | Match | Search | Each | Until | Trace;
+export type Statement = Let | Fun | Algo | Do | Return | If | Match | Using | Each | Until | Trace;
 
 // --- Expressions (values) ---
 
