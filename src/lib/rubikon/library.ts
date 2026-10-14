@@ -17,6 +17,9 @@ export interface Program {
 	saved: number;
 }
 
+import { RETIRED_SEEDS, migrateSource } from './migrate';
+import { shortHash } from './racing';
+
 const PROGRAMS_KEY = 'rubikon.library';
 const LAST_OPEN_KEY = 'rubikon.lastOpen';
 
@@ -55,10 +58,14 @@ export class Library {
 			try {
 				const list: unknown = JSON.parse(stored);
 				if (Array.isArray(list)) {
+					let changed = false;
 					for (const p of list.filter(isProgram)) {
-						this.programs.set(p.name, { name: p.name, source: p.source, saved: p.saved });
+						const source = updated(p, seeds);
+						changed ||= source !== p.source;
+						this.programs.set(p.name, { name: p.name, source, saved: p.saved });
 					}
 					loaded = true;
+					if (changed) this.write();
 				}
 			} catch {
 				// Unreadable: start again from the seeds.
@@ -157,6 +164,16 @@ export class Library {
 			this.persisted = false;
 		}
 	}
+}
+
+// A stored program's source, brought up to date: an example still as it
+// was first copied becomes the current example; anything else is migrated.
+function updated(program: Program, seeds: readonly { name: string; source: string }[]): string {
+	const seed = seeds.find((s) => s.name === program.name);
+	if (seed !== undefined && RETIRED_SEEDS.has(shortHash(program.source))) {
+		return seed.source;
+	}
+	return migrateSource(program.source);
 }
 
 // A program's name, trimmed; it can't be empty.
