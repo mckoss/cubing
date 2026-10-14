@@ -33,11 +33,21 @@ function clockwise(name: string): string | undefined {
 
 interface PeggyError {
 	message: string;
-	location: { start: { line: number; column: number; offset: number } };
+	location: { start: { line: number; column: number } };
 }
 
 function isPeggyError(e: unknown): e is PeggyError {
 	return e instanceof Error && 'location' in e;
+}
+
+// Where a program from before 3.0 has a search (`search U* as t`), if it does.
+function oldSearch(source: string): { line: number; column: number } | undefined {
+	// Comments blanked (same length, so positions hold).
+	const code = source.replace(/#.*/g, (comment) => ' '.repeat(comment.length));
+	const match = /(?<![\w.])search(?:\s+[A-Za-z]['2]?\*)+\s+as\s/.exec(code);
+	if (match === null) return undefined;
+	const before = code.slice(0, match.index).split('\n');
+	return { line: before.length, column: (before.at(-1)?.length ?? 0) + 1 };
 }
 
 export function parseRubikon(source: string): RubikonFile {
@@ -45,12 +55,15 @@ export function parseRubikon(source: string): RubikonFile {
 		return getParser().parse(source, { isLocation, clockwise }) as RubikonFile;
 	} catch (e) {
 		if (isPeggyError(e)) {
-			const { line, column, offset } = e.location.start;
-			// A program from before 3.0.
-			const message = /^search(?![A-Za-z0-9_])/.test(source.slice(offset))
-				? '`search` is now `using` (Rubikon 3.0): using U* as t { … }'
-				: e.message;
-			throw new RubikonSyntaxError(message, line, column);
+			const old = oldSearch(source);
+			if (old !== undefined) {
+				throw new RubikonSyntaxError(
+					'`search` is now `using` (Rubikon 3.0): using U* as t { … }',
+					old.line,
+					old.column
+				);
+			}
+			throw new RubikonSyntaxError(e.message, e.location.start.line, e.location.start.column);
 		}
 		throw e;
 	}

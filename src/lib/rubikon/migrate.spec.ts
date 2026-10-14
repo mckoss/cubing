@@ -25,18 +25,28 @@ const SEEDS = [
 
 describe('migrateSource', () => {
 	it('renames search to using, keeping as t', () => {
-		expect(migrateSource('search U* as t { } else search D* as t { }')).toBe(
-			'using U* as t { } else using D* as t { }'
+		expect(migrateSource('algo main { search U* as t { } else search D* as t { } }')).toBe(
+			'algo main { using U* as t { } else using D* as t { } }'
 		);
 	});
 
 	it('leaves comments, strings, and other words alone', () => {
-		const source = 'algo a "search me" {  # search here\n  let researched = R\n}';
-		expect(migrateSource(source)).toBe(source);
+		const source =
+			'algo main "search me" {  # search here\n  let researched = R\n  search U* as t { }\n}';
+		expect(migrateSource(source)).toBe(
+			'algo main "search me" {  # search here\n  let researched = R\n  using U* as t { }\n}'
+		);
 	});
 
-	it('leaves a current program as it is', () => {
+	it('leaves a program that parses as it is, even with search as a name', () => {
 		expect(migrateSource(basic)).toBe(basic);
+		const named = 'let search = R U\nalgo main {\n  do search\n}';
+		expect(migrateSource(named)).toBe(named);
+	});
+
+	it("leaves a program that wouldn't parse renamed either", () => {
+		const broken = 'algo main { search U* as t { case -> } }';
+		expect(migrateSource(broken)).toBe(broken);
 	});
 });
 
@@ -67,9 +77,18 @@ describe('stored programs from before 3.0', () => {
 });
 
 describe('parse', () => {
-	it('says search is now using', () => {
+	it('says search is now using, where the search is', () => {
 		expect(() => parseRubikon('algo main {\n  search U* as t { }\n}')).toThrow(
-			'`search` is now `using` (Rubikon 3.0): using U* as t { … }'
+			'2:3: `search` is now `using` (Rubikon 3.0): using U* as t { … }'
+		);
+		// After a do, which reads search as a name and U as a move.
+		expect(() => parseRubikon('algo main {\n  do R U\n  search U* as t { }\n}')).toThrow(
+			'3:3: `search` is now `using`'
+		);
+		expect(() => parseRubikon(oldBasic)).toThrow(/^77:\d+: `search` is now `using`/);
+		// Not for one in a comment.
+		expect(() => parseRubikon('# was: search U* as t\nalgo main { do R) }')).toThrow(
+			/^2:\d+: Expected/
 		);
 	});
 });
