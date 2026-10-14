@@ -33,7 +33,7 @@ function clockwise(name: string): string | undefined {
 
 interface PeggyError {
 	message: string;
-	location: { start: { line: number; column: number } };
+	location: { start: { line: number; column: number; offset: number } };
 }
 
 function isPeggyError(e: unknown): e is PeggyError {
@@ -45,7 +45,12 @@ export function parseRubikon(source: string): RubikonFile {
 		return getParser().parse(source, { isLocation, clockwise }) as RubikonFile;
 	} catch (e) {
 		if (isPeggyError(e)) {
-			throw new RubikonSyntaxError(e.message, e.location.start.line, e.location.start.column);
+			const { line, column, offset } = e.location.start;
+			// A program from before 3.0.
+			const message = /^search(?![A-Za-z0-9_])/.test(source.slice(offset))
+				? '`search` is now `using` (Rubikon 3.0): using U* as t { … }'
+				: e.message;
+			throw new RubikonSyntaxError(message, line, column);
 		}
 		throw e;
 	}

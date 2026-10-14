@@ -5,6 +5,14 @@ each page's title. It follows [semantic versioning](https://semver.org):
 the major version changes when something a user relies on changes, the
 minor version for new features, and the patch for fixes.
 
+## 3.1.0 (2026-10-14)
+
+- Programs saved in the playground before 3.0 run again. The basic example,
+  if you hadn't changed it, is replaced by the current one; any other
+  program has `search` renamed to `using` (which keeps its moves). Before,
+  the playground opened the old basic and it failed with a syntax error.
+- Writing `search` now says it is `using`.
+
 ## 3.0.0 (2026-10-13)
 
 - Rubikon: `search` is now `using`, and makes the turns it finds before

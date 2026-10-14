@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 // Open the playground at the fastest speed, with an empty local storage
@@ -60,6 +61,37 @@ test("solves a scramble with basic's main", async ({ page }) => {
 	for (const stage of ['The Basic Modern Solution', 'First Face', 'Bottom Edges', 'Middle']) {
 		await expect(history(page).locator(`[data-block="${stage}"]`).first()).toBeVisible();
 	}
+	await expect(page.getByTestId('solved')).toBeVisible({ timeout: 20_000 });
+	expect(errors).toEqual([]);
+});
+
+test('updates the basic example saved before 3.0, and solves with it', async ({ page }) => {
+	// What a visit before 3.0 stored: both examples, as they were then.
+	const old = readFileSync('src/lib/rubikon/testdata/basic-2.1.rbk', 'utf8');
+	const cfop = readFileSync('rubikon/cfop.rbk', 'utf8');
+	expect(old).toContain('search U* as t');
+	await page.addInitScript(
+		([basic, cfop]) => {
+			if (localStorage.getItem('rubikon.library') === null) {
+				localStorage.setItem(
+					'rubikon.library',
+					JSON.stringify([
+						{ name: 'cfop', source: cfop, saved: 1 },
+						{ name: 'basic', source: basic, saved: 1 }
+					])
+				);
+			}
+		},
+		[old, cfop]
+	);
+	const errors = await open(page, { instant: true });
+	await expect(programName(page)).toHaveValue('basic');
+	await expect(source(page)).toHaveValue(/using U\* \{/);
+	await expect(source(page)).not.toHaveValue(/search/);
+	await page.getByTestId('scramble').click();
+	await expect(page.getByTestId('solved')).toBeHidden();
+	await page.getByTestId('run').click();
+	await expect(page.getByTestId('status')).toHaveText('Ran main.');
 	await expect(page.getByTestId('solved')).toBeVisible({ timeout: 20_000 });
 	expect(errors).toEqual([]);
 });
